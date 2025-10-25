@@ -65,7 +65,7 @@ class GiftResponse(BaseModel):
     created_at: datetime
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.0.4")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.0.5")
 
 # CORS middleware
 app.add_middleware(
