@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Form, Input, Button, message, Typography, Space, Tag, Divider, Row, Col, Spin } from 'antd';
-import { UserOutlined, MailOutlined, CrownOutlined, CalendarOutlined, EnvironmentOutlined, HeartOutlined, ArrowLeftOutlined, SaveOutlined } from '@ant-design/icons';
+import { Card, Form, Input, Button, message, Typography, Space, Tag, Divider, Row, Col, Spin, Switch, Tooltip } from 'antd';
+import { UserOutlined, MailOutlined, CrownOutlined, CalendarOutlined, EnvironmentOutlined, HeartOutlined, ArrowLeftOutlined, SaveOutlined, CheckCircleOutlined, CloseCircleOutlined, LinkOutlined } from '@ant-design/icons';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
@@ -38,6 +38,8 @@ function AdminUserProfileEdit() {
         interests: response.data.interests,
         gwars_profile_url: response.data.gwars_profile_url,
         gwars_nickname: response.data.gwars_nickname,
+        gwars_verified: response.data.gwars_verified,
+        gwars_verification_token: response.data.gwars_verification_token,
       });
     } catch (error) {
       message.error('Ошибка при загрузке профиля пользователя');
@@ -224,6 +226,18 @@ function AdminUserProfileEdit() {
                   </div>
                 )}
 
+                <div>
+                  <Text strong>Статус верификации GWars:</Text>
+                  <div style={{ marginTop: '4px' }}>
+                    <Tag 
+                      color={user.gwars_verified ? 'green' : 'red'} 
+                      icon={user.gwars_verified ? <CheckCircleOutlined /> : <CloseCircleOutlined />}
+                    >
+                      {user.gwars_verified ? 'Верифицирован' : 'Не верифицирован'}
+                    </Tag>
+                  </div>
+                </div>
+
                 <Divider />
 
                 <Card title="GWars информация" size="small">
@@ -231,7 +245,7 @@ function AdminUserProfileEdit() {
                     name="gwars_profile_url"
                     label="Ссылка на GWars профиль"
                   >
-                    <Input />
+                    <Input prefix={<LinkOutlined />} />
                   </Form.Item>
 
                   <Form.Item
@@ -239,6 +253,24 @@ function AdminUserProfileEdit() {
                     label="GWars никнейм"
                   >
                     <Input />
+                  </Form.Item>
+
+                  <Form.Item
+                    name="gwars_verified"
+                    label="Статус верификации"
+                    valuePropName="checked"
+                  >
+                    <Switch 
+                      checkedChildren="Верифицирован" 
+                      unCheckedChildren="Не верифицирован"
+                    />
+                  </Form.Item>
+
+                  <Form.Item
+                    name="gwars_verification_token"
+                    label="Токен верификации"
+                  >
+                    <Input.Password placeholder="Токен для верификации GWars профиля" />
                   </Form.Item>
                 </Card>
               </Space>

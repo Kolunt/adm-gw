@@ -254,6 +254,8 @@ class ProfileUpdate(BaseModel):
     address: str | None = None
     interests: str | None = None
     gwars_nickname: str | None = None
+    gwars_verified: bool | None = None
+    gwars_verification_token: str | None = None
 
 class EventCreate(BaseModel):
     name: str
@@ -310,7 +312,7 @@ class SystemSettingUpdate(BaseModel):
 
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.0.59")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.0.60")
 
 # CORS middleware
 app.add_middleware(
