@@ -6,9 +6,16 @@ import axios from 'axios';
 const AddressAutocomplete = ({ value, onChange, placeholder = "Введите адрес", ...props }) => {
   const [options, setOptions] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [autocompleteEnabled, setAutocompleteEnabled] = useState(true);
 
   const handleSearch = useCallback(async (searchText) => {
     if (!searchText || searchText.length < 3) {
+      setOptions([]);
+      return;
+    }
+
+    // Если автодополнение отключено, не делаем запросы
+    if (!autocompleteEnabled) {
       setOptions([]);
       return;
     }
@@ -40,14 +47,17 @@ const AddressAutocomplete = ({ value, onChange, placeholder = "Введите а
       console.error('Error fetching address suggestions:', error);
       if (error.response?.status === 400) {
         // Автодополнение отключено или токен не настроен
+        setAutocompleteEnabled(false);
         setOptions([]);
+        // Не показываем ошибку пользователю, просто отключаем автодополнение
       } else {
         message.error('Ошибка при получении подсказок адреса');
+        setOptions([]);
       }
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [autocompleteEnabled]);
 
   const handleSelect = (value, option) => {
     onChange?.(value);
@@ -66,7 +76,13 @@ const AddressAutocomplete = ({ value, onChange, placeholder = "Введите а
       onChange={handleChange}
       loading={loading}
       placeholder={placeholder}
-      notFoundContent={loading ? "Поиск..." : "Начните вводить адрес"}
+      notFoundContent={
+        loading 
+          ? "Поиск..." 
+          : autocompleteEnabled 
+            ? "Начните вводить адрес" 
+            : "Автодополнение отключено"
+      }
       {...props}
     >
       <Input
