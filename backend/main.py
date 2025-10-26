@@ -101,6 +101,19 @@ class Interest(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
+class FAQ(Base):
+    __tablename__ = "faq"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    question = Column(String, nullable=False, index=True)
+    answer = Column(String, nullable=False)
+    is_active = Column(Boolean, default=True)
+    order = Column(Integer, default=0)  # Порядок отображения
+    created_by_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # Кто создал FAQ
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
 # Password and JWT functions
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
@@ -340,8 +353,36 @@ class InterestResponse(BaseModel):
         from_attributes = True
 
 
+class FAQCreate(BaseModel):
+    question: str
+    answer: str
+    order: int = 0
+    created_by_user_id: int | None = None
+
+
+class FAQUpdate(BaseModel):
+    question: str | None = None
+    answer: str | None = None
+    is_active: bool | None = None
+    order: int | None = None
+
+
+class FAQResponse(BaseModel):
+    id: int
+    question: str
+    answer: str
+    is_active: bool
+    order: int
+    created_by_user_id: int | None = None
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.0.70")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.0.71")
 
 # CORS middleware
 app.add_middleware(
@@ -1425,6 +1466,88 @@ async def suggest_address(
         raise HTTPException(status_code=500, detail=f"Ошибка при обращении к Dadata: {str(e)}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Ошибка автодополнения: {str(e)}")
+
+# FAQ API endpoints
+
+@app.get("/api/faq", response_model=list[FAQResponse])
+async def get_faq(
+    db: Session = Depends(get_db)
+):
+    """Получение всех активных FAQ (доступно всем)"""
+    faq_items = db.query(FAQ).filter(
+        FAQ.is_active == True
+    ).order_by(FAQ.order.asc(), FAQ.created_at.asc()).all()
+    
+    return faq_items
+
+@app.get("/admin/faq", response_model=list[FAQResponse])
+async def get_all_faq(
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """Получение всех FAQ для администратора"""
+    faq_items = db.query(FAQ).order_by(FAQ.order.asc(), FAQ.created_at.asc()).all()
+    return faq_items
+
+@app.post("/admin/faq", response_model=FAQResponse)
+async def create_faq(
+    faq_data: FAQCreate,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """Создание нового FAQ (только для администраторов)"""
+    faq = FAQ(
+        question=faq_data.question,
+        answer=faq_data.answer,
+        order=faq_data.order,
+        is_active=True,
+        created_by_user_id=faq_data.created_by_user_id
+    )
+    db.add(faq)
+    db.commit()
+    db.refresh(faq)
+    return faq
+
+@app.put("/admin/faq/{faq_id}", response_model=FAQResponse)
+async def update_faq(
+    faq_id: int,
+    faq_data: FAQUpdate,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """Обновление FAQ (только для администраторов)"""
+    faq = db.query(FAQ).filter(FAQ.id == faq_id).first()
+    if not faq:
+        raise HTTPException(status_code=404, detail="FAQ не найден")
+    
+    if faq_data.question is not None:
+        faq.question = faq_data.question
+    if faq_data.answer is not None:
+        faq.answer = faq_data.answer
+    if faq_data.is_active is not None:
+        faq.is_active = faq_data.is_active
+    if faq_data.order is not None:
+        faq.order = faq_data.order
+    
+    faq.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(faq)
+    return faq
+
+@app.delete("/admin/faq/{faq_id}")
+async def delete_faq(
+    faq_id: int,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """Удаление FAQ (только для администраторов)"""
+    faq = db.query(FAQ).filter(FAQ.id == faq_id).first()
+    if not faq:
+        raise HTTPException(status_code=404, detail="FAQ не найден")
+    
+    db.delete(faq)
+    db.commit()
+    return {"message": "FAQ удален"}
 
 # Mount static files for React app
 if os.path.exists("dist"):
