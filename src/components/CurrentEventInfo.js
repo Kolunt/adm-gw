@@ -14,7 +14,6 @@ function CurrentEventInfo() {
   const [currentPhase, setCurrentPhase] = useState(null);
   const [loading, setLoading] = useState(true);
   const [participants, setParticipants] = useState([]);
-  const [participantsLoading, setParticipantsLoading] = useState(false);
 
   const updateCountdown = useCallback((event = currentEvent) => {
     if (!event) return;
@@ -84,15 +83,12 @@ function CurrentEventInfo() {
   const fetchParticipants = useCallback(async (eventId) => {
     if (!eventId) return;
     
-    setParticipantsLoading(true);
     try {
       const response = await axios.get(`/events/${eventId}/participants`);
       setParticipants(response.data);
     } catch (error) {
       console.error('Error fetching participants:', error);
       setParticipants([]);
-    } finally {
-      setParticipantsLoading(false);
     }
   }, []);
 
@@ -237,11 +233,7 @@ function CurrentEventInfo() {
           Участники мероприятия ({participants.length})
         </Title>
         
-        {participantsLoading ? (
-          <div style={{ textAlign: 'center', padding: '20px' }}>
-            <Text type="secondary">Загрузка участников...</Text>
-          </div>
-        ) : participants.length > 0 ? (
+        {participants.length > 0 ? (
           <List
             dataSource={participants}
             renderItem={(participant) => (
