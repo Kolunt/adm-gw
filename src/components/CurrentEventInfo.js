@@ -98,8 +98,10 @@ function CurrentEventInfo({ user, isAuthenticated, onNavigate }) {
   const fetchUserRegistration = useCallback(async (eventId) => {
     if (!eventId || !isAuthenticated || !user) return;
     
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    
     try {
-      const token = localStorage.getItem('token');
       const response = await axios.get(`/events/${eventId}/user-registration`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -198,7 +200,10 @@ function CurrentEventInfo({ user, isAuthenticated, onNavigate }) {
       
       // Загружаем участников и регистрацию пользователя
       fetchParticipants(response.data.id);
-      if (isAuthenticated && user) {
+      
+      // Загружаем регистрацию пользователя только если он авторизован
+      const token = localStorage.getItem('token');
+      if (isAuthenticated && user && token) {
         fetchUserRegistration(response.data.id);
       }
     } catch (error) {
@@ -215,7 +220,7 @@ function CurrentEventInfo({ user, isAuthenticated, onNavigate }) {
       setLoading(false);
       setHasChecked(true);
     }
-  }, [updateCountdown, fetchParticipants, fetchUserRegistration, hasChecked]);
+  }, [updateCountdown, fetchParticipants, fetchUserRegistration, hasChecked, isAuthenticated, user]);
 
   // Запускаем проверку только один раз при монтировании
   useEffect(() => {
