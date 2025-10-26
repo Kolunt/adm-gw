@@ -341,7 +341,7 @@ class InterestResponse(BaseModel):
 
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.0.65")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.0.66")
 
 # CORS middleware
 app.add_middleware(

@@ -144,9 +144,17 @@ function CurrentEventInfo() {
     return () => clearInterval(interval);
   }, [currentEvent, updateCountdown]);
 
-  // Если нет активного мероприятия, не показываем компонент
+  // Если нет активного мероприятия, показываем сообщение
   if (!currentEvent && !loading) {
-    return null;
+    return (
+      <Alert
+        message="Нет активных мероприятий"
+        description="В данный момент нет активных мероприятий. Следите за обновлениями!"
+        type="info"
+        showIcon
+        style={{ marginBottom: 24 }}
+      />
+    );
   }
 
   if (loading) {

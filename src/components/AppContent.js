@@ -37,16 +37,14 @@ function AppContent() {
         setUser(response.data);
         setIsAuthenticated(true);
         
-             // Проверяем заполненность профиля для обычных пользователей
-             if (response.data.role === 'user' && !response.data.profile_completed) {
-               navigate('/profile');
-               return;
-             }
-        
-        // Если админ и на главной странице, перенаправляем в админ-панель
-        if (response.data.role === 'admin' && location.pathname === '/') {
-          navigate('/admin');
+        // Проверяем заполненность профиля для обычных пользователей
+        if (response.data.role === 'user' && !response.data.profile_completed) {
+          navigate('/profile');
+          return;
         }
+        
+        // Убираем автоматическое перенаправление админа на /admin
+        // Админ может оставаться на главной странице
       } catch (error) {
         localStorage.removeItem('token');
       }
@@ -106,6 +104,16 @@ function AppContent() {
 
   const HomePage = () => (
     <div style={{ padding: '20px' }}>
+      {/* Приветственное сообщение */}
+      <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+        <Title level={1} style={{ color: '#d63031', marginBottom: '10px' }}>
+          🎅 Анонимный Дед Мороз
+        </Title>
+        <Title level={3} style={{ color: '#666', fontWeight: 'normal' }}>
+          Добро пожаловать в систему обмена подарками!
+        </Title>
+      </div>
+
       {/* Информация о текущем мероприятии */}
       <CurrentEventInfo />
 
@@ -151,6 +159,43 @@ function AppContent() {
               style={{ width: window.innerWidth <= 768 ? '100%' : 'auto' }}
             >
               Мероприятия
+            </Button>
+          </Space>
+        </div>
+      )}
+
+      {/* Кнопки для неавторизованных пользователей */}
+      {!isAuthenticated && (
+        <div style={{ textAlign: 'center', marginTop: '30px' }}>
+          <Space size="large" direction={window.innerWidth <= 768 ? "vertical" : "horizontal"} style={{ width: '100%' }}>
+            <Button 
+              type="primary"
+              size={window.innerWidth <= 768 ? "middle" : "large"}
+              icon={<UserAddOutlined />}
+              onClick={() => navigate('/register')}
+              style={{ 
+                backgroundColor: '#d63031', 
+                borderColor: '#d63031',
+                width: window.innerWidth <= 768 ? '100%' : 'auto'
+              }}
+            >
+              Зарегистрироваться
+            </Button>
+            <Button 
+              size={window.innerWidth <= 768 ? "middle" : "large"}
+              icon={<UserOutlined />}
+              onClick={() => navigate('/login')}
+              style={{ width: window.innerWidth <= 768 ? '100%' : 'auto' }}
+            >
+              Войти
+            </Button>
+            <Button 
+              size={window.innerWidth <= 768 ? "middle" : "large"}
+              icon={<UserOutlined />}
+              onClick={() => navigate('/users')}
+              style={{ width: window.innerWidth <= 768 ? '100%' : 'auto' }}
+            >
+              Участники
             </Button>
           </Space>
         </div>
