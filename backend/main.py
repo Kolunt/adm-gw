@@ -148,6 +148,25 @@ def create_default_settings():
     """Создание настроек системы по умолчанию"""
     db = SessionLocal()
     try:
+        # Общие настройки сайта
+        site_title_setting = db.query(SystemSettings).filter(SystemSettings.key == "site_title").first()
+        if not site_title_setting:
+            site_title_setting = SystemSettings(
+                key="site_title",
+                value="Анонимный Дед Мороз",
+                description="Название сайта, отображаемое в заголовке страницы"
+            )
+            db.add(site_title_setting)
+        
+        site_description_setting = db.query(SystemSettings).filter(SystemSettings.key == "site_description").first()
+        if not site_description_setting:
+            site_description_setting = SystemSettings(
+                key="site_description",
+                value="Система организации анонимного обмена подарками между участниками сообщества GWars.io",
+                description="Описание сайта для поисковых систем и социальных сетей"
+            )
+            db.add(site_description_setting)
+        
         # Настройки Dadata
         dadata_token_setting = db.query(SystemSettings).filter(SystemSettings.key == "dadata_token").first()
         if not dadata_token_setting:
@@ -290,7 +309,7 @@ class SystemSettingUpdate(BaseModel):
 
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.0.54")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.0.55")
 
 # CORS middleware
 app.add_middleware(

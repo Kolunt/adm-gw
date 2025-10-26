@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, Form, Input, Button, Switch, Divider, Typography, message, Space, Tag, Alert } from 'antd';
-import { SettingOutlined, SaveOutlined, ReloadOutlined, KeyOutlined, CheckCircleOutlined, CheckOutlined } from '@ant-design/icons';
+import { Card, Form, Input, Button, Switch, Divider, Typography, message, Space, Tag, Alert, Tabs } from 'antd';
+import { SettingOutlined, SaveOutlined, ReloadOutlined, KeyOutlined, CheckCircleOutlined, CheckOutlined, GlobalOutlined, DatabaseOutlined } from '@ant-design/icons';
 import axios from 'axios';
 
 const { Title, Paragraph, Text } = Typography;
+const { TabPane } = Tabs;
+const { TextArea } = Input;
 
 function AdminSystemSettings() {
   const [form] = Form.useForm();
@@ -11,6 +13,7 @@ function AdminSystemSettings() {
   const [settings, setSettings] = useState([]);
   const [tokenVerifying, setTokenVerifying] = useState(false);
   const [tokenValue, setTokenValue] = useState('');
+  const [activeTab, setActiveTab] = useState('general');
 
   const fetchSettings = useCallback(async () => {
     setLoading(true);
@@ -121,6 +124,178 @@ function AdminSystemSettings() {
 
   const dadataStatus = getDadataStatus();
 
+  const renderGeneralTab = () => (
+    <Form
+      form={form}
+      layout="vertical"
+      onFinish={handleSave}
+    >
+      <Card size="small" title="Общие настройки сайта">
+        <Alert
+          message="Основные настройки"
+          description="Настройте название сайта и описание, которые будут отображаться пользователям."
+          type="info"
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
+        
+        <Form.Item
+          name="site_title"
+          label="Название сайта"
+          rules={[
+            { required: true, message: 'Название сайта обязательно' },
+            { max: 100, message: 'Название сайта не должно превышать 100 символов' }
+          ]}
+        >
+          <Input
+            placeholder="Введите название сайта"
+            prefix={<GlobalOutlined />}
+            maxLength={100}
+            showCount
+          />
+        </Form.Item>
+
+        <Form.Item
+          name="site_description"
+          label="Описание сайта"
+          rules={[
+            { required: true, message: 'Описание сайта обязательно' },
+            { max: 500, message: 'Описание сайта не должно превышать 500 символов' }
+          ]}
+        >
+          <TextArea
+            placeholder="Введите описание сайта"
+            rows={4}
+            maxLength={500}
+            showCount
+          />
+        </Form.Item>
+      </Card>
+
+      <Divider />
+
+      <Space>
+        <Button
+          type="primary"
+          htmlType="submit"
+          icon={<SaveOutlined />}
+          loading={loading}
+        >
+          Сохранить настройки
+        </Button>
+        <Button
+          icon={<ReloadOutlined />}
+          onClick={handleReset}
+          disabled={loading}
+        >
+          Сбросить
+        </Button>
+      </Space>
+    </Form>
+  );
+
+  const renderDadataTab = () => (
+    <Form
+      form={form}
+      layout="vertical"
+      onFinish={handleSave}
+    >
+      {/* Статус Dadata */}
+      <Card size="small" title="Статус автодополнения адресов">
+        <Space>
+          <Tag color={dadataStatus.color} icon={<CheckCircleOutlined />}>
+            {dadataStatus.text}
+          </Tag>
+          {dadataStatus.status === 'disabled' && (
+            <Text type="secondary">Включите автодополнение в настройках ниже</Text>
+          )}
+          {dadataStatus.status === 'no-token' && (
+            <Text type="secondary">Укажите API токен Dadata.ru</Text>
+          )}
+          {dadataStatus.status === 'enabled' && (
+            <Text type="success">Автодополнение адресов работает</Text>
+          )}
+        </Space>
+      </Card>
+
+      <Card size="small" title="Настройки Dadata.ru">
+        <Alert
+          message="Интеграция с Dadata.ru"
+          description="Для работы автодополнения адресов необходимо получить API токен на сайте dadata.ru. Это поможет пользователям быстрее и точнее заполнять адреса."
+          type="info"
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
+        
+        <Form.Item
+          name="dadata_enabled"
+          label="Включить автодополнение адресов"
+          valuePropName="checked"
+        >
+          <Switch />
+        </Form.Item>
+
+        <Form.Item
+          name="dadata_token"
+          label="API токен Dadata.ru"
+          rules={[
+            {
+              validator: (_, value) => {
+                const dadataEnabled = form.getFieldValue('dadata_enabled');
+                if (dadataEnabled && !value) {
+                  return Promise.reject('Токен обязателен при включенном автодополнении');
+                }
+                return Promise.resolve();
+              }
+            }
+          ]}
+        >
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <Input.Password
+              placeholder="Введите API токен Dadata.ru"
+              prefix={<KeyOutlined />}
+              style={{ flex: 1 }}
+              value={tokenValue}
+              onChange={(e) => {
+                setTokenValue(e.target.value);
+                form.setFieldValue('dadata_token', e.target.value);
+              }}
+            />
+            <Button
+              type="default"
+              icon={<CheckOutlined />}
+              loading={tokenVerifying}
+              onClick={handleVerifyToken}
+              style={{ minWidth: '120px' }}
+            >
+              Проверить
+            </Button>
+          </div>
+        </Form.Item>
+      </Card>
+
+      <Divider />
+
+      <Space>
+        <Button
+          type="primary"
+          htmlType="submit"
+          icon={<SaveOutlined />}
+          loading={loading}
+        >
+          Сохранить настройки
+        </Button>
+        <Button
+          icon={<ReloadOutlined />}
+          onClick={handleReset}
+          disabled={loading}
+        >
+          Сбросить
+        </Button>
+      </Space>
+    </Form>
+  );
+
   return (
     <div>
       <Card>
@@ -134,105 +309,32 @@ function AdminSystemSettings() {
             </Paragraph>
           </div>
 
-          {/* Статус Dadata */}
-          <Card size="small" title="Статус автодополнения адресов">
-            <Space>
-              <Tag color={dadataStatus.color} icon={<CheckCircleOutlined />}>
-                {dadataStatus.text}
-              </Tag>
-              {dadataStatus.status === 'disabled' && (
-                <Text type="secondary">Включите автодополнение в настройках ниже</Text>
-              )}
-              {dadataStatus.status === 'no-token' && (
-                <Text type="secondary">Укажите API токен Dadata.ru</Text>
-              )}
-              {dadataStatus.status === 'enabled' && (
-                <Text type="success">Автодополнение адресов работает</Text>
-              )}
-            </Space>
-          </Card>
-
-          <Form
-            form={form}
-            layout="vertical"
-            onFinish={handleSave}
-          >
-            <Card size="small" title="Настройки Dadata.ru">
-              <Alert
-                message="Интеграция с Dadata.ru"
-                description="Для работы автодополнения адресов необходимо получить API токен на сайте dadata.ru. Это поможет пользователям быстрее и точнее заполнять адреса."
-                type="info"
-                showIcon
-                style={{ marginBottom: 16 }}
-              />
-              
-              <Form.Item
-                name="dadata_enabled"
-                label="Включить автодополнение адресов"
-                valuePropName="checked"
-              >
-                <Switch />
-              </Form.Item>
-
-              <Form.Item
-                name="dadata_token"
-                label="API токен Dadata.ru"
-                rules={[
-                  {
-                    validator: (_, value) => {
-                      const dadataEnabled = form.getFieldValue('dadata_enabled');
-                      if (dadataEnabled && !value) {
-                        return Promise.reject('Токен обязателен при включенном автодополнении');
-                      }
-                      return Promise.resolve();
-                    }
-                  }
-                ]}
-              >
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <Input.Password
-                    placeholder="Введите API токен Dadata.ru"
-                    prefix={<KeyOutlined />}
-                    style={{ flex: 1 }}
-                    value={tokenValue}
-                    onChange={(e) => {
-                      setTokenValue(e.target.value);
-                      form.setFieldValue('dadata_token', e.target.value);
-                    }}
-                  />
-                  <Button
-                    type="default"
-                    icon={<CheckOutlined />}
-                    loading={tokenVerifying}
-                    onClick={handleVerifyToken}
-                    style={{ minWidth: '120px' }}
-                  >
-                    Проверить
-                  </Button>
-                </div>
-              </Form.Item>
-            </Card>
-
-            <Divider />
-
-            <Space>
-              <Button
-                type="primary"
-                htmlType="submit"
-                icon={<SaveOutlined />}
-                loading={loading}
-              >
-                Сохранить настройки
-              </Button>
-              <Button
-                icon={<ReloadOutlined />}
-                onClick={handleReset}
-                disabled={loading}
-              >
-                Сбросить
-              </Button>
-            </Space>
-          </Form>
+          <Tabs 
+            activeKey={activeTab} 
+            onChange={setActiveTab}
+            items={[
+              {
+                key: 'general',
+                label: (
+                  <span>
+                    <GlobalOutlined />
+                    Общие
+                  </span>
+                ),
+                children: renderGeneralTab(),
+              },
+              {
+                key: 'dadata',
+                label: (
+                  <span>
+                    <DatabaseOutlined />
+                    Dadata
+                  </span>
+                ),
+                children: renderDadataTab(),
+              },
+            ]}
+          />
         </Space>
       </Card>
     </div>
