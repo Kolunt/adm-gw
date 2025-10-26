@@ -305,11 +305,11 @@ class SystemSettingResponse(BaseModel):
     updated_at: datetime
 
 class SystemSettingUpdate(BaseModel):
-    value: str
+    value: str | bool
 
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.0.57")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.0.58")
 
 # CORS middleware
 app.add_middleware(
@@ -1035,7 +1035,28 @@ async def get_system_settings(
 ):
     """Получение всех настроек системы (только для администраторов)"""
     settings = db.query(SystemSettings).all()
-    return settings
+    
+    # Создаем список ответов с правильными типами
+    response_settings = []
+    for setting in settings:
+        response_setting = SystemSettingResponse(
+            id=setting.id,
+            key=setting.key,
+            value=setting.value,
+            description=setting.description,
+            updated_at=setting.updated_at
+        )
+        
+        # Конвертируем булевые значения из строк
+        if response_setting.key in ['dadata_enabled']:
+            if response_setting.value.lower() == 'true':
+                response_setting.value = True
+            elif response_setting.value.lower() == 'false':
+                response_setting.value = False
+        
+        response_settings.append(response_setting)
+    
+    return response_settings
 
 # Функция для проверки токена Dadata
 def verify_dadata_token(token: str) -> dict:
@@ -1094,12 +1115,34 @@ async def update_system_setting(
                 detail=f"Токен Dadata недействителен: {token_check['error']}"
             )
     
-    setting.value = setting_update.value
+    # Конвертируем булевые значения в строки для сохранения в БД
+    value_to_save = setting_update.value
+    if setting_key in ['dadata_enabled'] and isinstance(value_to_save, bool):
+        value_to_save = str(value_to_save).lower()
+    
+    setting.value = value_to_save
     setting.updated_at = datetime.utcnow()
     
     db.commit()
     db.refresh(setting)
-    return setting
+    
+    # Создаем копию для ответа с правильными типами
+    response_setting = SystemSettingResponse(
+        id=setting.id,
+        key=setting.key,
+        value=setting.value,
+        description=setting.description,
+        updated_at=setting.updated_at
+    )
+    
+    # Конвертируем обратно для ответа
+    if response_setting.key in ['dadata_enabled']:
+        if response_setting.value.lower() == 'true':
+            response_setting.value = True
+        elif response_setting.value.lower() == 'false':
+            response_setting.value = False
+    
+    return response_setting
 
 # API endpoint для проверки токена Dadata
 @app.post("/admin/verify-dadata-token")
