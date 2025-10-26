@@ -338,7 +338,7 @@ class InterestResponse(BaseModel):
 
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.0.63")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.0.64")
 
 # CORS middleware
 app.add_middleware(
@@ -1299,11 +1299,7 @@ async def delete_interest(
 @app.get("/api/users/public")
 async def get_public_users(db: Session = Depends(get_db)):
     """Получение публичного списка пользователей с игровой информацией"""
-    users = db.query(User).filter(
-        User.gwars_verified == True,
-        User.gwars_nickname.isnot(None),
-        User.gwars_profile_url.isnot(None)
-    ).all()
+    users = db.query(User).all()
     
     public_users = []
     for user in users:

@@ -219,6 +219,13 @@ function AppContent() {
                   >
                     Регистрация
                   </Button>
+                  <Button 
+                    icon={<UserOutlined />}
+                    onClick={() => navigate('/users')}
+                    size="middle"
+                  >
+                    Участники
+                  </Button>
                 </>
               ) : (
                 <>
@@ -401,6 +408,20 @@ function AppContent() {
                 }}
               >
                 Регистрация
+              </Button>
+              <Button
+                type="default"
+                icon={<UserOutlined />}
+                onClick={() => handleNavigation('/users')}
+                style={{ 
+                  width: '100%', 
+                  marginBottom: '12px',
+                  textAlign: 'left',
+                  height: '48px',
+                  fontSize: '16px'
+                }}
+              >
+                Участники
               </Button>
             </>
           ) : (

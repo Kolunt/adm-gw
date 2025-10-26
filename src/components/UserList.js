@@ -51,8 +51,8 @@ const UserList = () => {
           🎅 Участники Анонимного Дед Мороза
         </Title>
         <Alert 
-          message="Пока нет верифицированных участников" 
-          description="Участники появятся здесь после прохождения верификации GWars профиля"
+          message="Пока нет участников" 
+          description="Участники появятся здесь после регистрации"
           type="info" 
           showIcon 
         />
@@ -83,33 +83,50 @@ const UserList = () => {
                   style={{ backgroundColor: '#d63031', marginBottom: '16px' }}
                 />
                 <Title level={4} style={{ marginBottom: '8px' }}>
-                  {user.gwars_nickname}
+                  {user.gwars_nickname || 'Пользователь'}
                 </Title>
                 
                 <div style={{ marginBottom: '16px' }}>
-                  <Tag 
-                    color="green" 
-                    icon={<CheckCircleOutlined />}
-                    style={{ marginBottom: '8px' }}
-                  >
-                    Верифицирован
-                  </Tag>
+                  {user.gwars_verified ? (
+                    <Tag 
+                      color="green" 
+                      icon={<CheckCircleOutlined />}
+                      style={{ marginBottom: '8px' }}
+                    >
+                      Верифицирован
+                    </Tag>
+                  ) : (
+                    <Tag 
+                      color="orange"
+                      style={{ marginBottom: '8px' }}
+                    >
+                      Не верифицирован
+                    </Tag>
+                  )}
                 </div>
                 
-                <div style={{ marginTop: '12px' }}>
-                  <a 
-                    href={user.gwars_profile_url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    style={{ 
-                      color: '#1890ff', 
-                      textDecoration: 'none',
-                      fontSize: '14px'
-                    }}
-                  >
-                    <LinkOutlined /> Профиль GWars
-                  </a>
-                </div>
+                {user.gwars_profile_url ? (
+                  <div style={{ marginTop: '12px' }}>
+                    <a 
+                      href={user.gwars_profile_url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      style={{ 
+                        color: '#1890ff', 
+                        textDecoration: 'none',
+                        fontSize: '14px'
+                      }}
+                    >
+                      <LinkOutlined /> Профиль GWars
+                    </a>
+                  </div>
+                ) : (
+                  <div style={{ marginTop: '12px' }}>
+                    <Text type="secondary" style={{ fontSize: '14px' }}>
+                      Профиль GWars не указан
+                    </Text>
+                  </div>
+                )}
                 
                 <div style={{ marginTop: '8px' }}>
                   <Text type="secondary" style={{ fontSize: '12px' }}>
