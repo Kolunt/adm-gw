@@ -290,7 +290,7 @@ class SystemSettingUpdate(BaseModel):
 
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.0.47")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.0.48")
 
 # CORS middleware
 app.add_middleware(
@@ -1018,6 +1018,42 @@ async def get_system_settings(
     settings = db.query(SystemSettings).all()
     return settings
 
+# Функция для проверки токена Dadata
+def verify_dadata_token(token: str) -> dict:
+    """Проверяет валидность токена Dadata.ru"""
+    if not token:
+        return {"valid": False, "error": "Токен не указан"}
+    
+    try:
+        import requests
+        
+        # Простой тестовый запрос к Dadata API
+        url = "https://suggestions.dadata.ru/suggestions/api/4_1/rs/suggest/address"
+        headers = {
+            "Authorization": f"Token {token}",
+            "Content-Type": "application/json"
+        }
+        data = {
+            "query": "Москва",
+            "count": 1
+        }
+        
+        response = requests.post(url, json=data, headers=headers, timeout=5)
+        
+        if response.status_code == 200:
+            return {"valid": True, "message": "Токен действителен"}
+        elif response.status_code == 401:
+            return {"valid": False, "error": "Неверный токен"}
+        elif response.status_code == 403:
+            return {"valid": False, "error": "Токен заблокирован или превышен лимит"}
+        else:
+            return {"valid": False, "error": f"Ошибка API: {response.status_code}"}
+            
+    except requests.exceptions.RequestException as e:
+        return {"valid": False, "error": f"Ошибка подключения: {str(e)}"}
+    except Exception as e:
+        return {"valid": False, "error": f"Неожиданная ошибка: {str(e)}"}
+
 @app.put("/admin/settings/{setting_key}", response_model=SystemSettingResponse)
 async def update_system_setting(
     setting_key: str,
@@ -1030,12 +1066,46 @@ async def update_system_setting(
     if not setting:
         raise HTTPException(status_code=404, detail="Настройка не найдена")
     
+    # Если обновляется токен Dadata, проверяем его
+    if setting_key == "dadata_token" and setting_update.value:
+        token_check = verify_dadata_token(setting_update.value)
+        if not token_check["valid"]:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Токен Dadata недействителен: {token_check['error']}"
+            )
+    
     setting.value = setting_update.value
     setting.updated_at = datetime.utcnow()
     
     db.commit()
     db.refresh(setting)
     return setting
+
+# API endpoint для проверки токена Dadata
+@app.post("/admin/verify-dadata-token")
+async def verify_dadata_token_endpoint(
+    request_data: dict,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """Проверка токена Dadata.ru (только для администраторов)"""
+    token = request_data.get("token", "")
+    if not token:
+        raise HTTPException(status_code=400, detail="Токен не указан")
+    
+    token_check = verify_dadata_token(token)
+    
+    if token_check["valid"]:
+        return {
+            "valid": True,
+            "message": "Токен действителен и готов к использованию"
+        }
+    else:
+        return {
+            "valid": False,
+            "error": token_check["error"]
+        }
 
 # API endpoint для автодополнения адресов через Dadata
 @app.post("/api/suggest-address")

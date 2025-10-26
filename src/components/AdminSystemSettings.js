@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Form, Input, Button, Switch, Divider, Typography, message, Space, Tag, Alert } from 'antd';
-import { SettingOutlined, SaveOutlined, ReloadOutlined, KeyOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import { SettingOutlined, SaveOutlined, ReloadOutlined, KeyOutlined, CheckCircleOutlined, CheckOutlined } from '@ant-design/icons';
 import axios from 'axios';
 
 const { Title, Paragraph, Text } = Typography;
@@ -9,6 +9,7 @@ function AdminSystemSettings() {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [settings, setSettings] = useState([]);
+  const [tokenVerifying, setTokenVerifying] = useState(false);
 
   const fetchSettings = useCallback(async () => {
     setLoading(true);
@@ -66,6 +67,38 @@ function AdminSystemSettings() {
       settingsData[setting.key] = setting.value;
     });
     form.setFieldsValue(settingsData);
+  };
+
+  const handleVerifyToken = async () => {
+    const token = form.getFieldValue('dadata_token');
+    if (!token) {
+      message.error('Введите токен для проверки');
+      return;
+    }
+
+    setTokenVerifying(true);
+    try {
+      const adminToken = localStorage.getItem('token');
+      const response = await axios.post('/admin/verify-dadata-token', 
+        { token },
+        { headers: { Authorization: `Bearer ${adminToken}` } }
+      );
+
+      if (response.data.valid) {
+        message.success(response.data.message);
+      } else {
+        message.error(`Токен недействителен: ${response.data.error}`);
+      }
+    } catch (error) {
+      console.error('Error verifying token:', error);
+      if (error.response?.data?.detail) {
+        message.error(error.response.data.detail);
+      } else {
+        message.error('Ошибка при проверке токена');
+      }
+    } finally {
+      setTokenVerifying(false);
+    }
   };
 
   const getDadataStatus = () => {
@@ -154,10 +187,22 @@ function AdminSystemSettings() {
                   }
                 ]}
               >
-                <Input.Password
-                  placeholder="Введите API токен Dadata.ru"
-                  prefix={<KeyOutlined />}
-                />
+                <Input.Group compact>
+                  <Input.Password
+                    placeholder="Введите API токен Dadata.ru"
+                    prefix={<KeyOutlined />}
+                    style={{ width: 'calc(100% - 120px)' }}
+                  />
+                  <Button
+                    type="default"
+                    icon={<CheckOutlined />}
+                    loading={tokenVerifying}
+                    onClick={handleVerifyToken}
+                    style={{ width: '120px' }}
+                  >
+                    Проверить
+                  </Button>
+                </Input.Group>
               </Form.Item>
             </Card>
 
