@@ -16,6 +16,7 @@ import CurrentEventInfo from './CurrentEventInfo';
 import AdminRouteGuard from './AdminRouteGuard';
 import AdminUserProfileEdit from './AdminUserProfileEdit';
 import FAQ from './FAQ';
+import WelcomeMessage from './WelcomeMessage';
 import './RouteTransition.css';
 
 const { Header, Content, Footer } = Layout;
@@ -119,15 +120,8 @@ function AppContent() {
 
   const HomePage = () => (
     <div style={{ padding: '20px' }}>
-      {/* Приветственное сообщение */}
-      <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-        <Title level={1} style={{ color: '#d63031', marginBottom: '10px' }}>
-          🎅 Анонимный Дед Мороз
-        </Title>
-        <Title level={3} style={{ color: '#666', fontWeight: 'normal' }}>
-          Добро пожаловать в систему обмена подарками!
-        </Title>
-      </div>
+      {/* Динамическое приветственное сообщение */}
+      <WelcomeMessage />
 
       {/* Информация о текущем мероприятии */}
       <CurrentEventInfo 

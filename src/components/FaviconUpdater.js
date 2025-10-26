@@ -5,23 +5,27 @@ const FaviconUpdater = () => {
   useEffect(() => {
     const updateFavicon = async () => {
       try {
-        // Получаем текущую иконку сайта
-        const response = await axios.get('/api/site-icon');
+        // Получаем текущую иконку сайта с подавлением ошибок
+        const response = await axios.get('/api/site-icon', {
+          validateStatus: function (status) {
+            return status < 500; // Разрешаем 404, но не 500+ ошибки
+          }
+        });
         
         if (response.status === 200) {
           // Создаем или обновляем favicon
           const favicon = document.querySelector('link[rel="icon"]') || document.createElement('link');
           favicon.rel = 'icon';
-          favicon.href = `/uploads/icons/${response.data.filename}`;
-          favicon.type = response.data.mime_type;
+          favicon.href = '/api/site-icon';
+          favicon.type = response.headers['content-type'] || 'image/x-icon';
           
           if (!document.querySelector('link[rel="icon"]')) {
             document.head.appendChild(favicon);
           }
         }
+        // Для 404 статуса ничего не делаем - это нормально
       } catch (error) {
-        // Если иконка не найдена (404) или другая ошибка, ничего не делаем
-        // Это нормально, если иконка еще не установлена
+        // Логируем только серьезные ошибки (не 404)
         if (error.response?.status !== 404) {
           console.log('Ошибка загрузки иконки сайта:', error.message);
         }

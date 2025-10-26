@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Typography, Button, Space, Tag, Divider, Row, Col, message, Form, Input } from 'antd';
-import { EditOutlined, SaveOutlined, CloseOutlined } from '@ant-design/icons';
+import { UserOutlined, EditOutlined, SaveOutlined, CloseOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import UserAvatar from './UserAvatar';
 

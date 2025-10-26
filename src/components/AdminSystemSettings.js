@@ -185,6 +185,48 @@ function AdminSystemSettings({ activeTab: initialActiveTab = 'general' }) {
         </Form.Item>
       </Card>
 
+      <Card size="small" title="Приветственное сообщение" style={{ marginTop: 16 }}>
+        <Alert
+          message="Настройки главной страницы"
+          description="Настройте заголовок и подзаголовок, которые будут отображаться на главной странице."
+          type="info"
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
+        
+        <Form.Item
+          name="welcome_title"
+          label="Заголовок приветствия"
+          rules={[
+            { required: true, message: 'Заголовок приветствия обязателен' },
+            { max: 100, message: 'Заголовок не должен превышать 100 символов' }
+          ]}
+        >
+          <Input
+            placeholder="Введите заголовок приветствия"
+            prefix={<SettingOutlined />}
+            maxLength={100}
+            showCount
+          />
+        </Form.Item>
+
+        <Form.Item
+          name="welcome_subtitle"
+          label="Подзаголовок приветствия"
+          rules={[
+            { required: true, message: 'Подзаголовок приветствия обязателен' },
+            { max: 200, message: 'Подзаголовок не должен превышать 200 символов' }
+          ]}
+        >
+          <Input
+            placeholder="Введите подзаголовок приветствия"
+            prefix={<SettingOutlined />}
+            maxLength={200}
+            showCount
+          />
+        </Form.Item>
+      </Card>
+
       <Divider />
 
       <Space>
