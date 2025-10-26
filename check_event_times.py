@@ -7,10 +7,10 @@ from datetime import datetime, timedelta
 
 BASE_URL = "http://localhost:8004"
 
-def check_event_status():
-    """Проверка статуса мероприятия"""
+def check_event_times():
+    """Проверка времени мероприятия"""
     
-    print("=== Проверка статуса мероприятия ===\n")
+    print("=== Проверка времени мероприятия ===\n")
     
     response = requests.get(f"{BASE_URL}/events/current")
     if response.status_code == 200:
@@ -47,4 +47,4 @@ def check_event_status():
         print(f"ERROR Нет активного мероприятия: {response.status_code}")
 
 if __name__ == "__main__":
-    check_event_status()
+    check_event_times()

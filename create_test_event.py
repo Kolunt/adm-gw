@@ -7,10 +7,10 @@ from datetime import datetime, timedelta
 
 BASE_URL = "http://localhost:8004"
 
-def create_fresh_event():
-    """Создание нового мероприятия с правильным временем"""
+def create_test_event():
+    """Создание тестового мероприятия"""
     
-    print("=== Создание нового мероприятия ===\n")
+    print("=== Создание тестового мероприятия ===\n")
     
     # 1. Вход как админ
     print("1. Вход как администратор...")
@@ -32,10 +32,10 @@ def create_fresh_event():
     
     # 2. Создание нового мероприятия
     print("\n2. Создание нового мероприятия...")
-    now = datetime.now()
+    now = datetime.utcnow()  # Используем UTC время
     event_data = {
-        "name": "Свежее мероприятие для тестирования",
-        "description": "Мероприятие с актуальным временем",
+        "name": "Тестовое мероприятие для регистрации",
+        "description": "Мероприятие для тестирования регистрации",
         "preregistration_start": (now - timedelta(minutes=5)).isoformat(),  # Началось 5 минут назад
         "registration_start": (now + timedelta(hours=2)).isoformat(),       # Начнется через 2 часа
         "registration_end": (now + timedelta(hours=4)).isoformat()          # Закончится через 4 часа
@@ -56,4 +56,4 @@ def create_fresh_event():
         return False
 
 if __name__ == "__main__":
-    create_fresh_event()
+    create_test_event()

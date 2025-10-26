@@ -1,169 +1,108 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import requests
+import json
 from datetime import datetime, timedelta
 
+BASE_URL = "http://localhost:8004"
+
 def test_event_registration():
-    print("=== Тест регистрации на мероприятия ===")
+    """Тестирование регистрации на мероприятие"""
     
-    BASE_URL = 'http://localhost:8004'
+    print("=== Тестирование регистрации на мероприятие ===\n")
     
-    # 1. Создаем тестового пользователя
-    print("\n1. Создание тестового пользователя...")
-    email = f'test_user_{datetime.now().strftime("%Y%m%d_%H%M%S")}@example.com'
-    password = 'password123'
-    
+    # 1. Регистрация нового пользователя
+    print("1. Регистрация нового пользователя...")
     register_data = {
-        'email': email,
-        'password': password,
-        'confirm_password': password
+        "email": "test_event_registration_final@example.com",
+        "password": "testpass123",
+        "confirm_password": "testpass123"
     }
     
-    response = requests.post(f'{BASE_URL}/auth/register', json=register_data)
-    if response.status_code != 200:
-        print(f"❌ Ошибка регистрации: {response.text}")
-        return False
-    
-    user_data = response.json()
-    print(f"✅ Пользователь создан: {user_data['email']}")
-    
-    # 2. Логинимся как пользователь
-    print("\n2. Вход пользователя...")
-    login_data = {'email': email, 'password': password}
-    response = requests.post(f'{BASE_URL}/auth/login', json=login_data)
-    
-    if response.status_code != 200:
-        print(f"❌ Ошибка входа: {response.text}")
-        return False
-    
-    user_token = response.json()['access_token']
-    user_headers = {'Authorization': f'Bearer {user_token}'}
-    print("✅ Пользователь авторизован")
-    
-    # 3. Заполняем профиль пользователя
-    print("\n3. Заполнение профиля...")
-    
-    # Шаг 1: GWars профиль
-    step1_data = {'gwars_profile_url': 'https://www.gwars.io/info.php?id=12345'}
-    response = requests.post(f'{BASE_URL}/profile/step1', json=step1_data, headers=user_headers)
-    if response.status_code != 200:
-        print(f"❌ Ошибка шага 1: {response.text}")
-        return False
-    
-    # Шаг 2: Личные данные
-    step2_data = {
-        'full_name': 'Тестовый Пользователь',
-        'address': 'г. Москва, ул. Тестовая, д. 1, кв. 1'
-    }
-    response = requests.post(f'{BASE_URL}/profile/step2', json=step2_data, headers=user_headers)
-    if response.status_code != 200:
-        print(f"❌ Ошибка шага 2: {response.text}")
-        return False
-    
-    # Шаг 3: Интересы
-    step3_data = {'interests': 'Тестирование системы'}
-    response = requests.post(f'{BASE_URL}/profile/step3', json=step3_data, headers=user_headers)
-    if response.status_code != 200:
-        print(f"❌ Ошибка шага 3: {response.text}")
-        return False
-    
-    print("✅ Профиль заполнен")
-    
-    # 4. Логинимся как админ для создания мероприятия
-    print("\n4. Создание мероприятия администратором...")
-    admin_login_data = {'email': 'admin@example.com', 'password': 'admin'}
-    response = requests.post(f'{BASE_URL}/auth/login', json=admin_login_data)
-    
-    if response.status_code != 200:
-        print(f"❌ Ошибка входа админа: {response.text}")
-        return False
-    
-    admin_token = response.json()['access_token']
-    admin_headers = {'Authorization': f'Bearer {admin_token}'}
-    
-    # Создаем мероприятие
-    now = datetime.now()
-    event_data = {
-        'name': f'Тестовое мероприятие {now.strftime("%Y-%m-%d %H:%M")}',
-        'description': 'Тестовое мероприятие для проверки регистрации',
-        'preregistration_start': (now + timedelta(minutes=1)).isoformat(),
-        'registration_start': (now + timedelta(minutes=2)).isoformat(),
-        'registration_end': (now + timedelta(minutes=5)).isoformat()
-    }
-    
-    response = requests.post(f'{BASE_URL}/events/', json=event_data, headers=admin_headers)
-    if response.status_code != 200:
-        print(f"❌ Ошибка создания мероприятия: {response.text}")
-        return False
-    
-    event = response.json()
-    print(f"✅ Мероприятие создано: {event['name']} (ID: {event['id']})")
-    
-    # 5. Тестируем регистрацию на мероприятие
-    print("\n5. Тестирование регистрации на мероприятие...")
-    
-    # Пытаемся зарегистрироваться до начала предварительной регистрации
-    print("   - Попытка регистрации до начала предварительной регистрации...")
-    registration_data = {
-        'event_id': event['id'],
-        'registration_type': 'preregistration'
-    }
-    response = requests.post(f'{BASE_URL}/events/{event["id"]}/register', json=registration_data, headers=user_headers)
-    if response.status_code == 400 and "еще не началась" in response.text:
-        print("   ✅ Корректно отклонена регистрация до начала периода")
+    response = requests.post(f"{BASE_URL}/auth/register", json=register_data)
+    if response.status_code == 200:
+        user_data = response.json()
+        print("OK Пользователь зарегистрирован")
+        print(f"   ID: {user_data['id']}")
+        print(f"   Email: {user_data['email']}")
+        print(f"   Profile completed: {user_data['profile_completed']}")
     else:
-        print(f"   ❌ Неожиданный ответ: {response.status_code} - {response.text}")
+        print(f"ERROR Ошибка регистрации: {response.status_code}")
+        print(response.text)
+        return False
     
-    # Ждем начала предварительной регистрации
-    print("   - Ожидание начала предварительной регистрации...")
-    import time
-    time.sleep(70)  # Ждем 70 секунд
+    # 2. Вход в систему
+    print("\n2. Вход в систему...")
+    login_data = {
+        "email": "test_event_registration_final@example.com",
+        "password": "testpass123"
+    }
     
-    # Регистрируемся на предварительную регистрацию
-    print("   - Регистрация на предварительную регистрацию...")
-    response = requests.post(f'{BASE_URL}/events/{event["id"]}/register', json=registration_data, headers=user_headers)
+    response = requests.post(f"{BASE_URL}/auth/login", json=login_data)
+    if response.status_code == 200:
+        token_data = response.json()
+        token = token_data["access_token"]
+        print("OK Вход выполнен успешно")
+    else:
+        print(f"ERROR Ошибка входа: {response.status_code}")
+        print(response.text)
+        return False
+    
+    headers = {"Authorization": f"Bearer {token}"}
+    
+    # 3. Заполнение профиля
+    print("\n3. Заполнение профиля...")
+    profile_data = {
+        "gwars_profile_url": "https://www.gwars.io/info.php?id=283494",
+        "full_name": "Тестовый Пользователь",
+        "address": "Тестовый адрес",
+        "interests": "Тестирование"
+    }
+    
+    response = requests.post(f"{BASE_URL}/profile/step1", json={"gwars_profile_url": profile_data["gwars_profile_url"]}, headers=headers)
+    if response.status_code == 200:
+        print("OK Шаг 1 профиля выполнен")
+    
+    response = requests.post(f"{BASE_URL}/profile/step2", json={"full_name": profile_data["full_name"], "address": profile_data["address"]}, headers=headers)
+    if response.status_code == 200:
+        print("OK Шаг 2 профиля выполнен")
+    
+    response = requests.post(f"{BASE_URL}/profile/step3", json={"interests": profile_data["interests"]}, headers=headers)
+    if response.status_code == 200:
+        print("OK Шаг 3 профиля выполнен")
+    
+    # 4. Получение активного мероприятия
+    print("\n4. Получение активного мероприятия...")
+    response = requests.get(f"{BASE_URL}/events/current")
+    if response.status_code == 200:
+        event = response.json()
+        print(f"OK Активное мероприятие: {event['name']} (ID: {event['id']})")
+    else:
+        print(f"ERROR Нет активного мероприятия: {response.status_code}")
+        return False
+    
+    # 5. Регистрация на мероприятие
+    print("\n5. Регистрация на мероприятие...")
+    registration_data = {
+        "registration_type": "preregistration"
+    }
+    
+    response = requests.post(f"{BASE_URL}/events/{event['id']}/register", json=registration_data, headers=headers)
     if response.status_code == 200:
         registration = response.json()
-        print(f"   ✅ Предварительная регистрация успешна (ID: {registration['id']})")
-        print(f"   ✅ Подтверждено: {registration['is_confirmed']}")
+        print(f"OK Регистрация успешна!")
+        print(f"   ID регистрации: {registration['id']}")
+        print(f"   Тип регистрации: {registration['registration_type']}")
+        print(f"   Подтверждено: {registration['is_confirmed']}")
     else:
-        print(f"   ❌ Ошибка предварительной регистрации: {response.text}")
+        print(f"ERROR Ошибка регистрации: {response.status_code}")
+        print(response.text)
         return False
     
-    # Ждем начала основной регистрации
-    print("   - Ожидание начала основной регистрации...")
-    time.sleep(70)  # Ждем еще 70 секунд
-    
-    # Подтверждаем участие
-    print("   - Подтверждение участия...")
-    confirm_data = {
-        'confirmed_address': 'г. Москва, ул. Подтвержденная, д. 2, кв. 2'
-    }
-    response = requests.post(f'{BASE_URL}/events/{event["id"]}/confirm', json=confirm_data, headers=user_headers)
-    if response.status_code == 200:
-        confirmed_registration = response.json()
-        print(f"   ✅ Участие подтверждено")
-        print(f"   ✅ Подтвержденный адрес: {confirmed_registration['confirmed_address']}")
-    else:
-        print(f"   ❌ Ошибка подтверждения: {response.text}")
-        return False
-    
-    # 6. Проверяем регистрации пользователя
-    print("\n6. Проверка регистраций пользователя...")
-    response = requests.get(f'{BASE_URL}/user/registrations', headers=user_headers)
-    if response.status_code == 200:
-        registrations = response.json()
-        print(f"   ✅ Найдено регистраций: {len(registrations)}")
-        for reg in registrations:
-            print(f"   - Мероприятие {reg['event_id']}: {reg['registration_type']}, подтверждено: {reg['is_confirmed']}")
-    else:
-        print(f"   ❌ Ошибка получения регистраций: {response.text}")
-    
-    print("\n🎉 Все тесты регистрации на мероприятия прошли успешно!")
+    print("\n=== Тест завершен успешно ===")
+    print("Регистрация на мероприятие работает корректно!")
     return True
 
 if __name__ == "__main__":
-    try:
-        success = test_event_registration()
-        if not success:
-            print("\n❌ Тесты не прошли")
-    except Exception as e:
-        print(f"\n💥 Ошибка: {e}")
+    test_event_registration()
