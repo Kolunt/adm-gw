@@ -37,9 +37,18 @@ function SimpleLoginForm({ onLogin }) {
   };
 
   return (
-    <div style={{ maxWidth: '400px', margin: '0 auto', textAlign: 'center' }}>
+    <div style={{ 
+      maxWidth: window.innerWidth <= 768 ? '100%' : '400px', 
+      margin: '0 auto', 
+      textAlign: 'center',
+      padding: window.innerWidth <= 768 ? '10px' : '0'
+    }}>
       <Card className="santa-card">
-        <Title level={2} style={{ color: '#d63031', marginBottom: '30px' }}>
+        <Title level={2} style={{ 
+          color: '#d63031', 
+          marginBottom: window.innerWidth <= 768 ? '20px' : '30px',
+          fontSize: window.innerWidth <= 768 ? '20px' : '24px'
+        }}>
           🎅 Вход
         </Title>
         
@@ -47,7 +56,7 @@ function SimpleLoginForm({ onLogin }) {
           name="login"
           onFinish={onFinish}
           layout="vertical"
-          size="large"
+          size={window.innerWidth <= 768 ? "middle" : "large"}
         >
           <Form.Item
             name="email"

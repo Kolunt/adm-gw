@@ -98,71 +98,112 @@ function AdminPanel({ currentUser, onLogout }) {
     ]
   };
 
+  const isMobile = window.innerWidth <= 768;
+
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Sider 
-        width={250} 
-        style={{ 
-          background: '#fff',
-          borderRight: '1px solid #f0f0f0'
-        }}
-      >
-        <div style={{ 
-          padding: '20px', 
-          textAlign: 'center',
-          borderBottom: '1px solid #f0f0f0'
-        }}>
-          <CrownOutlined style={{ fontSize: '24px', color: '#d63031' }} />
-          <Title level={4} style={{ margin: '10px 0 0 0' }}>
-            Админ-панель
-          </Title>
-        </div>
-        
-        <div style={{ padding: '10px' }}>
-          {menuItems.map(item => (
-            <Button
-              key={item.key}
-              type={selectedMenu === item.key ? 'primary' : 'default'}
-              icon={item.icon}
-              onClick={() => setSelectedMenu(item.key)}
-              style={{ 
-                width: '100%', 
-                marginBottom: '8px',
-                textAlign: 'left',
-                backgroundColor: selectedMenu === item.key ? '#d63031' : 'transparent',
-                borderColor: selectedMenu === item.key ? '#d63031' : '#d9d9d9'
-              }}
-            >
-              {item.label}
-            </Button>
-          ))}
-        </div>
-      </Sider>
+      {/* Десктопная боковая панель */}
+      {!isMobile && (
+        <Sider 
+          width={250} 
+          style={{ 
+            background: '#fff',
+            borderRight: '1px solid #f0f0f0'
+          }}
+        >
+          <div style={{ 
+            padding: '20px', 
+            textAlign: 'center',
+            borderBottom: '1px solid #f0f0f0'
+          }}>
+            <CrownOutlined style={{ fontSize: '24px', color: '#d63031' }} />
+            <Title level={4} style={{ margin: '10px 0 0 0' }}>
+              Админ-панель
+            </Title>
+          </div>
+          
+          <div style={{ padding: '10px' }}>
+            {menuItems.map(item => (
+              <Button
+                key={item.key}
+                type={selectedMenu === item.key ? 'primary' : 'default'}
+                icon={item.icon}
+                onClick={() => setSelectedMenu(item.key)}
+                style={{ 
+                  width: '100%', 
+                  marginBottom: '8px',
+                  textAlign: 'left',
+                  backgroundColor: selectedMenu === item.key ? '#d63031' : 'transparent',
+                  borderColor: selectedMenu === item.key ? '#d63031' : '#d9d9d9'
+                }}
+              >
+                {item.label}
+              </Button>
+            ))}
+          </div>
+        </Sider>
+      )}
       
       <Layout>
+        {/* Мобильная навигация */}
+        {isMobile && (
+          <div style={{ 
+            padding: '10px', 
+            background: '#f5f5f5',
+            borderBottom: '1px solid #f0f0f0',
+            display: 'flex',
+            justifyContent: 'center',
+            flexWrap: 'wrap'
+          }}>
+            {menuItems.map(item => (
+              <Button
+                key={item.key}
+                type={selectedMenu === item.key ? 'primary' : 'default'}
+                icon={item.icon}
+                onClick={() => setSelectedMenu(item.key)}
+                style={{ 
+                  margin: '2px',
+                  fontSize: '12px',
+                  padding: '4px 8px',
+                  backgroundColor: selectedMenu === item.key ? '#d63031' : 'transparent',
+                  borderColor: selectedMenu === item.key ? '#d63031' : '#d9d9d9'
+                }}
+              >
+                {item.label}
+              </Button>
+            ))}
+          </div>
+        )}
+        
         <div style={{ 
-          padding: '20px', 
+          padding: isMobile ? '10px' : '20px', 
           background: '#f5f5f5',
           borderBottom: '1px solid #f0f0f0',
           display: 'flex',
           justifyContent: 'space-between',
-          alignItems: 'center'
+          alignItems: 'center',
+          flexWrap: isMobile ? 'wrap' : 'nowrap'
         }}>
-          <Title level={4} style={{ margin: 0 }}>
+          <Title level={4} style={{ 
+            margin: 0,
+            fontSize: isMobile ? '16px' : '20px'
+          }}>
             {selectedMenu === 'dashboard' && 'Панель управления'}
             {selectedMenu === 'users' && 'Управление пользователями'}
             {selectedMenu === 'settings' && 'Настройки системы'}
           </Title>
           
           <Dropdown menu={userMenu} placement="bottomRight">
-            <Button>
+            <Button size={isMobile ? "small" : "middle"}>
               <Avatar size="small" icon={<UserOutlined />} />
-              {currentUser?.name}
+              <span style={{ fontSize: isMobile ? '12px' : '14px' }}>
+                {currentUser?.name}
+              </span>
             </Button>
           </Dropdown>
         </div>
         
-        <Content style={{ padding: '20px' }}>
+        <Content style={{ padding: isMobile ? '10px' : '20px' }}>
           {renderContent()}
         </Content>
       </Layout>
