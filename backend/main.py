@@ -59,6 +59,7 @@ class Event(Base):
     __tablename__ = "events"
     
     id = Column(Integer, primary_key=True, index=True)
+    unique_id = Column(Integer, unique=True, index=True)  # Уникальный ID для URL (не переиспользуется)
     name = Column(String, index=True)
     description = Column(String)
     preregistration_start = Column(DateTime)  # Дата начала предварительной регистрации
@@ -211,6 +212,7 @@ class EventUpdate(BaseModel):
 
 class EventResponse(BaseModel):
     id: int
+    unique_id: int
     name: str
     description: str
     preregistration_start: datetime
@@ -238,7 +240,7 @@ class EventRegistrationResponse(BaseModel):
 
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.0.45")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.0.46")
 
 # CORS middleware
 app.add_middleware(
@@ -401,6 +403,14 @@ async def get_profile_status(current_user: User = Depends(get_current_user)):
                     (3 if not current_user.interests else None))
     }
 
+# Функция для генерации уникального ID мероприятия
+def get_next_unique_event_id(db: Session) -> int:
+    """Получает следующий уникальный ID для мероприятия"""
+    max_unique_id = db.query(Event.unique_id).order_by(Event.unique_id.desc()).first()
+    if max_unique_id is None:
+        return 1
+    return max_unique_id[0] + 1
+
 # API endpoints для управления мероприятиями
 @app.post("/events/", response_model=EventResponse)
 async def create_event(
@@ -416,7 +426,11 @@ async def create_event(
     if event.registration_start >= event.registration_end:
         raise HTTPException(status_code=400, detail="Дата начала регистрации должна быть раньше даты закрытия регистрации")
     
+    # Генерируем уникальный ID
+    unique_id = get_next_unique_event_id(db)
+    
     db_event = Event(
+        unique_id=unique_id,
         name=event.name,
         description=event.description,
         preregistration_start=event.preregistration_start,
@@ -454,8 +468,16 @@ async def get_current_event(db: Session = Depends(get_db)):
 
 @app.get("/events/{event_id}", response_model=EventResponse)
 async def get_event(event_id: int, db: Session = Depends(get_db)):
-    """Получение конкретного мероприятия"""
+    """Получение конкретного мероприятия по ID"""
     event = db.query(Event).filter(Event.id == event_id).first()
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    return event
+
+@app.get("/events/unique/{unique_id}", response_model=EventResponse)
+async def get_event_by_unique_id(unique_id: int, db: Session = Depends(get_db)):
+    """Получение конкретного мероприятия по уникальному ID"""
+    event = db.query(Event).filter(Event.unique_id == unique_id).first()
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
     return event
@@ -471,6 +493,43 @@ async def get_event_participants(event_id: int, db: Session = Depends(get_db)):
     # Получаем всех участников мероприятия через EventRegistration
     registrations = db.query(EventRegistration).filter(
         EventRegistration.event_id == event_id
+    ).all()
+    
+    # Формируем список участников с никнеймом, ссылкой на профиль и статусом
+    participants_list = []
+    for registration in registrations:
+        # Получаем пользователя
+        user = db.query(User).filter(User.id == registration.user_id).first()
+        if user:
+            # Используем сохраненный никнейм из GWars профиля
+            nickname = user.gwars_nickname or "Неизвестно"
+            
+            # Определяем статус участника
+            status = "confirmed" if registration.is_confirmed else "preregistered"
+            status_text = "Подтвержден" if registration.is_confirmed else "Предварительная регистрация"
+            
+            participants_list.append({
+                "id": user.id,
+                "nickname": nickname,
+                "gwars_profile_url": user.gwars_profile_url,
+                "status": status,
+                "status_text": status_text,
+                "registration_type": registration.registration_type
+            })
+    
+    return participants_list
+
+@app.get("/events/unique/{unique_id}/participants")
+async def get_event_participants_by_unique_id(unique_id: int, db: Session = Depends(get_db)):
+    """Получение списка участников мероприятия по уникальному ID"""
+    # Находим мероприятие по уникальному ID
+    event = db.query(Event).filter(Event.unique_id == unique_id).first()
+    if not event:
+        raise HTTPException(status_code=404, detail="Мероприятие не найдено")
+    
+    # Получаем всех участников мероприятия через EventRegistration
+    registrations = db.query(EventRegistration).filter(
+        EventRegistration.event_id == event.id  # Используем внутренний ID
     ).all()
     
     # Формируем список участников с никнеймом, ссылкой на профиль и статусом
@@ -593,6 +652,69 @@ async def register_for_event(
     registration = EventRegistration(
         user_id=current_user.id,
         event_id=event_id,
+        registration_type=registration_type,
+        is_confirmed=(registration_type == "registration")  # Если прямая регистрация, сразу подтверждаем
+    )
+    
+    if registration_type == "registration":
+        registration.confirmed_address = current_user.address
+        registration.confirmed_at = now
+    
+    db.add(registration)
+    db.commit()
+    db.refresh(registration)
+    return registration
+
+@app.post("/events/unique/{unique_id}/register", response_model=EventRegistrationResponse)
+async def register_for_event_by_unique_id(
+    unique_id: int,
+    registration_data: EventRegistrationCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Регистрация пользователя на мероприятие по уникальному ID"""
+    # Проверяем, что пользователь авторизован и профиль заполнен
+    if not current_user.profile_completed:
+        raise HTTPException(status_code=400, detail="Профиль должен быть полностью заполнен")
+    
+    # Находим мероприятие по уникальному ID
+    event = db.query(Event).filter(Event.unique_id == unique_id).first()
+    if not event:
+        raise HTTPException(status_code=404, detail="Мероприятие не найдено")
+    
+    if not event.is_active:
+        raise HTTPException(status_code=400, detail="Мероприятие неактивно")
+    
+    # Проверяем, что пользователь еще не зарегистрирован
+    existing_registration = db.query(EventRegistration).filter(
+        EventRegistration.user_id == current_user.id,
+        EventRegistration.event_id == event.id
+    ).first()
+    
+    if existing_registration:
+        raise HTTPException(status_code=400, detail="Вы уже зарегистрированы на это мероприятие")
+    
+    now = datetime.utcnow()
+    registration_type = registration_data.registration_type
+    
+    # Проверяем даты в зависимости от типа регистрации
+    if registration_type == "preregistration":
+        if now < event.preregistration_start:
+            raise HTTPException(status_code=400, detail="Предварительная регистрация еще не началась")
+        if now >= event.registration_start:
+            raise HTTPException(status_code=400, detail="Предварительная регистрация уже закончилась")
+    elif registration_type == "registration":
+        if now < event.registration_start:
+            raise HTTPException(status_code=400, detail="Регистрация еще не началась")
+        if now >= event.registration_end:
+            raise HTTPException(status_code=400, detail="Регистрация уже закончилась")
+    else:
+        raise HTTPException(status_code=400, detail="Неверный тип регистрации")
+    
+    # Создаем регистрацию
+    registration = EventRegistration(
+        user_id=current_user.id,
+        event_id=event.id,  # Используем внутренний ID для связи
         registration_type=registration_type,
         is_confirmed=(registration_type == "registration")  # Если прямая регистрация, сразу подтверждаем
     )

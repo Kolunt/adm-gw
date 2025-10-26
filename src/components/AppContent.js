@@ -11,6 +11,7 @@ import UserList from './UserList';
 import UserProfile from './UserProfile';
 import ProfileWizard from './ProfileWizard';
 import EventRegistration from './EventRegistration';
+import EventDetail from './EventDetail';
 import CurrentEventInfo from './CurrentEventInfo';
 
 const { Header, Content, Footer } = Layout;
@@ -278,6 +279,7 @@ function AppContent() {
           <Route path="/admin" element={<AdminPanel currentUser={user} onLogout={handleLogout} />} />
           <Route path="/users" element={<UserList users={users} />} />
           <Route path="/events" element={<EventRegistration />} />
+          <Route path="/event/:uniqueId" element={<EventDetail />} />
         </Routes>
       </Content>
 

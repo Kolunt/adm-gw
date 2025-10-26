@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Button, Table, Tag, Modal, Form, Input, message, Typography, Space, Alert } from 'antd';
-import { CalendarOutlined, CheckCircleOutlined, ClockCircleOutlined } from '@ant-design/icons';
+import { CalendarOutlined, CheckCircleOutlined, ClockCircleOutlined, LinkOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import moment from 'moment';
 
@@ -13,6 +14,7 @@ function EventRegistration() {
   const [confirmModalVisible, setConfirmModalVisible] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [form] = Form.useForm();
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchEvents();
@@ -263,6 +265,19 @@ function EventRegistration() {
           }
         }
       }
+    },
+    {
+      title: 'Ссылка',
+      key: 'link',
+      render: (_, record) => (
+        <Button
+          type="link"
+          icon={<LinkOutlined />}
+          onClick={() => navigate(`/event/${record.unique_id}`)}
+        >
+          Открыть мероприятие
+        </Button>
+      )
     }
   ];
 
