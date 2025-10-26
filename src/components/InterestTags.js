@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Select, Tag, Button, message, Space } from 'antd';
-import { PlusOutlined, CloseOutlined } from '@ant-design/icons';
+import { Select, Tag, message, Space, AutoComplete } from 'antd';
+import { PlusOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import debounce from 'lodash.debounce';
 
@@ -99,9 +99,9 @@ function InterestTags({ value = [], onChange, placeholder = "Добавьте в
     onChange?.(updatedInterests);
   };
 
-  const handleSelectExisting = (interestId) => {
-    const interest = searchResults.find(i => i.id === interestId);
-    if (interest && !selectedInterests.some(i => i.id === interestId)) {
+  const handleSelectExisting = (value, option) => {
+    const interest = searchResults.find(i => i.id === parseInt(value));
+    if (interest && !selectedInterests.some(i => i.id === interest.id)) {
       const updatedInterests = [...selectedInterests, interest];
       setSelectedInterests(updatedInterests);
       onChange?.(updatedInterests);
@@ -118,6 +118,27 @@ function InterestTags({ value = [], onChange, placeholder = "Добавьте в
       onChange?.(updatedInterests);
     }
   };
+
+  const handlePressEnter = () => {
+    if (searchValue && searchValue.trim()) {
+      handleAddInterest(searchValue);
+    }
+  };
+
+  // Подготавливаем опции для автокомплита
+  const autocompleteOptions = searchResults.map(interest => ({
+    value: interest.id.toString(),
+    label: interest.name
+  }));
+
+  // Добавляем опцию для создания нового интереса, если его нет в результатах
+  if (searchValue && searchValue.trim() && 
+      !searchResults.some(interest => interest.name.toLowerCase() === searchValue.toLowerCase())) {
+    autocompleteOptions.push({
+      value: `create:${searchValue}`,
+      label: `Создать "${searchValue}"`
+    });
+  }
 
   return (
     <div>
@@ -136,36 +157,25 @@ function InterestTags({ value = [], onChange, placeholder = "Добавьте в
         ))}
       </div>
 
-      {/* Поле поиска и добавления */}
-      <Select
-        mode="combobox"
-        placeholder={placeholder}
+      {/* Поле автокомплита */}
+      <AutoComplete
         value={searchValue}
+        options={autocompleteOptions}
         onSearch={handleSearch}
-        onSelect={handleSelectExisting}
-        loading={searchLoading}
-        notFoundContent={searchLoading ? "Поиск..." : "Введите название интереса"}
+        onSelect={(value, option) => {
+          if (value.startsWith('create:')) {
+            const interestName = value.replace('create:', '');
+            handleAddInterest(interestName);
+          } else {
+            handleSelectExisting(value, option);
+          }
+        }}
+        onPressEnter={handlePressEnter}
+        placeholder={placeholder}
         style={{ width: '100%', marginBottom: '12px' }}
-        dropdownStyle={{ maxHeight: '200px' }}
-      >
-        {searchResults.map((interest) => (
-          <Option key={interest.id} value={interest.id}>
-            {interest.name}
-          </Option>
-        ))}
-      </Select>
-
-      {/* Кнопка добавления нового интереса */}
-      {searchValue && searchValue.trim() && (
-        <Button
-          type="dashed"
-          icon={<PlusOutlined />}
-          onClick={() => handleAddInterest(searchValue)}
-          style={{ width: '100%', marginBottom: '12px' }}
-        >
-          Добавить "{searchValue.trim()}"
-        </Button>
-      )}
+        filterOption={false}
+        notFoundContent={searchLoading ? "Поиск..." : "Введите название интереса"}
+      />
 
       {/* Популярные интересы */}
       {popularInterests.length > 0 && (
