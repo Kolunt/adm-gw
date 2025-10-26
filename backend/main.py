@@ -174,6 +174,8 @@ class ProfileStep3(BaseModel):
     interests: str
 
 class ProfileUpdate(BaseModel):
+    name: str | None = None
+    email: str | None = None
     gwars_profile_url: str | None = None
     full_name: str | None = None
     address: str | None = None
@@ -224,7 +226,7 @@ class EventRegistrationResponse(BaseModel):
 
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.0.18")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.0.19")
 
 # CORS middleware
 app.add_middleware(
@@ -627,6 +629,32 @@ async def promote_user_to_admin(
     user.role = "admin"
     db.commit()
     return {"message": "User promoted to admin successfully"}
+
+
+@app.put("/auth/profile")
+async def update_user_profile(
+    profile_data: ProfileUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Обновить профиль текущего пользователя"""
+    # Обновляем поля профиля
+    if profile_data.name is not None:
+        current_user.name = profile_data.name
+    if profile_data.email is not None:
+        current_user.email = profile_data.email
+    if profile_data.gwars_profile_url is not None:
+        current_user.gwars_profile_url = profile_data.gwars_profile_url
+    if profile_data.full_name is not None:
+        current_user.full_name = profile_data.full_name
+    if profile_data.address is not None:
+        current_user.address = profile_data.address
+    if profile_data.interests is not None:
+        current_user.interests = profile_data.interests
+    
+    db.commit()
+    db.refresh(current_user)
+    return current_user
 
 
 # Mount static files for React app

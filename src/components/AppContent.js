@@ -8,6 +8,7 @@ import SimpleRegistrationForm from './SimpleRegistrationForm';
 import SimpleLoginForm from './SimpleLoginForm';
 import AdminPanel from './AdminPanel';
 import UserList from './UserList';
+import UserProfile from './UserProfile';
 import ProfileWizard from './ProfileWizard';
 import EventRegistration from './EventRegistration';
 import CurrentEventInfo from './CurrentEventInfo';
@@ -127,6 +128,14 @@ function AppContent() {
             <Button 
               size={window.innerWidth <= 768 ? "middle" : "large"}
               icon={<UserOutlined />}
+              onClick={() => navigate('/user-profile')}
+              style={{ width: window.innerWidth <= 768 ? '100%' : 'auto' }}
+            >
+              Мой профиль
+            </Button>
+            <Button 
+              size={window.innerWidth <= 768 ? "middle" : "large"}
+              icon={<UserOutlined />}
               onClick={() => navigate('/users')}
               style={{ width: window.innerWidth <= 768 ? '100%' : 'auto' }}
             >
@@ -212,6 +221,13 @@ function AppContent() {
                 <>
                   <Button 
                     icon={<UserOutlined />}
+                    onClick={() => navigate('/user-profile')}
+                    size="middle"
+                  >
+                    Профиль
+                  </Button>
+                  <Button 
+                    icon={<UserOutlined />}
                     onClick={() => navigate('/users')}
                     size="middle"
                   >
@@ -258,6 +274,7 @@ function AppContent() {
           <Route path="/register" element={<SimpleRegistrationForm onUserRegistered={handleUserRegistered} />} />
           <Route path="/login" element={<SimpleLoginForm onLogin={handleLogin} />} />
           <Route path="/profile" element={<ProfileWizard onProfileCompleted={handleProfileCompleted} />} />
+          <Route path="/user-profile" element={<UserProfile />} />
           <Route path="/admin" element={<AdminPanel currentUser={user} onLogout={handleLogout} />} />
           <Route path="/users" element={<UserList users={users} />} />
           <Route path="/events" element={<EventRegistration />} />
@@ -340,6 +357,20 @@ function AppContent() {
             </>
           ) : (
             <>
+              <Button
+                type="default"
+                icon={<UserOutlined />}
+                onClick={() => handleNavigation('/user-profile')}
+                style={{ 
+                  width: '100%', 
+                  marginBottom: '12px',
+                  textAlign: 'left',
+                  height: '48px',
+                  fontSize: '16px'
+                }}
+              >
+                Мой профиль
+              </Button>
               <Button
                 type="default"
                 icon={<UserOutlined />}
