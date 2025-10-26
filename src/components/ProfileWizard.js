@@ -9,6 +9,7 @@ import {
 } from '@ant-design/icons';
 import axios from 'axios';
 import GWarsVerification from './GWarsVerification';
+import AddressAutocomplete from './AddressAutocomplete';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -152,10 +153,8 @@ function ProfileWizard({ onProfileCompleted }) {
                   { min: 10, message: 'Адрес должен содержать минимум 10 символов!' }
                 ]}
               >
-                <TextArea 
+                <AddressAutocomplete 
                   placeholder="г. Москва, ул. Примерная, д. 1, кв. 1, индекс 123456"
-                  rows={3}
-                  prefix={<HomeOutlined />}
                 />
               </Form.Item>
               <Form.Item>

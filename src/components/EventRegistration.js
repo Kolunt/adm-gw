@@ -4,6 +4,7 @@ import { CalendarOutlined, CheckCircleOutlined, ClockCircleOutlined, LinkOutline
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import moment from 'moment';
+import AddressAutocomplete from './AddressAutocomplete';
 
 const { Title, Text } = Typography;
 
@@ -329,8 +330,7 @@ function EventRegistration() {
               { min: 10, message: 'Адрес должен содержать минимум 10 символов!' }
             ]}
           >
-            <Input.TextArea 
-              rows={4} 
+            <AddressAutocomplete 
               placeholder="Введите полный адрес: индекс, город, улица, дом, квартира"
             />
           </Form.Item>

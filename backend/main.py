@@ -81,6 +81,15 @@ class EventRegistration(Base):
     confirmed_at = Column(DateTime)  # Дата подтверждения
     created_at = Column(DateTime, default=datetime.utcnow)
 
+class SystemSettings(Base):
+    __tablename__ = "system_settings"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    key = Column(String, unique=True, index=True)  # Ключ настройки
+    value = Column(String)  # Значение настройки
+    description = Column(String)  # Описание настройки
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
 
 # Password and JWT functions
 def verify_password(plain_password, hashed_password):
@@ -135,8 +144,39 @@ def create_default_admin():
     finally:
         db.close()
 
-# Create default admin on startup
+def create_default_settings():
+    """Создание настроек системы по умолчанию"""
+    db = SessionLocal()
+    try:
+        # Настройки Dadata
+        dadata_token_setting = db.query(SystemSettings).filter(SystemSettings.key == "dadata_token").first()
+        if not dadata_token_setting:
+            dadata_token_setting = SystemSettings(
+                key="dadata_token",
+                value="",
+                description="API токен для сервиса Dadata.ru (для автодополнения адресов)"
+            )
+            db.add(dadata_token_setting)
+        
+        dadata_enabled_setting = db.query(SystemSettings).filter(SystemSettings.key == "dadata_enabled").first()
+        if not dadata_enabled_setting:
+            dadata_enabled_setting = SystemSettings(
+                key="dadata_enabled",
+                value="false",
+                description="Включить автодополнение адресов через Dadata.ru"
+            )
+            db.add(dadata_enabled_setting)
+        
+        db.commit()
+        print("Настройки системы инициализированы")
+    except Exception as e:
+        print(f"Ошибка при инициализации настроек: {e}")
+    finally:
+        db.close()
+
+# Create default admin and settings on startup
 create_default_admin()
+create_default_settings()
 
 # Pydantic models
 class UserCreate(BaseModel):
@@ -238,9 +278,19 @@ class EventRegistrationResponse(BaseModel):
     confirmed_at: datetime | None = None
     created_at: datetime
 
+class SystemSettingResponse(BaseModel):
+    id: int
+    key: str
+    value: str
+    description: str | None = None
+    updated_at: datetime
+
+class SystemSettingUpdate(BaseModel):
+    value: str
+
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.0.46")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.0.47")
 
 # CORS middleware
 app.add_middleware(
@@ -957,6 +1007,91 @@ async def verify_gwars_token(
     except Exception as e:
         return {"success": False, "error": f"Ошибка при проверке: {str(e)}"}
 
+
+# API endpoints для настроек системы
+@app.get("/admin/settings", response_model=list[SystemSettingResponse])
+async def get_system_settings(
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """Получение всех настроек системы (только для администраторов)"""
+    settings = db.query(SystemSettings).all()
+    return settings
+
+@app.put("/admin/settings/{setting_key}", response_model=SystemSettingResponse)
+async def update_system_setting(
+    setting_key: str,
+    setting_update: SystemSettingUpdate,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """Обновление настройки системы (только для администраторов)"""
+    setting = db.query(SystemSettings).filter(SystemSettings.key == setting_key).first()
+    if not setting:
+        raise HTTPException(status_code=404, detail="Настройка не найдена")
+    
+    setting.value = setting_update.value
+    setting.updated_at = datetime.utcnow()
+    
+    db.commit()
+    db.refresh(setting)
+    return setting
+
+# API endpoint для автодополнения адресов через Dadata
+@app.post("/api/suggest-address")
+async def suggest_address(
+    request_data: dict,
+    db: Session = Depends(get_db)
+):
+    """Автодополнение адресов через Dadata.ru"""
+    query = request_data.get("query", "")
+    if not query:
+        raise HTTPException(status_code=400, detail="Поле query обязательно")
+    
+    # Проверяем, включено ли автодополнение
+    dadata_enabled = db.query(SystemSettings).filter(SystemSettings.key == "dadata_enabled").first()
+    if not dadata_enabled or dadata_enabled.value.lower() != "true":
+        raise HTTPException(status_code=400, detail="Автодополнение адресов отключено")
+    
+    # Получаем токен
+    dadata_token = db.query(SystemSettings).filter(SystemSettings.key == "dadata_token").first()
+    if not dadata_token or not dadata_token.value:
+        raise HTTPException(status_code=400, detail="Токен Dadata не настроен")
+    
+    try:
+        import requests
+        
+        # API Dadata для подсказок адресов
+        url = "https://suggestions.dadata.ru/suggestions/api/4_1/rs/suggest/address"
+        headers = {
+            "Authorization": f"Token {dadata_token.value}",
+            "Content-Type": "application/json"
+        }
+        data = {
+            "query": query,
+            "count": 10
+        }
+        
+        response = requests.post(url, json=data, headers=headers, timeout=5)
+        response.raise_for_status()
+        
+        suggestions = response.json().get("suggestions", [])
+        
+        # Форматируем ответ
+        result = []
+        for suggestion in suggestions:
+            result.append({
+                "value": suggestion.get("value", ""),
+                "unrestricted_value": suggestion.get("unrestricted_value", ""),
+                "data": suggestion.get("data", {})
+            })
+        
+        return {"suggestions": result}
+        
+    except requests.exceptions.RequestException as e:
+        raise HTTPException(status_code=500, detail=f"Ошибка при обращении к Dadata: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Ошибка автодополнения: {str(e)}")
 
 # Mount static files for React app
 if os.path.exists("dist"):

@@ -1,32 +1,37 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, Form, Input, Button, Switch, Divider, Typography, message, Space, Tag } from 'antd';
-import { SettingOutlined, SaveOutlined, ReloadOutlined } from '@ant-design/icons';
+import { Card, Form, Input, Button, Switch, Divider, Typography, message, Space, Tag, Alert } from 'antd';
+import { SettingOutlined, SaveOutlined, ReloadOutlined, KeyOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import axios from 'axios';
 
-const { Title, Paragraph } = Typography;
+const { Title, Paragraph, Text } = Typography;
 
 function AdminSystemSettings() {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
-  const [settings, setSettings] = useState({
-    site_name: 'Анонимный Дед Мороз',
-    site_description: 'Система управления мероприятиями',
-    registration_enabled: true,
-    max_participants: 100,
-    admin_email: 'admin@example.com',
-  });
+  const [settings, setSettings] = useState([]);
 
   const fetchSettings = useCallback(async () => {
     setLoading(true);
     try {
-      // В реальном приложении здесь был бы API для получения настроек
-      // Пока используем моковые данные
-      form.setFieldsValue(settings);
+      const token = localStorage.getItem('token');
+      const response = await axios.get('/admin/settings', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      const settingsData = {};
+      response.data.forEach(setting => {
+        settingsData[setting.key] = setting.value;
+      });
+      
+      setSettings(response.data);
+      form.setFieldsValue(settingsData);
     } catch (error) {
+      console.error('Error fetching settings:', error);
       message.error('Ошибка при загрузке настроек');
     } finally {
       setLoading(false);
     }
-  }, [form, settings]);
+  }, [form]);
 
   useEffect(() => {
     fetchSettings();
@@ -35,11 +40,20 @@ function AdminSystemSettings() {
   const handleSave = async (values) => {
     setLoading(true);
     try {
-      // В реальном приложении здесь был бы API для сохранения настроек
-      console.log('Сохранение настроек:', values);
+      const token = localStorage.getItem('token');
+      
+      // Обновляем каждую настройку
+      for (const [key, value] of Object.entries(values)) {
+        await axios.put(`/admin/settings/${key}`, 
+          { value: value.toString() },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      }
+      
       message.success('Настройки сохранены');
-      setSettings(values);
+      fetchSettings(); // Перезагружаем настройки
     } catch (error) {
+      console.error('Error saving settings:', error);
       message.error('Ошибка при сохранении настроек');
     } finally {
       setLoading(false);
@@ -47,117 +61,127 @@ function AdminSystemSettings() {
   };
 
   const handleReset = () => {
-    form.setFieldsValue(settings);
-    message.info('Настройки сброшены');
+    const settingsData = {};
+    settings.forEach(setting => {
+      settingsData[setting.key] = setting.value;
+    });
+    form.setFieldsValue(settingsData);
   };
+
+  const getDadataStatus = () => {
+    const dadataEnabled = settings.find(s => s.key === 'dadata_enabled');
+    const dadataToken = settings.find(s => s.key === 'dadata_token');
+    
+    if (!dadataEnabled || dadataEnabled.value !== 'true') {
+      return { status: 'disabled', text: 'Отключено', color: 'red' };
+    }
+    
+    if (!dadataToken || !dadataToken.value) {
+      return { status: 'no-token', text: 'Токен не настроен', color: 'orange' };
+    }
+    
+    return { status: 'enabled', text: 'Активно', color: 'green' };
+  };
+
+  const dadataStatus = getDadataStatus();
 
   return (
     <div>
       <Card>
-        <div style={{ marginBottom: '20px' }}>
-          <Title level={3} style={{ margin: 0 }}>
-            <SettingOutlined /> Настройки системы
-          </Title>
-          <Paragraph type="secondary">
-            Управление основными параметрами системы
-          </Paragraph>
-        </div>
+        <Space direction="vertical" size="large" style={{ width: '100%' }}>
+          <div>
+            <Title level={3}>
+              <SettingOutlined /> Настройки системы
+            </Title>
+            <Paragraph type="secondary">
+              Управление настройками системы Анонимный Дед Мороз
+            </Paragraph>
+          </div>
 
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleSave}
-          initialValues={settings}
-        >
-          <Card size="small" style={{ marginBottom: '16px' }}>
-            <Title level={4}>Основные настройки</Title>
-            
-            <Form.Item
-              name="site_name"
-              label="Название сайта"
-              rules={[{ required: true, message: 'Введите название сайта' }]}
-            >
-              <Input placeholder="Анонимный Дед Мороз" />
-            </Form.Item>
-
-            <Form.Item
-              name="site_description"
-              label="Описание сайта"
-            >
-              <Input.TextArea 
-                rows={3} 
-                placeholder="Описание системы управления мероприятиями"
-              />
-            </Form.Item>
-
-            <Form.Item
-              name="admin_email"
-              label="Email администратора"
-              rules={[
-                { required: true, message: 'Введите email администратора' },
-                { type: 'email', message: 'Введите корректный email' }
-              ]}
-            >
-              <Input placeholder="admin@example.com" />
-            </Form.Item>
-          </Card>
-
-          <Card size="small" style={{ marginBottom: '16px' }}>
-            <Title level={4}>Функциональность</Title>
-            
-            <Form.Item
-              name="registration_enabled"
-              label="Разрешить регистрацию"
-              valuePropName="checked"
-            >
-              <Switch 
-                checkedChildren="Включено" 
-                unCheckedChildren="Отключено"
-              />
-            </Form.Item>
-
-
-            <Form.Item
-              name="max_participants"
-              label="Максимальное количество участников"
-              rules={[
-                { required: true, message: 'Введите максимальное количество участников' },
-                { type: 'number', min: 1, message: 'Минимум 1 участник' }
-              ]}
-            >
-              <Input type="number" min={1} />
-            </Form.Item>
-          </Card>
-
-          <Card size="small">
-            <Title level={4}>Статистика системы</Title>
-            <Space direction="vertical" style={{ width: '100%' }}>
-              <div>
-                <Tag color="blue">Всего пользователей: 0</Tag>
-                <Tag color="green">Активных пользователей: 0</Tag>
-              </div>
+          {/* Статус Dadata */}
+          <Card size="small" title="Статус автодополнения адресов">
+            <Space>
+              <Tag color={dadataStatus.color} icon={<CheckCircleOutlined />}>
+                {dadataStatus.text}
+              </Tag>
+              {dadataStatus.status === 'disabled' && (
+                <Text type="secondary">Включите автодополнение в настройках ниже</Text>
+              )}
+              {dadataStatus.status === 'no-token' && (
+                <Text type="secondary">Укажите API токен Dadata.ru</Text>
+              )}
+              {dadataStatus.status === 'enabled' && (
+                <Text type="success">Автодополнение адресов работает</Text>
+              )}
             </Space>
           </Card>
 
-          <Divider />
+          <Form
+            form={form}
+            layout="vertical"
+            onFinish={handleSave}
+            loading={loading}
+          >
+            <Card size="small" title="Настройки Dadata.ru">
+              <Alert
+                message="Интеграция с Dadata.ru"
+                description="Для работы автодополнения адресов необходимо получить API токен на сайте dadata.ru. Это поможет пользователям быстрее и точнее заполнять адреса."
+                type="info"
+                showIcon
+                style={{ marginBottom: 16 }}
+              />
+              
+              <Form.Item
+                name="dadata_enabled"
+                label="Включить автодополнение адресов"
+                valuePropName="checked"
+              >
+                <Switch />
+              </Form.Item>
 
-          <Space>
-            <Button
-              type="primary"
-              htmlType="submit"
-              icon={<SaveOutlined />}
-              loading={loading}
-            >
-              Сохранить настройки
-            </Button>
-            <Button
-              icon={<ReloadOutlined />}
-              onClick={handleReset}
-            >
-              Сбросить
-            </Button>
-          </Space>
-        </Form>
+              <Form.Item
+                name="dadata_token"
+                label="API токен Dadata.ru"
+                rules={[
+                  {
+                    validator: (_, value) => {
+                      const dadataEnabled = form.getFieldValue('dadata_enabled');
+                      if (dadataEnabled && !value) {
+                        return Promise.reject('Токен обязателен при включенном автодополнении');
+                      }
+                      return Promise.resolve();
+                    }
+                  }
+                ]}
+              >
+                <Input.Password
+                  placeholder="Введите API токен Dadata.ru"
+                  prefix={<KeyOutlined />}
+                />
+              </Form.Item>
+            </Card>
+
+            <Divider />
+
+            <Space>
+              <Button
+                type="primary"
+                htmlType="submit"
+                icon={<SaveOutlined />}
+                loading={loading}
+              >
+                Сохранить настройки
+              </Button>
+              <Button
+                icon={<ReloadOutlined />}
+                onClick={handleReset}
+                disabled={loading}
+              >
+                Сбросить
+              </Button>
+            </Space>
+          </Form>
+        </Space>
       </Card>
     </div>
   );
