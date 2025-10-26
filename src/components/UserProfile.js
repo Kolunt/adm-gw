@@ -106,6 +106,47 @@ function UserProfile() {
 
         <Divider />
 
+        {/* Информация о GWars профиле */}
+        {user.gwars_profile_url && (
+          <div style={{ marginBottom: '24px' }}>
+            <Title level={4} style={{ color: '#1890ff', marginBottom: '16px' }}>
+              🎮 Профиль GWars.io
+            </Title>
+            <Row gutter={[16, 16]}>
+              <Col xs={24} sm={12}>
+                <div style={{ padding: '12px', backgroundColor: '#f0f2f5', borderRadius: '6px' }}>
+                  <Text strong>Никнейм:</Text>
+                  <br />
+                  <Text>{user.gwars_nickname || 'Не указан'}</Text>
+                </div>
+              </Col>
+              <Col xs={24} sm={12}>
+                <div style={{ padding: '12px', backgroundColor: '#f0f2f5', borderRadius: '6px' }}>
+                  <Text strong>Статус верификации:</Text>
+                  <br />
+                  <Tag color={user.gwars_verified ? 'green' : 'red'}>
+                    {user.gwars_verified ? 'Верифицирован' : 'Не верифицирован'}
+                  </Tag>
+                </div>
+              </Col>
+              <Col xs={24}>
+                <div style={{ padding: '12px', backgroundColor: '#f0f2f5', borderRadius: '6px' }}>
+                  <Text strong>Ссылка на профиль:</Text>
+                  <br />
+                  <a 
+                    href={user.gwars_profile_url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    style={{ color: '#1890ff' }}
+                  >
+                    {user.gwars_profile_url}
+                  </a>
+                </div>
+              </Col>
+            </Row>
+          </div>
+        )}
+
         <Form
           form={form}
           layout="vertical"

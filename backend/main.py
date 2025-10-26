@@ -45,6 +45,7 @@ class User(Base):
     
     # Профиль пользователя
     gwars_profile_url = Column(String)  # Ссылка на профиль в gwars.io
+    gwars_nickname = Column(String)  # Никнейм из GWars профиля
     full_name = Column(String)  # ФИО
     address = Column(String)  # Адрес для отправки подарков
     interests = Column(String)  # Интересы пользователя
@@ -157,6 +158,7 @@ class UserResponse(BaseModel):
     created_at: datetime
     # Профиль пользователя
     gwars_profile_url: str | None = None
+    gwars_nickname: str | None = None
     full_name: str | None = None
     address: str | None = None
     interests: str | None = None
@@ -234,7 +236,7 @@ class EventRegistrationResponse(BaseModel):
 
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.0.35")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.0.36")
 
 # CORS middleware
 app.add_middleware(
@@ -472,14 +474,8 @@ async def get_event_participants(event_id: int, db: Session = Depends(get_db)):
         # Получаем пользователя
         user = db.query(User).filter(User.id == registration.user_id).first()
         if user:
-            # Извлекаем никнейм из URL профиля GWars
-            nickname = "Неизвестно"
-            if user.gwars_profile_url:
-                # Пытаемся извлечь никнейм из URL
-                import re
-                match = re.search(r'id=(\d+)', user.gwars_profile_url)
-                if match:
-                    nickname = f"Игрок #{match.group(1)}"
+            # Используем сохраненный никнейм из GWars профиля
+            nickname = user.gwars_nickname or "Неизвестно"
             
             # Определяем статус участника
             status = "confirmed" if registration.is_confirmed else "preregistered"
@@ -737,8 +733,9 @@ async def parse_gwars_profile(
         nickname = nickname_match.group(1).strip()
         level = level_match.group(1) if level_match else "Неизвестно"
         
-        # Обновляем URL профиля в базе данных
+        # Обновляем URL профиля и никнейм в базе данных
         current_user.gwars_profile_url = profile_url
+        current_user.gwars_nickname = nickname
         db.commit()
         
         return {
