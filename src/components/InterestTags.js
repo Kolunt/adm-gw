@@ -7,7 +7,7 @@ import debounce from 'lodash.debounce';
 const { Option } = Select;
 
 function InterestTags({ value = [], onChange, placeholder = "Добавьте ваши интересы..." }) {
-  const [selectedInterests, setSelectedInterests] = useState(value);
+  const [selectedInterests, setSelectedInterests] = useState(Array.isArray(value) ? value : []);
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchValue, setSearchValue] = useState('');
@@ -20,7 +20,7 @@ function InterestTags({ value = [], onChange, placeholder = "Добавьте в
 
   // Обновляем локальное состояние при изменении value
   useEffect(() => {
-    setSelectedInterests(value);
+    setSelectedInterests(Array.isArray(value) ? value : []);
   }, [value]);
 
   const fetchPopularInterests = async () => {
@@ -123,7 +123,7 @@ function InterestTags({ value = [], onChange, placeholder = "Добавьте в
     <div>
       {/* Отображение выбранных интересов */}
       <div style={{ marginBottom: '12px', minHeight: '32px' }}>
-        {selectedInterests.map((interest) => (
+        {Array.isArray(selectedInterests) && selectedInterests.map((interest) => (
           <Tag
             key={interest.id}
             closable

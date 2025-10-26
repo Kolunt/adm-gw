@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { Layout, Typography, Button, Space, Drawer } from 'antd';
-import { UserAddOutlined, HomeOutlined, UserOutlined, CrownOutlined, MenuOutlined, LogoutOutlined, CalendarOutlined } from '@ant-design/icons';
+import { UserAddOutlined, HomeOutlined, UserOutlined, CrownOutlined, MenuOutlined, LogoutOutlined, CalendarOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import axios from 'axios';
 
 import SimpleRegistrationForm from './SimpleRegistrationForm';
@@ -15,6 +15,7 @@ import EventDetail from './EventDetail';
 import CurrentEventInfo from './CurrentEventInfo';
 import AdminRouteGuard from './AdminRouteGuard';
 import AdminUserProfileEdit from './AdminUserProfileEdit';
+import FAQ from './FAQ';
 
 const { Header, Content, Footer } = Layout;
 const { Title } = Typography;
@@ -195,6 +196,13 @@ function AppContent() {
                   >
                     Мероприятия
                   </Button>
+                  <Button 
+                    icon={<QuestionCircleOutlined />}
+                    onClick={() => navigate('/faq')}
+                    size="middle"
+                  >
+                    FAQ
+                  </Button>
                 </>
               ) : (
                 <>
@@ -218,6 +226,13 @@ function AppContent() {
                     size="middle"
                   >
                     Мероприятия
+                  </Button>
+                  <Button 
+                    icon={<QuestionCircleOutlined />}
+                    onClick={() => navigate('/faq')}
+                    size="middle"
+                  >
+                    FAQ
                   </Button>
                   {user?.role === 'admin' && (
                     <Button 
@@ -254,6 +269,7 @@ function AppContent() {
           <Route path="/login" element={<SimpleLoginForm onLogin={handleLogin} />} />
           <Route path="/profile" element={<ProfileWizard onProfileCompleted={handleProfileCompleted} />} />
           <Route path="/user-profile" element={<UserProfile />} />
+          <Route path="/faq" element={<FAQ />} />
           <Route path="/admin" element={
             <AdminRouteGuard user={user}>
               <AdminPanel currentUser={user} onLogout={handleLogout} />
@@ -290,6 +306,11 @@ function AppContent() {
             </AdminRouteGuard>
           } />
           <Route path="/admin/interests" element={
+            <AdminRouteGuard user={user}>
+              <AdminPanel currentUser={user} onLogout={handleLogout} />
+            </AdminRouteGuard>
+          } />
+          <Route path="/admin/faq" element={
             <AdminRouteGuard user={user}>
               <AdminPanel currentUser={user} onLogout={handleLogout} />
             </AdminRouteGuard>
@@ -406,6 +427,20 @@ function AppContent() {
               >
                 Мероприятия
               </Button>
+              <Button
+                type="default"
+                icon={<QuestionCircleOutlined />}
+                onClick={() => handleNavigation('/faq')}
+                style={{ 
+                  width: '100%', 
+                  marginBottom: '12px',
+                  textAlign: 'left',
+                  height: '48px',
+                  fontSize: '16px'
+                }}
+              >
+                FAQ
+              </Button>
             </>
           ) : (
             <>
@@ -450,6 +485,20 @@ function AppContent() {
                 }}
               >
                 Мероприятия
+              </Button>
+              <Button
+                type="default"
+                icon={<QuestionCircleOutlined />}
+                onClick={() => handleNavigation('/faq')}
+                style={{ 
+                  width: '100%', 
+                  marginBottom: '12px',
+                  textAlign: 'left',
+                  height: '48px',
+                  fontSize: '16px'
+                }}
+              >
+                FAQ
               </Button>
               {user?.role === 'admin' && (
                 <Button
