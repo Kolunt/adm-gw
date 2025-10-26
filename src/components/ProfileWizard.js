@@ -65,21 +65,6 @@ function ProfileWizard({ onProfileCompleted }) {
     }
   ];
 
-  const onStep1Finish = async (values) => {
-    setLoading(true);
-    try {
-      await axios.post('/profile/step1', values, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
-      message.success('Шаг 1 завершен!');
-      setCurrentStep(1);
-      fetchProfileStatus();
-    } catch (error) {
-      message.error('Ошибка при сохранении данных');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleGWarsVerificationComplete = () => {
     message.success('GWars профиль верифицирован!');

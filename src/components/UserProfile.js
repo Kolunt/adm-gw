@@ -11,10 +11,6 @@ function UserProfile() {
   const [editing, setEditing] = useState(false);
   const [form] = Form.useForm();
 
-  useEffect(() => {
-    fetchUserProfile();
-  }, [fetchUserProfile]);
-
   const fetchUserProfile = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
@@ -37,6 +33,10 @@ function UserProfile() {
       setLoading(false);
     }
   }, [form]);
+
+  useEffect(() => {
+    fetchUserProfile();
+  }, [fetchUserProfile]);
 
   const handleEdit = () => {
     setEditing(true);
