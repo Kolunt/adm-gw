@@ -188,6 +188,13 @@ function AppContent() {
                   >
                     Участники
                   </Button>
+                  <Button 
+                    icon={<CalendarOutlined />}
+                    onClick={() => navigate('/events')}
+                    size="middle"
+                  >
+                    Мероприятия
+                  </Button>
                 </>
               ) : (
                 <>
@@ -384,6 +391,20 @@ function AppContent() {
                 }}
               >
                 Участники
+              </Button>
+              <Button
+                type="default"
+                icon={<CalendarOutlined />}
+                onClick={() => handleNavigation('/events')}
+                style={{ 
+                  width: '100%', 
+                  marginBottom: '12px',
+                  textAlign: 'left',
+                  height: '48px',
+                  fontSize: '16px'
+                }}
+              >
+                Мероприятия
               </Button>
             </>
           ) : (
