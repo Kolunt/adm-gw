@@ -5,7 +5,9 @@ import axios from 'axios';
 import moment from 'moment';
 
 // Создаем кастомный axios instance для подавления 404 ошибок
-const silentAxios = axios.create();
+const silentAxios = axios.create({
+  baseURL: 'http://localhost:8004'
+});
 silentAxios.interceptors.response.use(
   (response) => response,
   (error) => {
