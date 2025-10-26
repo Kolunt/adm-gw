@@ -277,6 +277,10 @@ function AppContent() {
           <Route path="/profile" element={<ProfileWizard onProfileCompleted={handleProfileCompleted} />} />
           <Route path="/user-profile" element={<UserProfile />} />
           <Route path="/admin" element={<AdminPanel currentUser={user} onLogout={handleLogout} />} />
+          <Route path="/admin/dashboard" element={<AdminPanel currentUser={user} onLogout={handleLogout} />} />
+          <Route path="/admin/users" element={<AdminPanel currentUser={user} onLogout={handleLogout} />} />
+          <Route path="/admin/events" element={<AdminPanel currentUser={user} onLogout={handleLogout} />} />
+          <Route path="/admin/settings" element={<AdminPanel currentUser={user} onLogout={handleLogout} />} />
           <Route path="/users" element={<UserList users={users} />} />
           <Route path="/events" element={<EventRegistration />} />
           <Route path="/event/:uniqueId" element={<EventDetail />} />

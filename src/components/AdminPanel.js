@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Layout, Card, Typography, Space, Button, Avatar, Dropdown } from 'antd';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   UserOutlined, 
   SettingOutlined, 
@@ -17,30 +18,59 @@ const { Sider, Content } = Layout;
 const { Title } = Typography;
 
 function AdminPanel({ currentUser, onLogout }) {
-  const [selectedMenu, setSelectedMenu] = useState('dashboard');
+  const location = useLocation();
+  const navigate = useNavigate();
+  
+  // Определяем активное меню на основе URL
+  const getActiveMenuFromPath = () => {
+    const path = location.pathname;
+    if (path === '/admin' || path === '/admin/dashboard') return 'dashboard';
+    if (path === '/admin/users') return 'users';
+    if (path === '/admin/events') return 'events';
+    if (path === '/admin/settings') return 'settings';
+    return 'dashboard'; // по умолчанию
+  };
+  
+  const [selectedMenu, setSelectedMenu] = useState(getActiveMenuFromPath());
+
+  // Обновляем активное меню при изменении URL
+  useEffect(() => {
+    setSelectedMenu(getActiveMenuFromPath());
+  }, [location.pathname]);
 
   const menuItems = [
     {
       key: 'dashboard',
       icon: <DashboardOutlined />,
       label: 'Панель управления',
+      path: '/admin/dashboard',
     },
     {
       key: 'events',
       icon: <CalendarOutlined />,
       label: 'Управление мероприятиями',
+      path: '/admin/events',
     },
     {
       key: 'users',
       icon: <TeamOutlined />,
       label: 'Управление пользователями',
+      path: '/admin/users',
     },
     {
       key: 'settings',
       icon: <SettingOutlined />,
       label: 'Настройки системы',
+      path: '/admin/settings',
     },
   ];
+
+  const handleMenuClick = (menuKey) => {
+    const menuItem = menuItems.find(item => item.key === menuKey);
+    if (menuItem) {
+      navigate(menuItem.path);
+    }
+  };
 
   const renderContent = () => {
     switch (selectedMenu) {
@@ -70,13 +100,13 @@ function AdminPanel({ currentUser, onLogout }) {
                   <Button 
                     type="primary" 
                     icon={<TeamOutlined />}
-                    onClick={() => setSelectedMenu('users')}
+                    onClick={() => handleMenuClick('users')}
                   >
                     Управление пользователями
                   </Button>
                   <Button 
                     icon={<SettingOutlined />}
-                    onClick={() => setSelectedMenu('settings')}
+                    onClick={() => handleMenuClick('settings')}
                   >
                     Настройки системы
                   </Button>
@@ -137,7 +167,7 @@ function AdminPanel({ currentUser, onLogout }) {
                 key={item.key}
                 type={selectedMenu === item.key ? 'primary' : 'default'}
                 icon={item.icon}
-                onClick={() => setSelectedMenu(item.key)}
+                onClick={() => handleMenuClick(item.key)}
                 style={{ 
                   width: '100%', 
                   marginBottom: '8px',
@@ -169,7 +199,7 @@ function AdminPanel({ currentUser, onLogout }) {
                 key={item.key}
                 type={selectedMenu === item.key ? 'primary' : 'default'}
                 icon={item.icon}
-                onClick={() => setSelectedMenu(item.key)}
+                onClick={() => handleMenuClick(item.key)}
                 style={{ 
                   margin: '2px',
                   fontSize: '12px',
@@ -198,6 +228,7 @@ function AdminPanel({ currentUser, onLogout }) {
             fontSize: isMobile ? '16px' : '20px'
           }}>
             {selectedMenu === 'dashboard' && 'Панель управления'}
+            {selectedMenu === 'events' && 'Управление мероприятиями'}
             {selectedMenu === 'users' && 'Управление пользователями'}
             {selectedMenu === 'settings' && 'Настройки системы'}
           </Title>
