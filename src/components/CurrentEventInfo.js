@@ -103,11 +103,6 @@ function CurrentEventInfo() {
     }
   }, [updateCountdown, hasChecked]);
 
-  // Если нет активных мероприятий, не рендерим компонент
-  if (!currentEvent && !loading) {
-    return null;
-  }
-
   useEffect(() => {
     // Запускаем только один раз при монтировании
     fetchCurrentEvent();
@@ -123,6 +118,11 @@ function CurrentEventInfo() {
 
     return () => clearInterval(interval);
   }, [currentEvent, updateCountdown]);
+
+  // Если нет активных мероприятий, не рендерим компонент
+  if (!currentEvent && !loading) {
+    return null;
+  }
 
   if (loading) {
     return (
