@@ -490,7 +490,7 @@ class SiteIconResponse(BaseModel):
 
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.0.84")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.0.85")
 
 # CORS middleware
 app.add_middleware(
@@ -2105,6 +2105,121 @@ async def get_current_site_icon():
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Ошибка получения иконки: {str(e)}")
+    finally:
+        db.close()
+
+
+# Dashboard Statistics API
+@app.get("/admin/dashboard/stats")
+async def get_dashboard_stats(current_user: User = Depends(get_current_admin)):
+    """Получить статистику для дашборда администратора"""
+    db = SessionLocal()
+    try:
+        # Общая статистика пользователей
+        total_users = db.query(User).count()
+        active_users = db.query(User).filter(User.is_active == True).count()
+        verified_users = db.query(User).filter(User.gwars_verified == True).count()
+        admin_users = db.query(User).filter(User.role == "admin").count()
+        
+        # Статистика по ролям
+        user_roles = db.query(User.role, func.count(User.id)).group_by(User.role).all()
+        
+        # Статистика мероприятий
+        total_events = db.query(Event).count()
+        active_events = db.query(Event).filter(Event.is_active == True).count()
+        
+        # Статистика регистраций на мероприятия
+        total_registrations = db.query(EventRegistration).count()
+        preregistrations = db.query(EventRegistration).filter(EventRegistration.is_preregistration == True).count()
+        confirmed_registrations = db.query(EventRegistration).filter(EventRegistration.is_confirmed == True).count()
+        
+        # Статистика интересов
+        total_interests = db.query(Interest).count()
+        active_interests = db.query(Interest).filter(Interest.is_active == True).count()
+        
+        # Статистика FAQ
+        total_faq = db.query(FAQ).count()
+        active_faq = db.query(FAQ).filter(FAQ.is_active == True).count()
+        
+        # Статистика Telegram
+        telegram_subscribers = db.query(TelegramUser).filter(TelegramUser.is_active == True).count()
+        
+        # Статистика по месяцам (регистрации пользователей)
+        from datetime import datetime, timedelta
+        current_date = datetime.utcnow()
+        six_months_ago = current_date - timedelta(days=180)
+        
+        monthly_registrations = db.query(
+            func.strftime('%Y-%m', User.created_at).label('month'),
+            func.count(User.id).label('count')
+        ).filter(
+            User.created_at >= six_months_ago
+        ).group_by(
+            func.strftime('%Y-%m', User.created_at)
+        ).order_by('month').all()
+        
+        # Последние активные пользователи
+        recent_users = db.query(User).order_by(User.created_at.desc()).limit(5).all()
+        
+        # Последние мероприятия
+        recent_events = db.query(Event).order_by(Event.created_at.desc()).limit(5).all()
+        
+        return {
+            "users": {
+                "total": total_users,
+                "active": active_users,
+                "verified": verified_users,
+                "admins": admin_users,
+                "roles": [{"role": role, "count": count} for role, count in user_roles]
+            },
+            "events": {
+                "total": total_events,
+                "active": active_events
+            },
+            "registrations": {
+                "total": total_registrations,
+                "preregistrations": preregistrations,
+                "confirmed": confirmed_registrations
+            },
+            "interests": {
+                "total": total_interests,
+                "active": active_interests
+            },
+            "faq": {
+                "total": total_faq,
+                "active": active_faq
+            },
+            "telegram": {
+                "subscribers": telegram_subscribers
+            },
+            "charts": {
+                "monthly_registrations": [{"month": month, "count": count} for month, count in monthly_registrations]
+            },
+            "recent": {
+                "users": [
+                    {
+                        "id": user.id,
+                        "username": user.username,
+                        "email": user.email,
+                        "role": user.role,
+                        "created_at": user.created_at.isoformat(),
+                        "gwars_verified": user.gwars_verified
+                    } for user in recent_users
+                ],
+                "events": [
+                    {
+                        "id": event.id,
+                        "title": event.title,
+                        "unique_id": event.unique_id,
+                        "created_at": event.created_at.isoformat(),
+                        "is_active": event.is_active
+                    } for event in recent_events
+                ]
+            }
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Ошибка получения статистики: {str(e)}")
     finally:
         db.close()
 

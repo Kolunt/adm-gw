@@ -19,6 +19,7 @@ import EventManagement from './EventManagement';
 import AdminInterestsManagement from './AdminInterestsManagement';
 import AdminFAQManagement from './AdminFAQManagement';
 import AdminTelegramManagement from './AdminTelegramManagement';
+import AdminDashboard from './AdminDashboard';
 
 const { Sider, Content } = Layout;
 const { Title } = Typography;
@@ -124,41 +125,10 @@ function AdminPanel({ currentUser, onLogout }) {
         return <AdminTelegramManagement currentUser={currentUser} />;
       case 'settings':
         return <AdminSystemSettings activeTab={activeSettingsTab} />;
+      case 'dashboard':
+        return <AdminDashboard />;
       default:
-        return (
-          <Card>
-            <Title level={3}>Добро пожаловать в админ-панель!</Title>
-            <Space direction="vertical" size="large" style={{ width: '100%' }}>
-              <Card size="small">
-                <Title level={4}>Быстрая статистика</Title>
-                <Space wrap>
-                  <span>👥 Пользователей: 0</span>
-                  <span>🎁 Подарков: 0</span>
-                  <span>✅ Завершенных обменов: 0</span>
-                </Space>
-              </Card>
-              
-              <Card size="small">
-                <Title level={4}>Действия</Title>
-                <Space>
-                  <Button 
-                    type="primary" 
-                    icon={<TeamOutlined />}
-                    onClick={() => handleMenuClick('users')}
-                  >
-                    Управление пользователями
-                  </Button>
-                  <Button 
-                    icon={<SettingOutlined />}
-                    onClick={() => handleMenuClick('settings')}
-                  >
-                    Настройки системы
-                  </Button>
-                </Space>
-              </Card>
-            </Space>
-          </Card>
-        );
+        return <AdminDashboard />;
     }
   };
 
