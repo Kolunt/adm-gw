@@ -318,22 +318,22 @@ function AppContent() {
       </Footer>
 
       {/* Мобильное гамбургер-меню */}
-      <Drawer
-        title={
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center',
-            color: '#d63031'
-          }}>
-            🎅 Анонимный Дед Мороз
-          </div>
-        }
-        placement="left"
-        onClose={() => setMobileMenuOpen(false)}
-        open={mobileMenuOpen}
-        width={280}
-        bodyStyle={{ padding: '20px 0' }}
-      >
+           <Drawer
+             title={
+               <div style={{ 
+                 display: 'flex', 
+                 alignItems: 'center',
+                 color: '#d63031'
+               }}>
+                 🎅 Анонимный Дед Мороз
+               </div>
+             }
+             placement="left"
+             onClose={() => setMobileMenuOpen(false)}
+             open={mobileMenuOpen}
+             width={280}
+             styles={{ body: { padding: '20px 0' } }}
+           >
         <div style={{ padding: '0 20px' }}>
           <Button
             type="default"

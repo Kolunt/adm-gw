@@ -3,7 +3,7 @@ import requests
 try:
     email = 'newtest@example.com'
     data = {'email': email, 'password': 'password123', 'confirm_password': 'password123'}
-    response = requests.post('http://localhost:8003/auth/register', json=data)
+    response = requests.post('http://localhost:8004/auth/register', json=data)
     print(f'Status: {response.status_code}')
     print(f'Headers: {response.headers}')
     print(f'Text: {response.text}')

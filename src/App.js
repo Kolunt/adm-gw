@@ -6,7 +6,7 @@ import './App.css';
 import AppContent from './components/AppContent';
 
 // Configure axios base URL
-axios.defaults.baseURL = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8003';
+axios.defaults.baseURL = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8004';
 
 function App() {
   return (

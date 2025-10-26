@@ -136,10 +136,10 @@ class UserResponse(BaseModel):
     is_active: bool
     created_at: datetime
     # Профиль пользователя
-    gwars_profile_url: str = None
-    full_name: str = None
-    address: str = None
-    interests: str = None
+    gwars_profile_url: str | None = None
+    full_name: str | None = None
+    address: str | None = None
+    interests: str | None = None
     profile_completed: bool = False
 
 class Token(BaseModel):
@@ -158,10 +158,10 @@ class ProfileStep3(BaseModel):
     interests: str
 
 class ProfileUpdate(BaseModel):
-    gwars_profile_url: str = None
-    full_name: str = None
-    address: str = None
-    interests: str = None
+    gwars_profile_url: str | None = None
+    full_name: str | None = None
+    address: str | None = None
+    interests: str | None = None
 
 class GiftCreate(BaseModel):
     receiver_id: int
@@ -176,7 +176,7 @@ class GiftResponse(BaseModel):
     created_at: datetime
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.0.12")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.0.13")
 
 # CORS middleware
 app.add_middleware(
