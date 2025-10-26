@@ -31,13 +31,15 @@ function ProfileWizard({ onProfileCompleted }) {
         setCurrentStep(response.data.next_step - 1);
       }
       
-      // Заполняем форму существующими данными
-      form.setFieldsValue({
-        gwars_profile_url: response.data.step1_completed ? 'completed' : '',
-        full_name: response.data.step2_completed ? 'completed' : '',
-        address: response.data.step2_completed ? 'completed' : '',
-        interests: response.data.step3_completed ? 'completed' : ''
-      });
+      // Заполняем форму существующими данными только если форма готова
+      if (form && response.data) {
+        form.setFieldsValue({
+          gwars_profile_url: response.data.step1_completed ? 'completed' : '',
+          full_name: response.data.step2_completed ? 'completed' : '',
+          address: response.data.step2_completed ? 'completed' : '',
+          interests: response.data.step3_completed ? 'completed' : ''
+        });
+      }
     } catch (error) {
       console.error('Ошибка при получении статуса профиля:', error);
     }

@@ -70,7 +70,6 @@ function EventRegistration() {
     try {
       const token = localStorage.getItem('token');
       await axios.post(`/events/${event.id}/register`, {
-        event_id: event.id,
         registration_type: registrationType
       }, {
         headers: { Authorization: `Bearer ${token}` }

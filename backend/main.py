@@ -218,7 +218,6 @@ class EventResponse(BaseModel):
     created_by: int
 
 class EventRegistrationCreate(BaseModel):
-    event_id: int
     registration_type: str = "preregistration"  # preregistration, registration
 
 class EventRegistrationConfirm(BaseModel):
@@ -236,7 +235,7 @@ class EventRegistrationResponse(BaseModel):
 
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.0.40")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.0.41")
 
 # CORS middleware
 app.add_middleware(
