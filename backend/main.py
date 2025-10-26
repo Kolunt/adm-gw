@@ -261,6 +261,25 @@ def create_default_settings():
             )
             db.add(dadata_enabled_setting)
         
+        # Настройки приветственного сообщения
+        welcome_title_setting = db.query(SystemSettings).filter(SystemSettings.key == "welcome_title").first()
+        if not welcome_title_setting:
+            welcome_title_setting = SystemSettings(
+                key="welcome_title",
+                value="🎅 Анонимный Дед Мороз",
+                description="Заголовок приветственного сообщения на главной странице"
+            )
+            db.add(welcome_title_setting)
+        
+        welcome_subtitle_setting = db.query(SystemSettings).filter(SystemSettings.key == "welcome_subtitle").first()
+        if not welcome_subtitle_setting:
+            welcome_subtitle_setting = SystemSettings(
+                key="welcome_subtitle",
+                value="Добро пожаловать в систему обмена подарками!",
+                description="Подзаголовок приветственного сообщения на главной странице"
+            )
+            db.add(welcome_subtitle_setting)
+        
         db.commit()
         print("Настройки системы инициализированы")
     except Exception as e:
@@ -496,7 +515,7 @@ class SiteIconResponse(BaseModel):
 
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.0.89")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.0.90")
 
 # CORS middleware
 app.add_middleware(
@@ -1555,8 +1574,19 @@ async def get_popular_interests(
     return [{"id": interest.id, "name": interest.name} for interest in interests]
 
 # Публичный API для получения списка пользователей (доступен всем)
-@app.get("/api/users/public")
-async def get_public_users(db: Session = Depends(get_db)):
+@app.get("/api/settings/public")
+async def get_public_settings(db: Session = Depends(get_db)):
+    """Получение публичных настроек системы (доступно всем)"""
+    public_keys = ['welcome_title', 'welcome_subtitle', 'site_title', 'site_description']
+    settings = db.query(SystemSettings).filter(SystemSettings.key.in_(public_keys)).all()
+    
+    return [
+        {
+            "key": setting.key,
+            "value": setting.value
+        }
+        for setting in settings
+    ]
     """Получение публичного списка пользователей с игровой информацией"""
     users = db.query(User).all()
     
