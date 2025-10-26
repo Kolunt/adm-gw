@@ -45,6 +45,7 @@ function AdminPanel({ currentUser, onLogout }) {
     const path = location.pathname;
     if (path === '/admin/settings/general') return 'general';
     if (path === '/admin/settings/dadata') return 'dadata';
+    if (path === '/admin/settings/icon') return 'icon';
     return 'general'; // по умолчанию
   };
   

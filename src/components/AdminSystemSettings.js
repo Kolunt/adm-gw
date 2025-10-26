@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Form, Input, Button, Switch, Divider, Typography, message, Space, Tag, Alert, Tabs } from 'antd';
-import { SettingOutlined, SaveOutlined, ReloadOutlined, KeyOutlined, CheckCircleOutlined, CheckOutlined, GlobalOutlined, DatabaseOutlined } from '@ant-design/icons';
+import { SettingOutlined, SaveOutlined, ReloadOutlined, KeyOutlined, CheckCircleOutlined, CheckOutlined, GlobalOutlined, DatabaseOutlined, PictureOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import SiteIconManagement from './SiteIconManagement';
 
 const { Title, Paragraph, Text } = Typography;
 const { TabPane } = Tabs;
@@ -344,6 +345,16 @@ function AdminSystemSettings({ activeTab: initialActiveTab = 'general' }) {
                   </span>
                 ),
                 children: renderDadataTab(),
+              },
+              {
+                key: 'icon',
+                label: (
+                  <span>
+                    <PictureOutlined />
+                    Иконка сайта
+                  </span>
+                ),
+                children: <SiteIconManagement />,
               },
             ]}
           />

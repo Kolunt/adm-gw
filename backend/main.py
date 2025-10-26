@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.security import OAuth2PasswordBearer
@@ -8,6 +8,8 @@ from sqlalchemy.orm import sessionmaker, Session
 from pydantic import BaseModel
 from datetime import datetime
 import os
+import uuid
+import shutil
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
@@ -18,6 +20,15 @@ SQLALCHEMY_DATABASE_URL = "sqlite:///./santa.db"
 engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
+
+# File upload settings
+UPLOAD_DIR = "uploads"
+ICON_DIR = os.path.join(UPLOAD_DIR, "icons")
+os.makedirs(ICON_DIR, exist_ok=True)
+
+# Allowed file types for icons
+ALLOWED_ICON_TYPES = ["image/png", "image/jpeg", "image/jpg", "image/gif", "image/svg+xml", "image/x-icon", "image/vnd.microsoft.icon"]
+MAX_ICON_SIZE = 5 * 1024 * 1024  # 5MB
 
 # JWT settings
 SECRET_KEY = "your-secret-key-here"
@@ -136,6 +147,20 @@ class TelegramUser(Base):
     is_active = Column(Boolean, default=True)  # Активны ли уведомления
     subscribed_at = Column(DateTime, default=datetime.utcnow)
     last_notification = Column(DateTime)  # Последнее уведомление
+
+
+class SiteIcon(Base):
+    __tablename__ = "site_icon"
+
+    id = Column(Integer, primary_key=True, index=True)
+    filename = Column(String, nullable=False)  # Имя файла иконки
+    original_filename = Column(String, nullable=False)  # Оригинальное имя файла
+    file_size = Column(Integer)  # Размер файла в байтах
+    mime_type = Column(String)  # MIME тип файла
+    is_active = Column(Boolean, default=True)  # Активна ли иконка
+    uploaded_by_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # Кто загрузил
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
 # Password and JWT functions
@@ -449,8 +474,23 @@ class TelegramNotificationRequest(BaseModel):
     event_id: int | None = None
 
 
+class SiteIconResponse(BaseModel):
+    id: int
+    filename: str
+    original_filename: str
+    file_size: int | None = None
+    mime_type: str | None = None
+    is_active: bool
+    uploaded_by_user_id: int | None = None
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.0.79")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.0.80")
 
 # CORS middleware
 app.add_middleware(
@@ -1926,9 +1966,152 @@ async def send_event_notification(
         db.close()
 
 
+# Site Icon API endpoints
+
+@app.get("/admin/site-icon", response_model=SiteIconResponse | None)
+async def get_site_icon(current_user: User = Depends(get_current_admin_user)):
+    """Получить текущую иконку сайта"""
+    db = SessionLocal()
+    try:
+        icon = db.query(SiteIcon).filter(SiteIcon.is_active == True).first()
+        if icon:
+            return icon
+        return None
+    finally:
+        db.close()
+
+
+@app.post("/admin/site-icon/upload", response_model=SiteIconResponse)
+async def upload_site_icon(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_admin_user)
+):
+    """Загрузить новую иконку сайта"""
+    db = SessionLocal()
+    try:
+        # Проверяем тип файла
+        if file.content_type not in ALLOWED_ICON_TYPES:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Неподдерживаемый тип файла. Разрешены: {', '.join(ALLOWED_ICON_TYPES)}"
+            )
+        
+        # Проверяем размер файла
+        file_content = await file.read()
+        if len(file_content) > MAX_ICON_SIZE:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Файл слишком большой. Максимальный размер: {MAX_ICON_SIZE // (1024*1024)}MB"
+            )
+        
+        # Генерируем уникальное имя файла
+        file_extension = os.path.splitext(file.filename)[1]
+        unique_filename = f"{uuid.uuid4()}{file_extension}"
+        file_path = os.path.join(ICON_DIR, unique_filename)
+        
+        # Сохраняем файл
+        with open(file_path, "wb") as buffer:
+            buffer.write(file_content)
+        
+        # Деактивируем предыдущую иконку
+        existing_icons = db.query(SiteIcon).filter(SiteIcon.is_active == True).all()
+        for icon in existing_icons:
+            icon.is_active = False
+        
+        # Создаем новую запись об иконке
+        new_icon = SiteIcon(
+            filename=unique_filename,
+            original_filename=file.filename,
+            file_size=len(file_content),
+            mime_type=file.content_type,
+            is_active=True,
+            uploaded_by_user_id=current_user.id
+        )
+        
+        db.add(new_icon)
+        db.commit()
+        db.refresh(new_icon)
+        
+        return new_icon
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        # Удаляем файл в случае ошибки
+        if 'file_path' in locals() and os.path.exists(file_path):
+            os.remove(file_path)
+        raise HTTPException(status_code=500, detail=f"Ошибка загрузки иконки: {str(e)}")
+    finally:
+        db.close()
+
+
+@app.delete("/admin/site-icon/{icon_id}")
+async def delete_site_icon(
+    icon_id: int,
+    current_user: User = Depends(get_current_admin_user)
+):
+    """Удалить иконку сайта"""
+    db = SessionLocal()
+    try:
+        icon = db.query(SiteIcon).filter(SiteIcon.id == icon_id).first()
+        if not icon:
+            raise HTTPException(status_code=404, detail="Иконка не найдена")
+        
+        # Удаляем файл
+        file_path = os.path.join(ICON_DIR, icon.filename)
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        
+        # Удаляем запись из базы
+        db.delete(icon)
+        db.commit()
+        
+        return {"message": "Иконка удалена"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Ошибка удаления иконки: {str(e)}")
+    finally:
+        db.close()
+
+
+@app.get("/api/site-icon")
+async def get_current_site_icon():
+    """Получить текущую активную иконку сайта (публичный endpoint)"""
+    db = SessionLocal()
+    try:
+        icon = db.query(SiteIcon).filter(SiteIcon.is_active == True).first()
+        if not icon:
+            raise HTTPException(status_code=404, detail="Иконка не найдена")
+        
+        file_path = os.path.join(ICON_DIR, icon.filename)
+        if not os.path.exists(file_path):
+            raise HTTPException(status_code=404, detail="Файл иконки не найден")
+        
+        from fastapi.responses import FileResponse
+        return FileResponse(
+            file_path,
+            media_type=icon.mime_type,
+            filename=icon.original_filename
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Ошибка получения иконки: {str(e)}")
+    finally:
+        db.close()
+
+
 # Mount static files for React app
 if os.path.exists("dist"):
     app.mount("/", StaticFiles(directory="dist", html=True), name="static")
+
+# Mount uploads directory for serving uploaded files
+app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 if __name__ == "__main__":
     import uvicorn

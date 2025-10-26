@@ -305,6 +305,11 @@ function AppContent() {
               <AdminPanel currentUser={user} onLogout={handleLogout} />
             </AdminRouteGuard>
           } />
+          <Route path="/admin/settings/icon" element={
+            <AdminRouteGuard user={user}>
+              <AdminPanel currentUser={user} onLogout={handleLogout} />
+            </AdminRouteGuard>
+          } />
           <Route path="/admin/interests" element={
             <AdminRouteGuard user={user}>
               <AdminPanel currentUser={user} onLogout={handleLogout} />
