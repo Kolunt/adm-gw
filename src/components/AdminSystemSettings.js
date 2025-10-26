@@ -10,6 +10,7 @@ function AdminSystemSettings() {
   const [loading, setLoading] = useState(false);
   const [settings, setSettings] = useState([]);
   const [tokenVerifying, setTokenVerifying] = useState(false);
+  const [tokenValue, setTokenValue] = useState('');
 
   const fetchSettings = useCallback(async () => {
     setLoading(true);
@@ -26,6 +27,7 @@ function AdminSystemSettings() {
       
       setSettings(response.data);
       form.setFieldsValue(settingsData);
+      setTokenValue(settingsData.dadata_token || '');
     } catch (error) {
       console.error('Error fetching settings:', error);
       message.error('Ошибка при загрузке настроек');
@@ -67,10 +69,11 @@ function AdminSystemSettings() {
       settingsData[setting.key] = setting.value;
     });
     form.setFieldsValue(settingsData);
+    setTokenValue(settingsData.dadata_token || '');
   };
 
   const handleVerifyToken = async () => {
-    const token = form.getFieldValue('dadata_token');
+    const token = tokenValue || form.getFieldValue('dadata_token');
     if (!token) {
       message.error('Введите токен для проверки');
       return;
@@ -187,22 +190,26 @@ function AdminSystemSettings() {
                   }
                 ]}
               >
-                <Input.Group compact>
+                <div style={{ display: 'flex', gap: '8px' }}>
                   <Input.Password
                     placeholder="Введите API токен Dadata.ru"
                     prefix={<KeyOutlined />}
-                    style={{ width: 'calc(100% - 120px)' }}
+                    style={{ flex: 1 }}
+                    onChange={(e) => {
+                      setTokenValue(e.target.value);
+                      form.setFieldValue('dadata_token', e.target.value);
+                    }}
                   />
                   <Button
                     type="default"
                     icon={<CheckOutlined />}
                     loading={tokenVerifying}
                     onClick={handleVerifyToken}
-                    style={{ width: '120px' }}
+                    style={{ minWidth: '120px' }}
                   >
                     Проверить
                   </Button>
-                </Input.Group>
+                </div>
               </Form.Item>
             </Card>
 

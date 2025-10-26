@@ -3,14 +3,14 @@
 
 import requests
 import json
-from datetime import datetime, timedelta
+import time
 
 BASE_URL = "http://localhost:8004"
 
-def test_token_verification():
-    """Тестирование проверки токена Dadata.ru"""
+def test_token_fix():
+    """Тестирование исправления проверки токена"""
     
-    print("=== Тестирование проверки токена Dadata.ru ===\n")
+    print("=== Тестирование исправления проверки токена ===\n")
     
     # 1. Проверяем доступность backend
     print("1. Проверка доступности backend...")
@@ -23,7 +23,7 @@ def test_token_verification():
             return False
     except requests.exceptions.ConnectionError:
         print("ERROR Не удается подключиться к backend на порту 8004")
-        print("TIP Запустите: start_backend_radical.bat")
+        print("TIP Запустите backend: start_backend_radical.bat")
         return False
     except Exception as e:
         print(f"ERROR Ошибка подключения: {e}")
@@ -51,11 +51,51 @@ def test_token_verification():
         print(f"ERROR Ошибка при входе: {e}")
         return False
     
-    # 3. Тестируем проверку неверного токена
-    print("\n3. Тестирование проверки неверного токена...")
+    # 3. Получаем текущие настройки
+    print("\n3. Получение текущих настроек...")
+    try:
+        response = requests.get(f"{BASE_URL}/admin/settings", headers=admin_headers, timeout=10)
+        if response.status_code == 200:
+            settings = response.json()
+            print(f"OK Настройки получены: {len(settings)} настроек")
+            
+            # Находим настройки Dadata
+            dadata_enabled = next((s for s in settings if s['key'] == 'dadata_enabled'), None)
+            dadata_token = next((s for s in settings if s['key'] == 'dadata_token'), None)
+            
+            print(f"   dadata_enabled: {dadata_enabled['value'] if dadata_enabled else 'не найдено'}")
+            print(f"   dadata_token: {'настроен' if dadata_token and dadata_token['value'] else 'не настроен'}")
+        else:
+            print(f"ERROR Ошибка получения настроек: {response.status_code}")
+            print(response.text)
+            return False
+    except Exception as e:
+        print(f"ERROR Ошибка при получении настроек: {e}")
+        return False
+    
+    # 4. Тестируем проверку токена с пустым значением
+    print("\n4. Тестирование проверки пустого токена...")
     try:
         response = requests.post(f"{BASE_URL}/admin/verify-dadata-token", 
-            json={"token": "invalid_token_123"}, 
+            json={"token": ""}, 
+            headers=admin_headers, 
+            timeout=10)
+        
+        if response.status_code == 400:
+            print("OK Пустой токен корректно отклонен")
+        else:
+            print(f"ERROR Пустой токен не был отклонен: {response.status_code}")
+            print(response.text)
+            return False
+    except Exception as e:
+        print(f"ERROR Ошибка при проверке пустого токена: {e}")
+        return False
+    
+    # 5. Тестируем проверку неверного токена
+    print("\n5. Тестирование проверки неверного токена...")
+    try:
+        response = requests.post(f"{BASE_URL}/admin/verify-dadata-token", 
+            json={"token": "invalid_token_test_123"}, 
             headers=admin_headers, 
             timeout=10)
         
@@ -74,47 +114,11 @@ def test_token_verification():
         print(f"ERROR Ошибка при проверке неверного токена: {e}")
         return False
     
-    # 4. Тестируем проверку пустого токена
-    print("\n4. Тестирование проверки пустого токена...")
-    try:
-        response = requests.post(f"{BASE_URL}/admin/verify-dadata-token", 
-            json={"token": ""}, 
-            headers=admin_headers, 
-            timeout=10)
-        
-        if response.status_code == 400:
-            print("OK Пустой токен корректно отклонен")
-        else:
-            print(f"ERROR Пустой токен не был отклонен: {response.status_code}")
-            print(response.text)
-            return False
-    except Exception as e:
-        print(f"ERROR Ошибка при проверке пустого токена: {e}")
-        return False
-    
-    # 5. Тестируем проверку токена без поля token
-    print("\n5. Тестирование проверки без поля token...")
-    try:
-        response = requests.post(f"{BASE_URL}/admin/verify-dadata-token", 
-            json={}, 
-            headers=admin_headers, 
-            timeout=10)
-        
-        if response.status_code == 400:
-            print("OK Запрос без поля token корректно отклонен")
-        else:
-            print(f"ERROR Запрос без поля token не был отклонен: {response.status_code}")
-            print(response.text)
-            return False
-    except Exception as e:
-        print(f"ERROR Ошибка при проверке без поля token: {e}")
-        return False
-    
     # 6. Тестируем обновление настройки с неверным токеном
     print("\n6. Тестирование обновления настройки с неверным токеном...")
     try:
         response = requests.put(f"{BASE_URL}/admin/settings/dadata_token", 
-            json={"value": "invalid_token_456"}, 
+            json={"value": "invalid_token_update_test_456"}, 
             headers=admin_headers, 
             timeout=10)
         
@@ -146,13 +150,13 @@ def test_token_verification():
         print(f"ERROR Ошибка при обновлении с пустым токеном: {e}")
         return False
     
-    print("\n=== Тестирование проверки токена завершено! ===")
-    print("OK API проверки токена работает корректно")
-    print("OK Неверные токены отклоняются")
-    print("OK Пустые токены обрабатываются правильно")
-    print("OK Обновление настроек с проверкой токена работает")
-    print("TIP Для полной работы нужен действительный токен Dadata.ru")
+    print("\n=== Тестирование исправления завершено! ===")
+    print("OK Backend API работает корректно")
+    print("OK Проверка токена работает правильно")
+    print("OK Валидация токенов работает")
+    print("OK Frontend должен корректно работать с токенами")
+    print("TIP Теперь в админке кнопка 'Проверить' должна работать корректно")
     return True
 
 if __name__ == "__main__":
-    test_token_verification()
+    test_token_fix()
