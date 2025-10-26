@@ -6,10 +6,12 @@ import {
   CrownOutlined, 
   LogoutOutlined,
   TeamOutlined,
-  DashboardOutlined
+  DashboardOutlined,
+  CalendarOutlined
 } from '@ant-design/icons';
 import AdminUserManagement from './AdminUserManagement';
 import AdminSystemSettings from './AdminSystemSettings';
+import EventManagement from './EventManagement';
 
 const { Sider, Content } = Layout;
 const { Title } = Typography;
@@ -22,6 +24,11 @@ function AdminPanel({ currentUser, onLogout }) {
       key: 'dashboard',
       icon: <DashboardOutlined />,
       label: 'Панель управления',
+    },
+    {
+      key: 'events',
+      icon: <CalendarOutlined />,
+      label: 'Управление мероприятиями',
     },
     {
       key: 'users',
@@ -37,6 +44,8 @@ function AdminPanel({ currentUser, onLogout }) {
 
   const renderContent = () => {
     switch (selectedMenu) {
+      case 'events':
+        return <EventManagement />;
       case 'users':
         return <AdminUserManagement currentUser={currentUser} />;
       case 'settings':

@@ -50,6 +50,19 @@ class User(Base):
     interests = Column(String)  # Интересы пользователя
     profile_completed = Column(Boolean, default=False)  # Заполнен ли профиль
 
+class Event(Base):
+    __tablename__ = "events"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, index=True)
+    description = Column(String)
+    preregistration_start = Column(DateTime)  # Дата начала предварительной регистрации
+    registration_start = Column(DateTime)     # Дата начала регистрации
+    registration_end = Column(DateTime)       # Дата закрытия регистрации
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    created_by = Column(Integer, index=True)  # ID администратора, создавшего мероприятие
+
 class Gift(Base):
     __tablename__ = "gifts"
     
@@ -163,6 +176,32 @@ class ProfileUpdate(BaseModel):
     address: str | None = None
     interests: str | None = None
 
+class EventCreate(BaseModel):
+    name: str
+    description: str = ""
+    preregistration_start: datetime
+    registration_start: datetime
+    registration_end: datetime
+
+class EventUpdate(BaseModel):
+    name: str = None
+    description: str = None
+    preregistration_start: datetime = None
+    registration_start: datetime = None
+    registration_end: datetime = None
+    is_active: bool = None
+
+class EventResponse(BaseModel):
+    id: int
+    name: str
+    description: str
+    preregistration_start: datetime
+    registration_start: datetime
+    registration_end: datetime
+    is_active: bool
+    created_at: datetime
+    created_by: int
+
 class GiftCreate(BaseModel):
     receiver_id: int
     gift_description: str
@@ -176,7 +215,7 @@ class GiftResponse(BaseModel):
     created_at: datetime
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.0.13")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.0.14")
 
 # CORS middleware
 app.add_middleware(
@@ -335,6 +374,93 @@ async def get_profile_status(current_user: User = Depends(get_current_user)):
                     (2 if not (current_user.full_name and current_user.address) else 
                     (3 if not current_user.interests else None))
     }
+
+# API endpoints для управления мероприятиями
+@app.post("/events/", response_model=EventResponse)
+async def create_event(
+    event: EventCreate,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """Создание нового мероприятия (только для администраторов)"""
+    # Проверяем логику дат
+    if event.preregistration_start >= event.registration_start:
+        raise HTTPException(status_code=400, detail="Дата предварительной регистрации должна быть раньше даты регистрации")
+    
+    if event.registration_start >= event.registration_end:
+        raise HTTPException(status_code=400, detail="Дата начала регистрации должна быть раньше даты закрытия регистрации")
+    
+    db_event = Event(
+        name=event.name,
+        description=event.description,
+        preregistration_start=event.preregistration_start,
+        registration_start=event.registration_start,
+        registration_end=event.registration_end,
+        created_by=current_admin.id
+    )
+    db.add(db_event)
+    db.commit()
+    db.refresh(db_event)
+    return db_event
+
+@app.get("/events/", response_model=list[EventResponse])
+async def get_events(db: Session = Depends(get_db)):
+    """Получение списка всех мероприятий"""
+    events = db.query(Event).order_by(Event.created_at.desc()).all()
+    return events
+
+@app.get("/events/{event_id}", response_model=EventResponse)
+async def get_event(event_id: int, db: Session = Depends(get_db)):
+    """Получение конкретного мероприятия"""
+    event = db.query(Event).filter(Event.id == event_id).first()
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    return event
+
+@app.put("/events/{event_id}", response_model=EventResponse)
+async def update_event(
+    event_id: int,
+    event_update: EventUpdate,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """Обновление мероприятия (только для администраторов)"""
+    event = db.query(Event).filter(Event.id == event_id).first()
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    
+    # Обновляем только переданные поля
+    if event_update.name is not None:
+        event.name = event_update.name
+    if event_update.description is not None:
+        event.description = event_update.description
+    if event_update.preregistration_start is not None:
+        event.preregistration_start = event_update.preregistration_start
+    if event_update.registration_start is not None:
+        event.registration_start = event_update.registration_start
+    if event_update.registration_end is not None:
+        event.registration_end = event_update.registration_end
+    if event_update.is_active is not None:
+        event.is_active = event_update.is_active
+    
+    db.commit()
+    db.refresh(event)
+    return event
+
+@app.delete("/events/{event_id}")
+async def delete_event(
+    event_id: int,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """Удаление мероприятия (только для администраторов)"""
+    event = db.query(Event).filter(Event.id == event_id).first()
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    
+    db.delete(event)
+    db.commit()
+    return {"message": "Event deleted successfully"}
 
 @app.post("/admin/promote/{user_id}")
 async def promote_user_to_admin(
