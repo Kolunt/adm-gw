@@ -14,6 +14,7 @@ function CurrentEventInfo() {
   const [currentPhase, setCurrentPhase] = useState(null);
   const [loading, setLoading] = useState(true);
   const [participants, setParticipants] = useState([]);
+  const [hasChecked, setHasChecked] = useState(false);
 
   const updateCountdown = useCallback((event = currentEvent) => {
     if (!event) return;
@@ -93,11 +94,15 @@ function CurrentEventInfo() {
   }, []);
 
   const fetchCurrentEvent = useCallback(async () => {
+    // Если уже проверяли, не делаем повторный запрос
+    if (hasChecked) return;
+    
     try {
       const response = await axios.get('/events/current');
       setCurrentEvent(response.data);
       updateCountdown(response.data);
       setLoading(false);
+      setHasChecked(true);
       
       // Загружаем участников мероприятия
       fetchParticipants(response.data.id);
@@ -106,18 +111,22 @@ function CurrentEventInfo() {
       if (error.response?.status === 404) {
         setCurrentEvent(null);
         setLoading(false);
+        setHasChecked(true);
         return;
       }
       // Для других ошибок тоже просто скрываем компонент
       setCurrentEvent(null);
       setLoading(false);
+      setHasChecked(true);
     }
-  }, [updateCountdown, fetchParticipants]);
+  }, [updateCountdown, fetchParticipants, hasChecked]);
 
   useEffect(() => {
-    // Запускаем только один раз при монтировании
-    fetchCurrentEvent();
-  }, [fetchCurrentEvent]);
+    // Запускаем только один раз при монтировании, если еще не проверяли
+    if (!hasChecked) {
+      fetchCurrentEvent();
+    }
+  }, [fetchCurrentEvent, hasChecked]);
 
   useEffect(() => {
     // Обновляем каждую секунду только если есть активное мероприятие
