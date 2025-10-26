@@ -490,7 +490,7 @@ class SiteIconResponse(BaseModel):
 
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.0.80")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.0.81")
 
 # CORS middleware
 app.add_middleware(
@@ -532,6 +532,9 @@ def get_current_admin(current_user: User = Depends(get_current_user)):
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Not enough permissions")
     return current_user
+
+# Alias for compatibility
+get_current_admin_user = get_current_admin
 
 # API endpoints
 @app.get("/")
