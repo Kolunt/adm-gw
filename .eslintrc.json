@@ -1,0 +1,22 @@
+{
+  "extends": ["react-app", "react-app/jest"],
+  "rules": {
+    "no-unused-vars": "warn",
+    "react-hooks/exhaustive-deps": "warn",
+    "no-undef": "error"
+  },
+  "overrides": [
+    {
+      "files": ["src/components/CurrentEventInfo.js"],
+      "rules": {
+        "no-unused-vars": "off"
+      }
+    },
+    {
+      "files": ["src/components/AppContent.js"],
+      "rules": {
+        "no-unused-vars": "off"
+      }
+    }
+  ]
+}

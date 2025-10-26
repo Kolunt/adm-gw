@@ -69,7 +69,22 @@ function EventRegistration() {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      await axios.post(`/events/${event.id}/register`, {
+      
+      // Проверяем токен
+      if (!token) {
+        message.error('Необходимо войти в систему');
+        return;
+      }
+      
+      // Проверяем доступность backend
+      try {
+        await axios.get('/docs');
+      } catch (backendError) {
+        message.error('Backend недоступен. Запустите backend: start_backend_radical.bat');
+        return;
+      }
+      
+      const response = await axios.post(`/events/${event.id}/register`, {
         registration_type: registrationType
       }, {
         headers: { Authorization: `Bearer ${token}` }
@@ -79,10 +94,22 @@ function EventRegistration() {
       fetchUserRegistrations();
     } catch (error) {
       console.error('Error registering for event:', error);
-      if (error.response?.data?.detail) {
-        message.error(error.response.data.detail);
+      
+      if (error.response?.status === 401) {
+        message.error('Сессия истекла. Войдите в систему заново');
+        localStorage.removeItem('token');
+        window.location.reload();
+      } else if (error.response?.status === 400) {
+        const detail = error.response.data?.detail;
+        if (detail) {
+          message.error(detail);
+        } else {
+          message.error('Ошибка при регистрации. Проверьте данные');
+        }
+      } else if (error.code === 'ERR_NETWORK') {
+        message.error('Backend недоступен. Запустите backend: start_backend_radical.bat');
       } else {
-        message.error('Ошибка при регистрации на мероприятие.');
+        message.error('Ошибка при регистрации на мероприятие');
       }
     } finally {
       setLoading(false);

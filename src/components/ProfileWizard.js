@@ -33,12 +33,15 @@ function ProfileWizard({ onProfileCompleted }) {
       
       // Заполняем форму существующими данными только если форма готова
       if (form && response.data) {
-        form.setFieldsValue({
-          gwars_profile_url: response.data.step1_completed ? 'completed' : '',
-          full_name: response.data.step2_completed ? 'completed' : '',
-          address: response.data.step2_completed ? 'completed' : '',
-          interests: response.data.step3_completed ? 'completed' : ''
-        });
+        // Используем setTimeout для гарантии того, что форма подключена к DOM
+        setTimeout(() => {
+          form.setFieldsValue({
+            gwars_profile_url: response.data.step1_completed ? 'completed' : '',
+            full_name: response.data.step2_completed ? 'completed' : '',
+            address: response.data.step2_completed ? 'completed' : '',
+            interests: response.data.step3_completed ? 'completed' : ''
+          });
+        }, 100);
       }
     } catch (error) {
       console.error('Ошибка при получении статуса профиля:', error);
