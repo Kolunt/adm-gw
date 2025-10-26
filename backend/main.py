@@ -382,7 +382,7 @@ class FAQResponse(BaseModel):
 
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.0.75")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.0.76")
 
 # CORS middleware
 app.add_middleware(

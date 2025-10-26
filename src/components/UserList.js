@@ -31,7 +31,8 @@ const UserList = () => {
   if (loading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
-        <Spin size="large" tip="Загрузка участников..." />
+        <Spin size="large" />
+        <span style={{ marginLeft: '16px', fontSize: '16px' }}>Загрузка участников...</span>
       </div>
     );
   }

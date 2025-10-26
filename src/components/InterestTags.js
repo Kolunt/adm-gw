@@ -1,10 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Select, Tag, message, Space, AutoComplete } from 'antd';
-import { PlusOutlined } from '@ant-design/icons';
+import { Tag, message, Space, AutoComplete } from 'antd';
 import axios from 'axios';
 import debounce from 'lodash.debounce';
-
-const { Option } = Select;
 
 function InterestTags({ value = [], onChange, placeholder = "Добавьте ваши интересы..." }) {
   const [selectedInterests, setSelectedInterests] = useState(Array.isArray(value) ? value : []);
