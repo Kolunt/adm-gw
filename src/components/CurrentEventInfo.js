@@ -13,8 +13,6 @@ function CurrentEventInfo() {
   const [timeLeft, setTimeLeft] = useState(null);
   const [currentPhase, setCurrentPhase] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [hasChecked, setHasChecked] = useState(false);
-  const [shouldRender, setShouldRender] = useState(true);
 
   const updateCountdown = useCallback((event = currentEvent) => {
     if (!event) return;
@@ -82,29 +80,23 @@ function CurrentEventInfo() {
   }, [currentEvent]);
 
   const fetchCurrentEvent = useCallback(async () => {
-    if (hasChecked) return; // Проверяем только один раз
-    
     try {
       const response = await axios.get('/events/current');
       setCurrentEvent(response.data);
       updateCountdown(response.data);
       setLoading(false);
-      setHasChecked(true);
     } catch (error) {
-      // Если нет активных мероприятий (404), это нормально - не логируем
+      // Если нет активных мероприятий (404), это нормально
       if (error.response?.status === 404) {
         setCurrentEvent(null);
         setLoading(false);
-        setHasChecked(true);
-        setShouldRender(false); // Не рендерим компонент
         return;
       }
-      // Не логируем никакие ошибки для этого компонента
+      // Для других ошибок тоже просто скрываем компонент
+      setCurrentEvent(null);
       setLoading(false);
-      setHasChecked(true);
-      setShouldRender(false); // Не рендерим компонент
     }
-  }, [updateCountdown, hasChecked]);
+  }, [updateCountdown]);
 
   useEffect(() => {
     // Запускаем только один раз при монтировании
@@ -123,7 +115,7 @@ function CurrentEventInfo() {
   }, [currentEvent, updateCountdown]);
 
   // Если нет активных мероприятий, не рендерим компонент
-  if (!shouldRender) {
+  if (!currentEvent && !loading) {
     return null;
   }
 
