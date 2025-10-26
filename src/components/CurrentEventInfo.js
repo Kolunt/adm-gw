@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, Typography, Statistic, Row, Col, Tag, Alert, List, Avatar } from 'antd';
-import { CalendarOutlined, ClockCircleOutlined, CheckCircleOutlined, UserOutlined, LinkOutlined } from '@ant-design/icons';
+import { Card, Typography, Statistic, Row, Col, Tag, Alert, List } from 'antd';
+import { CalendarOutlined, ClockCircleOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import moment from 'moment';
-
-// Используем обычный axios без кастомных interceptor'ов
 
 const { Title, Text } = Typography;
 
@@ -28,56 +26,62 @@ function CurrentEventInfo() {
 
     if (now.isBefore(preregStart)) {
       // Ожидание предварительной регистрации
-      setCurrentPhase({
-        name: 'Ожидание',
-        description: 'Предварительная регистрация еще не началась',
-        color: 'default',
-        icon: <ClockCircleOutlined />
-      });
-      nextPhase = preregStart;
+      nextPhase = {
+        name: "Ожидание предварительной регистрации",
+        color: "blue",
+        description: "До начала предварительной регистрации",
+        timeLeft: preregStart.diff(now)
+      };
     } else if (now.isBefore(regStart)) {
       // Предварительная регистрация
-      setCurrentPhase({
-        name: 'Предварительная регистрация',
-        description: 'Можно зарегистрироваться заранее',
-        color: 'blue',
-        icon: <CalendarOutlined />
-      });
-      nextPhase = regStart;
+      nextPhase = {
+        name: "Предварительная регистрация",
+        color: "orange",
+        description: "До начала основной регистрации",
+        timeLeft: regStart.diff(now)
+      };
     } else if (now.isBefore(regEnd)) {
       // Основная регистрация
-      setCurrentPhase({
-        name: 'Основная регистрация',
-        description: 'Подтверждение участия и адресов',
-        color: 'green',
-        icon: <CheckCircleOutlined />
-      });
-      nextPhase = regEnd;
+      nextPhase = {
+        name: "Основная регистрация",
+        color: "green",
+        description: "До окончания регистрации",
+        timeLeft: regEnd.diff(now)
+      };
     } else {
       // Мероприятие завершено
-      setCurrentPhase({
-        name: 'Завершено',
-        description: 'Регистрация завершена',
-        color: 'red',
-        icon: <CheckCircleOutlined />
-      });
-      nextPhase = null;
+      nextPhase = {
+        name: "Мероприятие завершено",
+        color: "red",
+        description: "Регистрация закрыта",
+        timeLeft: 0
+      };
     }
 
-    if (nextPhase) {
-      const duration = moment.duration(nextPhase.diff(now));
-      if (duration.asMilliseconds() > 0) {
-        setTimeLeft({
-          days: Math.floor(duration.asDays()),
-          hours: duration.hours(),
-          minutes: duration.minutes(),
-          seconds: duration.seconds()
-        });
-      } else {
-        setTimeLeft(null);
-      }
+    setCurrentPhase(nextPhase);
+
+    if (nextPhase.timeLeft > 0) {
+      const duration = moment.duration(nextPhase.timeLeft);
+      const days = Math.floor(duration.asDays());
+      const hours = duration.hours();
+      const minutes = duration.minutes();
+      const seconds = duration.seconds();
+
+      setTimeLeft({
+        days,
+        hours,
+        minutes,
+        seconds,
+        formatted: `${days.toString().padStart(2, '0')}:${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+      });
     } else {
-      setTimeLeft(null);
+      setTimeLeft({
+        days: 0,
+        hours: 0,
+        minutes: 0,
+        seconds: 0,
+        formatted: "00:00:00:00"
+      });
     }
   }, [currentEvent]);
 
@@ -104,32 +108,33 @@ function CurrentEventInfo() {
       setLoading(false);
       setHasChecked(true);
       
-      // Загружаем участников мероприятия
+      // Загружаем участников
       fetchParticipants(response.data.id);
     } catch (error) {
-      // Если нет активных мероприятий (404), это нормально
       if (error.response?.status === 404) {
+        // Нет активных мероприятий - это нормально
         setCurrentEvent(null);
         setLoading(false);
         setHasChecked(true);
         return;
       }
-      // Для других ошибок тоже просто скрываем компонент
+      // Другие ошибки
+      console.error('Error fetching current event:', error);
       setCurrentEvent(null);
       setLoading(false);
       setHasChecked(true);
     }
   }, [updateCountdown, fetchParticipants, hasChecked]);
 
+  // Запускаем проверку только один раз при монтировании
   useEffect(() => {
-    // Запускаем только один раз при монтировании, если еще не проверяли
     if (!hasChecked) {
       fetchCurrentEvent();
     }
   }, [fetchCurrentEvent, hasChecked]);
 
+  // Обновляем счетчик каждую секунду
   useEffect(() => {
-    // Обновляем каждую секунду только если есть активное мероприятие
     if (!currentEvent) return;
     
     const interval = setInterval(() => {
@@ -139,7 +144,7 @@ function CurrentEventInfo() {
     return () => clearInterval(interval);
   }, [currentEvent, updateCountdown]);
 
-  // Если нет активных мероприятий, не рендерим компонент
+  // Если нет активного мероприятия, не показываем компонент
   if (!currentEvent && !loading) {
     return null;
   }
@@ -174,136 +179,100 @@ function CurrentEventInfo() {
       }
       style={{ marginBottom: 24 }}
     >
-      <div style={{ textAlign: 'center', marginBottom: 24 }}>
-        <Title level={2} style={{ color: '#d63031', marginBottom: 8 }}>
-          {currentEvent.name}
-        </Title>
-        {currentEvent.description && (
-          <Text type="secondary" style={{ fontSize: '16px' }}>
-            {currentEvent.description}
-          </Text>
-        )}
-      </div>
-
       <Row gutter={[16, 16]}>
-        <Col xs={24} sm={12} md={8}>
-          <Card size="small" style={{ textAlign: 'center' }}>
-            <Statistic
-              title="Текущий этап"
-              value={currentPhase?.name || 'Неизвестно'}
-              valueRender={() => (
-                <Tag 
-                  color={currentPhase?.color || 'default'} 
-                  icon={currentPhase?.icon}
-                  style={{ fontSize: '14px', padding: '4px 8px' }}
-                >
-                  {currentPhase?.name || 'Неизвестно'}
-                </Tag>
-              )}
-            />
-            <Text type="secondary" style={{ fontSize: '12px' }}>
-              {currentPhase?.description || 'Описание недоступно'}
-            </Text>
-          </Card>
+        <Col xs={24} sm={12}>
+          <Statistic
+            title="Название мероприятия"
+            value={currentEvent.name}
+            valueStyle={{ color: '#1890ff' }}
+          />
         </Col>
-
-        <Col xs={24} sm={12} md={16}>
-          <Card size="small" style={{ textAlign: 'center' }}>
-            <Statistic
-              title="До следующего этапа"
-              value={timeLeft ? `${timeLeft.days > 0 ? timeLeft.days + 'д ' : ''}${String(timeLeft.hours).padStart(2, '0')}:${String(timeLeft.minutes).padStart(2, '0')}:${String(timeLeft.seconds).padStart(2, '0')}` : 'Этап завершен'}
-              valueStyle={{ fontSize: '18px', fontWeight: 'bold', color: '#1890ff' }}
-            />
-          </Card>
+        <Col xs={24} sm={12}>
+          <Statistic
+            title="Текущий этап"
+            valueRender={() => (
+              <Tag color={currentPhase?.color || 'default'}>
+                {currentPhase?.name || 'Неизвестно'}
+              </Tag>
+            )}
+          />
+        </Col>
+        <Col xs={24} sm={12}>
+          <Statistic
+            title="До следующего этапа"
+            value={timeLeft?.formatted || '00:00:00:00'}
+            valueStyle={{ color: '#52c41a', fontSize: '24px', fontFamily: 'monospace' }}
+          />
+        </Col>
+        <Col xs={24} sm={12}>
+          <Statistic
+            title="Описание этапа"
+            value={currentPhase?.description || 'Нет информации'}
+            valueStyle={{ color: '#666' }}
+          />
         </Col>
       </Row>
 
-      <div style={{ marginTop: 16, padding: '12px', backgroundColor: '#f5f5f5', borderRadius: '6px' }}>
-        <Row gutter={[16, 8]}>
-          <Col xs={24} sm={8}>
-            <Text strong>Предварительная регистрация:</Text><br />
-            <Text>{moment(currentEvent.preregistration_start).format('DD.MM.YYYY HH:mm')}</Text>
-          </Col>
-          <Col xs={24} sm={8}>
-            <Text strong>Основная регистрация:</Text><br />
-            <Text>{moment(currentEvent.registration_start).format('DD.MM.YYYY HH:mm')}</Text>
-          </Col>
-          <Col xs={24} sm={8}>
-            <Text strong>Завершение:</Text><br />
-            <Text>{moment(currentEvent.registration_end).format('DD.MM.YYYY HH:mm')}</Text>
-          </Col>
-        </Row>
-      </div>
-
       {/* Список участников */}
-      <div style={{ marginTop: 24 }}>
-        <Title level={4} style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <UserOutlined style={{ color: '#1890ff' }} />
-          Участники мероприятия ({participants.length})
-        </Title>
-        
-        {/* Легенда */}
-        <div style={{ marginBottom: 16, display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <Tag color="green" icon={<CheckCircleOutlined />} style={{ fontSize: '12px' }}>
-              Подтвержден
+      {participants.length > 0 && (
+        <div style={{ marginTop: '24px' }}>
+          <Title level={4} style={{ marginBottom: '16px' }}>
+            Участники мероприятия
+          </Title>
+          
+          {/* Легенда */}
+          <div style={{ marginBottom: '12px', fontSize: '12px', color: '#666' }}>
+            <Tag color="green" size="small">
+              <CheckCircleOutlined /> Подтвержденные
             </Tag>
-            <Text type="secondary" style={{ fontSize: '12px' }}>точно участвует</Text>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <Tag color="red" icon={<ClockCircleOutlined />} style={{ fontSize: '12px' }}>
-              Предварительная регистрация
+            <Tag color="red" size="small" style={{ marginLeft: '8px' }}>
+              <ClockCircleOutlined /> Предварительно зарегистрированные
             </Tag>
-            <Text type="secondary" style={{ fontSize: '12px' }}>ожидает подтверждения</Text>
           </div>
-        </div>
-        
-        {participants.length > 0 ? (
+
           <List
             dataSource={participants}
             renderItem={(participant) => {
-              // Определяем цвет в зависимости от статуса
               const statusColor = participant.status === 'confirmed' ? 'green' : 'red';
-              const statusIcon = participant.status === 'confirmed' ? <CheckCircleOutlined /> : <ClockCircleOutlined />;
+              const statusIcon = participant.status === 'confirmed' ? 
+                <CheckCircleOutlined /> : <ClockCircleOutlined />;
               
               return (
                 <List.Item>
                   <List.Item.Meta
-                    avatar={<Avatar icon={<UserOutlined />} />}
                     title={
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                        <Text strong>{participant.nickname}</Text>
-                        <Tag 
-                          color={statusColor} 
-                          icon={statusIcon}
-                          style={{ fontSize: '12px', margin: '0' }}
-                        >
-                          {participant.status_text}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span>{participant.gwars_nickname || 'Неизвестно'}</span>
+                        <Tag color={statusColor} size="small">
+                          {statusIcon} {participant.status_text}
                         </Tag>
-                        {participant.gwars_profile_url && (
-                          <a 
-                            href={participant.gwars_profile_url} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            style={{ color: '#1890ff' }}
-                          >
-                            <LinkOutlined /> Профиль GWars
-                          </a>
-                        )}
                       </div>
+                    }
+                    description={
+                      participant.gwars_profile_url ? (
+                        <a 
+                          href={participant.gwars_profile_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          style={{ color: '#1890ff' }}
+                        >
+                          Профиль GWars
+                        </a>
+                      ) : 'Профиль не указан'
                     }
                   />
                 </List.Item>
               );
             }}
-            style={{ backgroundColor: '#fafafa', borderRadius: '6px', padding: '12px' }}
           />
-        ) : (
-          <div style={{ textAlign: 'center', padding: '20px', backgroundColor: '#fafafa', borderRadius: '6px' }}>
-            <Text type="secondary">Пока нет участников мероприятия</Text>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {participants.length === 0 && (
+        <div style={{ marginTop: '24px', textAlign: 'center', color: '#666' }}>
+          <Text>Пока нет участников мероприятия</Text>
+        </div>
+      )}
     </Card>
   );
 }
