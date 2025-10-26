@@ -13,6 +13,7 @@ import ProfileWizard from './ProfileWizard';
 import EventRegistration from './EventRegistration';
 import EventDetail from './EventDetail';
 import CurrentEventInfo from './CurrentEventInfo';
+import AdminRouteGuard from './AdminRouteGuard';
 
 const { Header, Content, Footer } = Layout;
 const { Title } = Typography;
@@ -276,13 +277,41 @@ function AppContent() {
           <Route path="/login" element={<SimpleLoginForm onLogin={handleLogin} />} />
           <Route path="/profile" element={<ProfileWizard onProfileCompleted={handleProfileCompleted} />} />
           <Route path="/user-profile" element={<UserProfile />} />
-          <Route path="/admin" element={<AdminPanel currentUser={user} onLogout={handleLogout} />} />
-          <Route path="/admin/dashboard" element={<AdminPanel currentUser={user} onLogout={handleLogout} />} />
-          <Route path="/admin/users" element={<AdminPanel currentUser={user} onLogout={handleLogout} />} />
-          <Route path="/admin/events" element={<AdminPanel currentUser={user} onLogout={handleLogout} />} />
-          <Route path="/admin/settings" element={<AdminPanel currentUser={user} onLogout={handleLogout} />} />
-          <Route path="/admin/settings/general" element={<AdminPanel currentUser={user} onLogout={handleLogout} />} />
-          <Route path="/admin/settings/dadata" element={<AdminPanel currentUser={user} onLogout={handleLogout} />} />
+          <Route path="/admin" element={
+            <AdminRouteGuard user={user}>
+              <AdminPanel currentUser={user} onLogout={handleLogout} />
+            </AdminRouteGuard>
+          } />
+          <Route path="/admin/dashboard" element={
+            <AdminRouteGuard user={user}>
+              <AdminPanel currentUser={user} onLogout={handleLogout} />
+            </AdminRouteGuard>
+          } />
+          <Route path="/admin/users" element={
+            <AdminRouteGuard user={user}>
+              <AdminPanel currentUser={user} onLogout={handleLogout} />
+            </AdminRouteGuard>
+          } />
+          <Route path="/admin/events" element={
+            <AdminRouteGuard user={user}>
+              <AdminPanel currentUser={user} onLogout={handleLogout} />
+            </AdminRouteGuard>
+          } />
+          <Route path="/admin/settings" element={
+            <AdminRouteGuard user={user}>
+              <AdminPanel currentUser={user} onLogout={handleLogout} />
+            </AdminRouteGuard>
+          } />
+          <Route path="/admin/settings/general" element={
+            <AdminRouteGuard user={user}>
+              <AdminPanel currentUser={user} onLogout={handleLogout} />
+            </AdminRouteGuard>
+          } />
+          <Route path="/admin/settings/dadata" element={
+            <AdminRouteGuard user={user}>
+              <AdminPanel currentUser={user} onLogout={handleLogout} />
+            </AdminRouteGuard>
+          } />
           <Route path="/users" element={<UserList users={users} />} />
           <Route path="/events" element={<EventRegistration />} />
           <Route path="/event/:uniqueId" element={<EventDetail />} />

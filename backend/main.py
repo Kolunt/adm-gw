@@ -309,7 +309,7 @@ class SystemSettingUpdate(BaseModel):
 
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.0.56")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.0.57")
 
 # CORS middleware
 app.add_middleware(
