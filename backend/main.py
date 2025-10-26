@@ -515,7 +515,7 @@ class SiteIconResponse(BaseModel):
 
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.0.93")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.0.94")
 
 # CORS middleware
 app.add_middleware(

@@ -19,7 +19,7 @@ const UserList = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get('/api/users/public');
+      const response = await axios.get('/users/');
       setUsers(response.data);
     } catch (error) {
       setError('Ошибка при загрузке списка участников');

@@ -198,7 +198,9 @@ function CurrentEventInfo({ user, isAuthenticated, onNavigate }) {
       
       // Загружаем участников и регистрацию пользователя
       fetchParticipants(response.data.id);
-      fetchUserRegistration(response.data.id);
+      if (isAuthenticated && user) {
+        fetchUserRegistration(response.data.id);
+      }
     } catch (error) {
       if (error.response?.status === 404) {
         // Нет активных мероприятий - это нормально
