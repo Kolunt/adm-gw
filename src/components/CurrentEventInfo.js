@@ -4,6 +4,19 @@ import { CalendarOutlined, ClockCircleOutlined, CheckCircleOutlined } from '@ant
 import axios from 'axios';
 import moment from 'moment';
 
+// Создаем кастомный axios instance для подавления 404 ошибок
+const silentAxios = axios.create();
+silentAxios.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Подавляем 404 ошибки для /events/current
+    if (error.config?.url?.includes('/events/current') && error.response?.status === 404) {
+      return Promise.reject({ ...error, silent: true });
+    }
+    return Promise.reject(error);
+  }
+);
+
 const { Title, Text } = Typography;
 
 function CurrentEventInfo() {
@@ -79,18 +92,18 @@ function CurrentEventInfo() {
 
   const fetchCurrentEvent = useCallback(async () => {
     try {
-      const response = await axios.get('/events/current');
+      const response = await silentAxios.get('/events/current');
       setCurrentEvent(response.data);
       updateCountdown(response.data);
       setLoading(false);
     } catch (error) {
-      // Если нет активных мероприятий (404), это нормально
-      if (error.response?.status === 404) {
+      // Если нет активных мероприятий (404), это нормально - не логируем
+      if (error.response?.status === 404 || error.silent) {
         setCurrentEvent(null);
         setLoading(false);
         return;
       }
-      // Логируем только реальные ошибки
+      // Логируем только реальные ошибки (не 404)
       console.error('Error fetching current event:', error);
       setLoading(false);
     }
