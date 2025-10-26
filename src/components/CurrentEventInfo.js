@@ -14,6 +14,7 @@ function CurrentEventInfo() {
   const [currentPhase, setCurrentPhase] = useState(null);
   const [loading, setLoading] = useState(true);
   const [hasChecked, setHasChecked] = useState(false);
+  const [shouldRender, setShouldRender] = useState(true);
 
   const updateCountdown = useCallback((event = currentEvent) => {
     if (!event) return;
@@ -95,11 +96,13 @@ function CurrentEventInfo() {
         setCurrentEvent(null);
         setLoading(false);
         setHasChecked(true);
+        setShouldRender(false); // Не рендерим компонент
         return;
       }
       // Не логируем никакие ошибки для этого компонента
       setLoading(false);
       setHasChecked(true);
+      setShouldRender(false); // Не рендерим компонент
     }
   }, [updateCountdown, hasChecked]);
 
@@ -120,7 +123,7 @@ function CurrentEventInfo() {
   }, [currentEvent, updateCountdown]);
 
   // Если нет активных мероприятий, не рендерим компонент
-  if (!currentEvent && !loading) {
+  if (!shouldRender) {
     return null;
   }
 
