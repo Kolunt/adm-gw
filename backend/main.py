@@ -382,7 +382,7 @@ class FAQResponse(BaseModel):
 
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.0.72")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.0.73")
 
 # CORS middleware
 app.add_middleware(
@@ -443,6 +443,13 @@ async def register_user(user: UserCreate, db: Session = Depends(get_db)):
     
     # Generate username from email
     username = user.email.split('@')[0]
+    
+    # Check if username already exists, if so add a number
+    original_username = username
+    counter = 1
+    while db.query(User).filter(User.username == username).first():
+        username = f"{original_username}{counter}"
+        counter += 1
     
     db_user = User(
         username=username,
