@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Typography, Button, Space, Tag, Divider, Row, Col, Avatar, message, Form, Input } from 'antd';
 import { UserOutlined, EditOutlined, SaveOutlined, CloseOutlined } from '@ant-design/icons';
 import axios from 'axios';
 
-const { Title, Text, Paragraph } = Typography;
+const { Title, Text } = Typography;
 
 function UserProfile() {
   const [user, setUser] = useState(null);
@@ -13,9 +13,9 @@ function UserProfile() {
 
   useEffect(() => {
     fetchUserProfile();
-  }, []);
+  }, [fetchUserProfile]);
 
-  const fetchUserProfile = async () => {
+  const fetchUserProfile = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.get('/auth/me', {
@@ -36,7 +36,7 @@ function UserProfile() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [form]);
 
   const handleEdit = () => {
     setEditing(true);

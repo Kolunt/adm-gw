@@ -1,9 +1,9 @@
 import React, { useState, useCallback } from 'react';
-import { Card, Typography, Button, Space, Input, message, Spin, Tag, Alert, Divider } from 'antd';
+import { Card, Typography, Button, Space, Input, message, Tag, Alert } from 'antd';
 import { UserOutlined, CheckOutlined, ReloadOutlined, LinkOutlined } from '@ant-design/icons';
 import axios from 'axios';
 
-const { Title, Text, Paragraph } = Typography;
+const { Title, Text } = Typography;
 
 function GWarsVerification({ onVerificationComplete }) {
   const [step, setStep] = useState(1); // 1: ввод ссылки, 2: подтверждение, 3: размещение токена, 4: проверка

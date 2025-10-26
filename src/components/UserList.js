@@ -1,5 +1,5 @@
 import React from 'react';
-import { List, Card, Avatar, Typography, Space, Tag } from 'antd';
+import { List, Card, Avatar, Typography, Tag } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
