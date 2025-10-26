@@ -6,10 +6,10 @@ import json
 
 BASE_URL = "http://localhost:8004"
 
-def check_dadata_settings():
-    """Проверка настроек Dadata.ru"""
+def enable_dadata_autocomplete():
+    """Включение автодополнения Dadata.ru"""
     
-    print("=== Проверка настроек Dadata.ru ===\n")
+    print("=== Включение автодополнения Dadata.ru ===\n")
     
     # 1. Проверяем доступность backend
     print("1. Проверка доступности backend...")
@@ -50,8 +50,8 @@ def check_dadata_settings():
         print(f"ERROR Ошибка при входе: {e}")
         return False
     
-    # 3. Получаем настройки
-    print("\n3. Получение настроек системы...")
+    # 3. Получаем текущие настройки
+    print("\n3. Получение текущих настроек...")
     try:
         response = requests.get(f"{BASE_URL}/admin/settings", headers=admin_headers, timeout=10)
         if response.status_code == 200:
@@ -62,20 +62,10 @@ def check_dadata_settings():
             dadata_enabled = next((s for s in settings if s['key'] == 'dadata_enabled'), None)
             dadata_token = next((s for s in settings if s['key'] == 'dadata_token'), None)
             
-            print(f"\nНастройки Dadata:")
+            print(f"\nТекущие настройки Dadata:")
             print(f"   dadata_enabled: {dadata_enabled['value'] if dadata_enabled else 'не найдено'}")
             print(f"   dadata_token: {'настроен' if dadata_token and dadata_token['value'] else 'не настроен'}")
             
-            if dadata_enabled and dadata_enabled['value'].lower() == 'true':
-                print("   Статус: Автодополнение включено")
-            else:
-                print("   Статус: Автодополнение отключено")
-                
-            if dadata_token and dadata_token['value']:
-                print("   Токен: Настроен")
-            else:
-                print("   Токен: Не настроен")
-                
         else:
             print(f"ERROR Ошибка получения настроек: {response.status_code}")
             print(response.text)
@@ -84,8 +74,54 @@ def check_dadata_settings():
         print(f"ERROR Ошибка при получении настроек: {e}")
         return False
     
-    # 4. Тестируем API автодополнения
-    print("\n4. Тестирование API автодополнения...")
+    # 4. Включаем автодополнение
+    print("\n4. Включение автодополнения адресов...")
+    try:
+        response = requests.put(f"{BASE_URL}/admin/settings/dadata_enabled", 
+            json={"value": "true"}, 
+            headers=admin_headers, 
+            timeout=10)
+        
+        if response.status_code == 200:
+            print("OK Автодополнение адресов включено")
+        else:
+            print(f"ERROR Ошибка включения автодополнения: {response.status_code}")
+            print(response.text)
+            return False
+    except Exception as e:
+        print(f"ERROR Ошибка при включении автодополнения: {e}")
+        return False
+    
+    # 5. Проверяем обновленные настройки
+    print("\n5. Проверка обновленных настроек...")
+    try:
+        response = requests.get(f"{BASE_URL}/admin/settings", headers=admin_headers, timeout=10)
+        if response.status_code == 200:
+            settings = response.json()
+            
+            # Находим настройки Dadata
+            dadata_enabled = next((s for s in settings if s['key'] == 'dadata_enabled'), None)
+            dadata_token = next((s for s in settings if s['key'] == 'dadata_token'), None)
+            
+            print(f"\nОбновленные настройки Dadata:")
+            print(f"   dadata_enabled: {dadata_enabled['value'] if dadata_enabled else 'не найдено'}")
+            print(f"   dadata_token: {'настроен' if dadata_token and dadata_token['value'] else 'не настроен'}")
+            
+            if dadata_enabled and dadata_enabled['value'].lower() == 'true':
+                print("   Статус: Автодополнение включено")
+            else:
+                print("   Статус: Автодополнение отключено")
+                
+        else:
+            print(f"ERROR Ошибка получения обновленных настроек: {response.status_code}")
+            print(response.text)
+            return False
+    except Exception as e:
+        print(f"ERROR Ошибка при получении обновленных настроек: {e}")
+        return False
+    
+    # 6. Тестируем API автодополнения
+    print("\n6. Тестирование API автодополнения...")
     try:
         response = requests.post(f"{BASE_URL}/api/suggest-address", 
             json={"query": "Москва"}, 
@@ -99,26 +135,22 @@ def check_dadata_settings():
                 print(f"   Первая подсказка: {suggestions[0]['value']}")
         elif response.status_code == 400:
             error_detail = response.json().get("detail", "")
-            print(f"INFO API автодополнения недоступен: {error_detail}")
-            if "отключено" in error_detail.lower():
-                print("   Причина: Автодополнение отключено в настройках")
-            elif "токен" in error_detail.lower():
-                print("   Причина: Токен Dadata не настроен")
+            print(f"ERROR API автодополнения все еще недоступен: {error_detail}")
+            return False
         else:
             print(f"ERROR Неожиданный ответ API: {response.status_code}")
             print(response.text)
+            return False
     except Exception as e:
         print(f"ERROR Ошибка при тестировании API: {e}")
+        return False
     
-    print("\n=== Проверка настроек завершена! ===")
-    print("TIP Для включения автодополнения:")
-    print("   1. Войдите в админку как администратор")
-    print("   2. Перейдите в 'Настройки системы'")
-    print("   3. Включите 'Автодополнение адресов'")
-    print("   4. Введите токен Dadata.ru")
-    print("   5. Нажмите 'Проверить' для проверки токена")
-    print("   6. Сохраните настройки")
+    print("\n=== Автодополнение Dadata.ru успешно включено! ===")
+    print("OK Токен настроен и проверен")
+    print("OK Автодополнение включено")
+    print("OK API автодополнения работает")
+    print("OK Frontend теперь может использовать автодополнение адресов")
     return True
 
 if __name__ == "__main__":
-    check_dadata_settings()
+    enable_dadata_autocomplete()
