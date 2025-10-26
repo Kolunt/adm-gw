@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { Layout, Typography, Button, Space, Drawer } from 'antd';
-import { UserAddOutlined, GiftOutlined, HomeOutlined, UserOutlined, CrownOutlined, MenuOutlined, LogoutOutlined } from '@ant-design/icons';
+import { UserAddOutlined, GiftOutlined, HomeOutlined, UserOutlined, CrownOutlined, MenuOutlined, LogoutOutlined, CalendarOutlined } from '@ant-design/icons';
 import axios from 'axios';
 
 import SimpleRegistrationForm from './SimpleRegistrationForm';
@@ -11,6 +11,7 @@ import UserList from './UserList';
 import GiftExchange from './GiftExchange';
 import GiftList from './GiftList';
 import ProfileWizard from './ProfileWizard';
+import EventRegistration from './EventRegistration';
 
 const { Header, Content, Footer } = Layout;
 const { Title } = Typography;
@@ -266,6 +267,13 @@ function AppContent() {
                   >
                     Подарки
                   </Button>
+                  <Button 
+                    icon={<CalendarOutlined />}
+                    onClick={() => navigate('/events')}
+                    size="middle"
+                  >
+                    Мероприятия
+                  </Button>
                   {user?.role === 'admin' && (
                     <Button 
                       icon={<CrownOutlined />}
@@ -304,6 +312,7 @@ function AppContent() {
           <Route path="/users" element={<UserList users={users} />} />
           <Route path="/gifts" element={<GiftList gifts={gifts} users={users} />} />
           <Route path="/exchange" element={<GiftExchange users={users} onGiftCreated={handleGiftCreated} />} />
+          <Route path="/events" element={<EventRegistration />} />
         </Routes>
       </Content>
 
@@ -410,6 +419,20 @@ function AppContent() {
                 }}
               >
                 Подарки
+              </Button>
+              <Button
+                type="default"
+                icon={<CalendarOutlined />}
+                onClick={() => handleNavigation('/events')}
+                style={{ 
+                  width: '100%', 
+                  marginBottom: '12px',
+                  textAlign: 'left',
+                  height: '48px',
+                  fontSize: '16px'
+                }}
+              >
+                Мероприятия
               </Button>
               {user?.role === 'admin' && (
                 <Button

@@ -63,6 +63,18 @@ class Event(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     created_by = Column(Integer, index=True)  # ID администратора, создавшего мероприятие
 
+class EventRegistration(Base):
+    __tablename__ = "event_registrations"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, index=True)  # ID пользователя
+    event_id = Column(Integer, index=True)  # ID мероприятия
+    registration_type = Column(String, default="preregistration")  # preregistration, registration
+    is_confirmed = Column(Boolean, default=False)  # Подтверждено ли участие
+    confirmed_address = Column(String)  # Подтвержденный адрес для подарка
+    confirmed_at = Column(DateTime)  # Дата подтверждения
+    created_at = Column(DateTime, default=datetime.utcnow)
+
 class Gift(Base):
     __tablename__ = "gifts"
     
@@ -202,6 +214,23 @@ class EventResponse(BaseModel):
     created_at: datetime
     created_by: int
 
+class EventRegistrationCreate(BaseModel):
+    event_id: int
+    registration_type: str = "preregistration"  # preregistration, registration
+
+class EventRegistrationConfirm(BaseModel):
+    confirmed_address: str
+
+class EventRegistrationResponse(BaseModel):
+    id: int
+    user_id: int
+    event_id: int
+    registration_type: str
+    is_confirmed: bool
+    confirmed_address: str | None = None
+    confirmed_at: datetime | None = None
+    created_at: datetime
+
 class GiftCreate(BaseModel):
     receiver_id: int
     gift_description: str
@@ -215,7 +244,7 @@ class GiftResponse(BaseModel):
     created_at: datetime
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.0.14")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.0.15")
 
 # CORS middleware
 app.add_middleware(
@@ -461,6 +490,132 @@ async def delete_event(
     db.delete(event)
     db.commit()
     return {"message": "Event deleted successfully"}
+
+# API endpoints для регистрации на мероприятия
+@app.post("/events/{event_id}/register", response_model=EventRegistrationResponse)
+async def register_for_event(
+    event_id: int,
+    registration_data: EventRegistrationCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Регистрация пользователя на мероприятие"""
+    # Проверяем, что пользователь авторизован и профиль заполнен
+    if not current_user.profile_completed:
+        raise HTTPException(status_code=400, detail="Профиль должен быть полностью заполнен")
+    
+    # Проверяем существование мероприятия
+    event = db.query(Event).filter(Event.id == event_id).first()
+    if not event:
+        raise HTTPException(status_code=404, detail="Мероприятие не найдено")
+    
+    if not event.is_active:
+        raise HTTPException(status_code=400, detail="Мероприятие неактивно")
+    
+    # Проверяем, что пользователь еще не зарегистрирован
+    existing_registration = db.query(EventRegistration).filter(
+        EventRegistration.user_id == current_user.id,
+        EventRegistration.event_id == event_id
+    ).first()
+    
+    if existing_registration:
+        raise HTTPException(status_code=400, detail="Вы уже зарегистрированы на это мероприятие")
+    
+    now = datetime.utcnow()
+    registration_type = registration_data.registration_type
+    
+    # Проверяем даты в зависимости от типа регистрации
+    if registration_type == "preregistration":
+        if now < event.preregistration_start:
+            raise HTTPException(status_code=400, detail="Предварительная регистрация еще не началась")
+        if now >= event.registration_start:
+            raise HTTPException(status_code=400, detail="Предварительная регистрация уже закончилась")
+    elif registration_type == "registration":
+        if now < event.registration_start:
+            raise HTTPException(status_code=400, detail="Регистрация еще не началась")
+        if now >= event.registration_end:
+            raise HTTPException(status_code=400, detail="Регистрация уже закончилась")
+    else:
+        raise HTTPException(status_code=400, detail="Неверный тип регистрации")
+    
+    # Создаем регистрацию
+    registration = EventRegistration(
+        user_id=current_user.id,
+        event_id=event_id,
+        registration_type=registration_type,
+        is_confirmed=(registration_type == "registration")  # Если прямая регистрация, сразу подтверждаем
+    )
+    
+    if registration_type == "registration":
+        registration.confirmed_address = current_user.address
+        registration.confirmed_at = now
+    
+    db.add(registration)
+    db.commit()
+    db.refresh(registration)
+    return registration
+
+@app.get("/events/{event_id}/registrations", response_model=list[EventRegistrationResponse])
+async def get_event_registrations(
+    event_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Получение регистраций на мероприятие (только для администраторов)"""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Доступ запрещен")
+    
+    registrations = db.query(EventRegistration).filter(
+        EventRegistration.event_id == event_id
+    ).all()
+    return registrations
+
+@app.get("/user/registrations", response_model=list[EventRegistrationResponse])
+async def get_user_registrations(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Получение регистраций текущего пользователя"""
+    registrations = db.query(EventRegistration).filter(
+        EventRegistration.user_id == current_user.id
+    ).all()
+    return registrations
+
+@app.post("/events/{event_id}/confirm", response_model=EventRegistrationResponse)
+async def confirm_registration(
+    event_id: int,
+    confirm_data: EventRegistrationConfirm,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Подтверждение участия в мероприятии"""
+    # Находим регистрацию
+    registration = db.query(EventRegistration).filter(
+        EventRegistration.user_id == current_user.id,
+        EventRegistration.event_id == event_id
+    ).first()
+    
+    if not registration:
+        raise HTTPException(status_code=404, detail="Регистрация не найдена")
+    
+    if registration.is_confirmed:
+        raise HTTPException(status_code=400, detail="Участие уже подтверждено")
+    
+    # Проверяем, что сейчас период основной регистрации
+    event = db.query(Event).filter(Event.id == event_id).first()
+    now = datetime.utcnow()
+    
+    if now < event.registration_start or now >= event.registration_end:
+        raise HTTPException(status_code=400, detail="Сейчас не период подтверждения участия")
+    
+    # Подтверждаем участие
+    registration.is_confirmed = True
+    registration.confirmed_address = confirm_data.confirmed_address
+    registration.confirmed_at = now
+    
+    db.commit()
+    db.refresh(registration)
+    return registration
 
 @app.post("/admin/promote/{user_id}")
 async def promote_user_to_admin(
