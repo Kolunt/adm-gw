@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException, Depends, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.security import OAuth2PasswordBearer
-from sqlalchemy import create_engine, Column, Integer, String, Boolean, DateTime, ForeignKey
+from sqlalchemy import create_engine, Column, Integer, String, Boolean, DateTime, ForeignKey, func
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from pydantic import BaseModel
@@ -515,7 +515,7 @@ class SiteIconResponse(BaseModel):
 
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.0.92")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.0.93")
 
 # CORS middleware
 app.add_middleware(
@@ -2204,7 +2204,7 @@ async def get_dashboard_stats(current_user: User = Depends(get_current_admin)):
         
         # Статистика регистраций на мероприятия
         total_registrations = db.query(EventRegistration).count()
-        preregistrations = db.query(EventRegistration).filter(EventRegistration.is_preregistration == True).count()
+        preregistrations = db.query(EventRegistration).filter(EventRegistration.registration_type == "preregistration").count()
         confirmed_registrations = db.query(EventRegistration).filter(EventRegistration.is_confirmed == True).count()
         
         # Статистика интересов (с проверкой существования таблицы)
@@ -2294,7 +2294,7 @@ async def get_dashboard_stats(current_user: User = Depends(get_current_admin)):
                 "events": [
                     {
                         "id": event.id,
-                        "title": event.title,
+                        "title": event.name,
                         "unique_id": event.unique_id,
                         "created_at": event.created_at.isoformat(),
                         "is_active": event.is_active
