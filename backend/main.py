@@ -13,7 +13,7 @@ import shutil
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
-from backend.telegram_bot import TelegramBot, create_telegram_bot
+from telegram_bot import TelegramBot, create_telegram_bot
 
 # Database setup
 SQLALCHEMY_DATABASE_URL = "sqlite:///./santa.db"
@@ -496,7 +496,7 @@ class SiteIconResponse(BaseModel):
 
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.0.88")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.0.89")
 
 # CORS middleware
 app.add_middleware(
