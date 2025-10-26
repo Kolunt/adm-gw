@@ -85,6 +85,10 @@ function CurrentEventInfo() {
       setLoading(false);
     } catch (error) {
       console.error('Error fetching current event:', error);
+      // Если нет активных мероприятий (404), это нормально
+      if (error.response?.status === 404) {
+        setCurrentEvent(null);
+      }
       setLoading(false);
     }
   }, [updateCountdown]);
