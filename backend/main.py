@@ -234,7 +234,7 @@ class EventRegistrationResponse(BaseModel):
 
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.0.32")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.0.33")
 
 # CORS middleware
 app.add_middleware(
@@ -452,6 +452,43 @@ async def get_event(event_id: int, db: Session = Depends(get_db)):
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
     return event
+
+@app.get("/events/{event_id}/participants")
+async def get_event_participants(event_id: int, db: Session = Depends(get_db)):
+    """Получение списка участников мероприятия"""
+    # Проверяем, что мероприятие существует
+    event = db.query(Event).filter(Event.id == event_id).first()
+    if not event:
+        raise HTTPException(status_code=404, detail="Мероприятие не найдено")
+    
+    # Получаем всех участников мероприятия через EventRegistration
+    registrations = db.query(EventRegistration).filter(
+        EventRegistration.event_id == event_id,
+        EventRegistration.is_confirmed == True
+    ).all()
+    
+    # Формируем список участников с никнеймом и ссылкой на профиль
+    participants_list = []
+    for registration in registrations:
+        # Получаем пользователя
+        user = db.query(User).filter(User.id == registration.user_id).first()
+        if user:
+            # Извлекаем никнейм из URL профиля GWars
+            nickname = "Неизвестно"
+            if user.gwars_profile_url:
+                # Пытаемся извлечь никнейм из URL
+                import re
+                match = re.search(r'id=(\d+)', user.gwars_profile_url)
+                if match:
+                    nickname = f"Игрок #{match.group(1)}"
+            
+            participants_list.append({
+                "id": user.id,
+                "nickname": nickname,
+                "gwars_profile_url": user.gwars_profile_url
+            })
+    
+    return participants_list
 
 @app.put("/events/{event_id}", response_model=EventResponse)
 async def update_event(

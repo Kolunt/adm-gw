@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, Typography, Statistic, Row, Col, Tag, Alert } from 'antd';
-import { CalendarOutlined, ClockCircleOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import { Card, Typography, Statistic, Row, Col, Tag, Alert, List, Avatar } from 'antd';
+import { CalendarOutlined, ClockCircleOutlined, CheckCircleOutlined, UserOutlined, LinkOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import moment from 'moment';
 
@@ -13,6 +13,8 @@ function CurrentEventInfo() {
   const [timeLeft, setTimeLeft] = useState(null);
   const [currentPhase, setCurrentPhase] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [participants, setParticipants] = useState([]);
+  const [participantsLoading, setParticipantsLoading] = useState(false);
 
   const updateCountdown = useCallback((event = currentEvent) => {
     if (!event) return;
@@ -79,12 +81,30 @@ function CurrentEventInfo() {
     }
   }, [currentEvent]);
 
+  const fetchParticipants = useCallback(async (eventId) => {
+    if (!eventId) return;
+    
+    setParticipantsLoading(true);
+    try {
+      const response = await axios.get(`/events/${eventId}/participants`);
+      setParticipants(response.data);
+    } catch (error) {
+      console.error('Error fetching participants:', error);
+      setParticipants([]);
+    } finally {
+      setParticipantsLoading(false);
+    }
+  }, []);
+
   const fetchCurrentEvent = useCallback(async () => {
     try {
       const response = await axios.get('/events/current');
       setCurrentEvent(response.data);
       updateCountdown(response.data);
       setLoading(false);
+      
+      // Загружаем участников мероприятия
+      fetchParticipants(response.data.id);
     } catch (error) {
       // Если нет активных мероприятий (404), это нормально
       if (error.response?.status === 404) {
@@ -96,7 +116,7 @@ function CurrentEventInfo() {
       setCurrentEvent(null);
       setLoading(false);
     }
-  }, [updateCountdown]);
+  }, [updateCountdown, fetchParticipants]);
 
   useEffect(() => {
     // Запускаем только один раз при монтировании
@@ -208,6 +228,51 @@ function CurrentEventInfo() {
             <Text>{moment(currentEvent.registration_end).format('DD.MM.YYYY HH:mm')}</Text>
           </Col>
         </Row>
+      </div>
+
+      {/* Список участников */}
+      <div style={{ marginTop: 24 }}>
+        <Title level={4} style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <UserOutlined style={{ color: '#1890ff' }} />
+          Участники мероприятия ({participants.length})
+        </Title>
+        
+        {participantsLoading ? (
+          <div style={{ textAlign: 'center', padding: '20px' }}>
+            <Text type="secondary">Загрузка участников...</Text>
+          </div>
+        ) : participants.length > 0 ? (
+          <List
+            dataSource={participants}
+            renderItem={(participant) => (
+              <List.Item>
+                <List.Item.Meta
+                  avatar={<Avatar icon={<UserOutlined />} />}
+                  title={
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Text strong>{participant.nickname}</Text>
+                      {participant.gwars_profile_url && (
+                        <a 
+                          href={participant.gwars_profile_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          style={{ color: '#1890ff' }}
+                        >
+                          <LinkOutlined /> Профиль GWars
+                        </a>
+                      )}
+                    </div>
+                  }
+                />
+              </List.Item>
+            )}
+            style={{ backgroundColor: '#fafafa', borderRadius: '6px', padding: '12px' }}
+          />
+        ) : (
+          <div style={{ textAlign: 'center', padding: '20px', backgroundColor: '#fafafa', borderRadius: '6px' }}>
+            <Text type="secondary">Пока нет участников мероприятия</Text>
+          </div>
+        )}
       </div>
     </Card>
   );
