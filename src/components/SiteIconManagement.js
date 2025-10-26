@@ -37,6 +37,11 @@ const SiteIconManagement = ({ currentUser }) => {
       const response = await axios.get('/admin/site-icon');
       setCurrentIcon(response.data);
     } catch (error) {
+      // Если пользователь не авторизован (401), это нормально
+      if (error.response?.status === 401) {
+        console.log('Пользователь не авторизован для управления иконкой сайта');
+        return;
+      }
       console.error('Ошибка загрузки иконки:', error);
     }
   };
@@ -67,7 +72,12 @@ const SiteIconManagement = ({ currentUser }) => {
       
     } catch (error) {
       console.error('Ошибка загрузки:', error);
-      message.error(error.response?.data?.detail || 'Ошибка загрузки иконки');
+      // Если пользователь не авторизован (401), показываем соответствующее сообщение
+      if (error.response?.status === 401) {
+        message.error('Недостаточно прав для загрузки иконки сайта');
+      } else {
+        message.error(error.response?.data?.detail || 'Ошибка загрузки иконки');
+      }
     } finally {
       setLoading(false);
     }
@@ -88,7 +98,12 @@ const SiteIconManagement = ({ currentUser }) => {
       
     } catch (error) {
       console.error('Ошибка удаления:', error);
-      message.error('Ошибка удаления иконки');
+      // Если пользователь не авторизован (401), показываем соответствующее сообщение
+      if (error.response?.status === 401) {
+        message.error('Недостаточно прав для удаления иконки сайта');
+      } else {
+        message.error('Ошибка удаления иконки');
+      }
     } finally {
       setLoading(false);
     }
