@@ -1,15 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { Layout, Typography, Button, Space, Drawer } from 'antd';
-import { UserAddOutlined, GiftOutlined, HomeOutlined, UserOutlined, CrownOutlined, MenuOutlined, LogoutOutlined, CalendarOutlined } from '@ant-design/icons';
+import { UserAddOutlined, HomeOutlined, UserOutlined, CrownOutlined, MenuOutlined, LogoutOutlined, CalendarOutlined } from '@ant-design/icons';
 import axios from 'axios';
 
 import SimpleRegistrationForm from './SimpleRegistrationForm';
 import SimpleLoginForm from './SimpleLoginForm';
 import AdminPanel from './AdminPanel';
 import UserList from './UserList';
-import GiftExchange from './GiftExchange';
-import GiftList from './GiftList';
 import ProfileWizard from './ProfileWizard';
 import EventRegistration from './EventRegistration';
 import CurrentEventInfo from './CurrentEventInfo';
@@ -19,7 +17,6 @@ const { Title } = Typography;
 
 function AppContent() {
   const [users, setUsers] = useState([]);
-  const [gifts, setGifts] = useState([]);
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -54,7 +51,6 @@ function AppContent() {
 
   useEffect(() => {
     fetchUsers();
-    fetchGifts();
     checkAuth();
   }, [checkAuth]);
 
@@ -67,23 +63,12 @@ function AppContent() {
     }
   };
 
-  const fetchGifts = async () => {
-    try {
-      const response = await axios.get('/gifts/');
-      setGifts(response.data);
-    } catch (error) {
-      console.error('Error fetching gifts:', error);
-    }
-  };
 
   const handleUserRegistered = () => {
     fetchUsers();
     navigate('/login');
   };
 
-  const handleGiftCreated = () => {
-    fetchGifts();
-  };
 
   const handleLogin = (userData) => {
     setUser(userData);
@@ -117,89 +102,47 @@ function AppContent() {
 
   const HomePage = () => (
     <div style={{ padding: '20px' }}>
-      <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-        <Title level={2} style={{ color: '#d63031', marginBottom: '20px', fontSize: window.innerWidth <= 768 ? '20px' : '32px' }}>
-          🎅 Добро пожаловать в Анонимный Дед Мороз! 🎁
-        </Title>
-        <Title level={4} style={{ color: '#636e72', marginBottom: '30px', fontSize: window.innerWidth <= 768 ? '14px' : '20px' }}>
-          {isAuthenticated 
-            ? `Добро пожаловать, ${user?.name}! Выберите действие:`
-            : 'Зарегистрируйтесь или войдите, чтобы участвовать в обмене подарками'
-          }
-        </Title>
-      </div>
-
       {/* Информация о текущем мероприятии */}
       <CurrentEventInfo />
 
-      {/* Кнопки действий */}
-      <div style={{ textAlign: 'center' }}>
-        <Space size="large" direction={window.innerWidth <= 768 ? "vertical" : "horizontal"} style={{ width: '100%' }}>
-          {!isAuthenticated ? (
-            <>
+      {/* Кнопки действий для авторизованных пользователей */}
+      {isAuthenticated && (
+        <div style={{ textAlign: 'center', marginTop: '30px' }}>
+          <Space size="large" direction={window.innerWidth <= 768 ? "vertical" : "horizontal"} style={{ width: '100%' }}>
+            {user?.role === 'admin' && (
               <Button 
                 type="primary" 
                 size={window.innerWidth <= 768 ? "middle" : "large"}
-                icon={<UserAddOutlined />}
-                onClick={() => navigate('/register')}
-                style={{ width: window.innerWidth <= 768 ? '100%' : 'auto' }}
+                icon={<CrownOutlined />}
+                onClick={() => navigate('/admin')}
+                style={{ 
+                  backgroundColor: '#d63031', 
+                  borderColor: '#d63031',
+                  width: window.innerWidth <= 768 ? '100%' : 'auto'
+                }}
               >
-                Зарегистрироваться
+                Админ-панель
               </Button>
-              <Button 
-                size={window.innerWidth <= 768 ? "middle" : "large"}
-                icon={<UserAddOutlined />}
-                onClick={() => navigate('/login')}
-                style={{ width: window.innerWidth <= 768 ? '100%' : 'auto' }}
-              >
-                Войти
-              </Button>
-            </>
-          ) : (
-            <>
-              {user?.role === 'admin' && (
-                <Button 
-                  type="primary" 
-                  size={window.innerWidth <= 768 ? "middle" : "large"}
-                  icon={<CrownOutlined />}
-                  onClick={() => navigate('/admin')}
-                  style={{ 
-                    backgroundColor: '#d63031', 
-                    borderColor: '#d63031',
-                    width: window.innerWidth <= 768 ? '100%' : 'auto'
-                  }}
-                >
-                  Админ-панель
-                </Button>
-              )}
-              <Button 
-                size={window.innerWidth <= 768 ? "middle" : "large"}
-                icon={<GiftOutlined />}
-                onClick={() => navigate('/exchange')}
-                style={{ width: window.innerWidth <= 768 ? '100%' : 'auto' }}
-              >
-                Обмен подарками
-              </Button>
-              <Button 
-                size={window.innerWidth <= 768 ? "middle" : "large"}
-                icon={<UserOutlined />}
-                onClick={() => navigate('/users')}
-                style={{ width: window.innerWidth <= 768 ? '100%' : 'auto' }}
-              >
-                Участники
-              </Button>
-              <Button 
-                size={window.innerWidth <= 768 ? "middle" : "large"}
-                icon={<CalendarOutlined />}
-                onClick={() => navigate('/events')}
-                style={{ width: window.innerWidth <= 768 ? '100%' : 'auto' }}
-              >
-                Мероприятия
-              </Button>
-            </>
-          )}
-        </Space>
-      </div>
+            )}
+            <Button 
+              size={window.innerWidth <= 768 ? "middle" : "large"}
+              icon={<UserOutlined />}
+              onClick={() => navigate('/users')}
+              style={{ width: window.innerWidth <= 768 ? '100%' : 'auto' }}
+            >
+              Участники
+            </Button>
+            <Button 
+              size={window.innerWidth <= 768 ? "middle" : "large"}
+              icon={<CalendarOutlined />}
+              onClick={() => navigate('/events')}
+              style={{ width: window.innerWidth <= 768 ? '100%' : 'auto' }}
+            >
+              Мероприятия
+            </Button>
+          </Space>
+        </div>
+      )}
     </div>
   );
 
@@ -275,13 +218,6 @@ function AppContent() {
                     Участники
                   </Button>
                   <Button 
-                    icon={<GiftOutlined />}
-                    onClick={() => navigate('/exchange')}
-                    size="middle"
-                  >
-                    Подарки
-                  </Button>
-                  <Button 
                     icon={<CalendarOutlined />}
                     onClick={() => navigate('/events')}
                     size="middle"
@@ -324,8 +260,6 @@ function AppContent() {
           <Route path="/profile" element={<ProfileWizard onProfileCompleted={handleProfileCompleted} />} />
           <Route path="/admin" element={<AdminPanel currentUser={user} onLogout={handleLogout} />} />
           <Route path="/users" element={<UserList users={users} />} />
-          <Route path="/gifts" element={<GiftList gifts={gifts} users={users} />} />
-          <Route path="/exchange" element={<GiftExchange users={users} onGiftCreated={handleGiftCreated} />} />
           <Route path="/events" element={<EventRegistration />} />
         </Routes>
       </Content>
@@ -419,20 +353,6 @@ function AppContent() {
                 }}
               >
                 Участники
-              </Button>
-              <Button
-                type="default"
-                icon={<GiftOutlined />}
-                onClick={() => handleNavigation('/exchange')}
-                style={{ 
-                  width: '100%', 
-                  marginBottom: '12px',
-                  textAlign: 'left',
-                  height: '48px',
-                  fontSize: '16px'
-                }}
-              >
-                Подарки
               </Button>
               <Button
                 type="default"

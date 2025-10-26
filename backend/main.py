@@ -75,15 +75,6 @@ class EventRegistration(Base):
     confirmed_at = Column(DateTime)  # Дата подтверждения
     created_at = Column(DateTime, default=datetime.utcnow)
 
-class Gift(Base):
-    __tablename__ = "gifts"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    giver_id = Column(Integer, index=True)
-    receiver_id = Column(Integer, index=True)
-    gift_description = Column(String)
-    is_delivered = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
 
 # Password and JWT functions
 def verify_password(plain_password, hashed_password):
@@ -231,20 +222,9 @@ class EventRegistrationResponse(BaseModel):
     confirmed_at: datetime | None = None
     created_at: datetime
 
-class GiftCreate(BaseModel):
-    receiver_id: int
-    gift_description: str
-
-class GiftResponse(BaseModel):
-    id: int
-    giver_id: int
-    receiver_id: int
-    gift_description: str
-    is_delivered: bool
-    created_at: datetime
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.0.17")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.0.18")
 
 # CORS middleware
 app.add_middleware(
@@ -648,33 +628,6 @@ async def promote_user_to_admin(
     db.commit()
     return {"message": "User promoted to admin successfully"}
 
-@app.post("/gifts/", response_model=GiftResponse)
-async def create_gift(gift: GiftCreate, db: Session = Depends(get_db)):
-    # Check if receiver exists
-    receiver = db.query(User).filter(User.id == gift.receiver_id).first()
-    if not receiver:
-        raise HTTPException(status_code=404, detail="Receiver not found")
-    
-    db_gift = Gift(
-        receiver_id=gift.receiver_id,
-        gift_description=gift.gift_description
-    )
-    db.add(db_gift)
-    db.commit()
-    db.refresh(db_gift)
-    return db_gift
-
-@app.get("/gifts/", response_model=list[GiftResponse])
-async def get_gifts(db: Session = Depends(get_db)):
-    gifts = db.query(Gift).all()
-    return gifts
-
-@app.get("/gifts/{gift_id}", response_model=GiftResponse)
-async def get_gift(gift_id: int, db: Session = Depends(get_db)):
-    gift = db.query(Gift).filter(Gift.id == gift_id).first()
-    if not gift:
-        raise HTTPException(status_code=404, detail="Gift not found")
-    return gift
 
 # Mount static files for React app
 if os.path.exists("dist"):

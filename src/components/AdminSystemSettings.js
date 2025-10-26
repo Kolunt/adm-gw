@@ -9,9 +9,8 @@ function AdminSystemSettings() {
   const [loading, setLoading] = useState(false);
   const [settings, setSettings] = useState({
     site_name: 'Анонимный Дед Мороз',
-    site_description: 'Система обмена подарками',
+    site_description: 'Система управления мероприятиями',
     registration_enabled: true,
-    gift_exchange_enabled: true,
     max_participants: 100,
     admin_email: 'admin@example.com',
   });
@@ -87,7 +86,7 @@ function AdminSystemSettings() {
             >
               <Input.TextArea 
                 rows={3} 
-                placeholder="Описание системы обмена подарками"
+                placeholder="Описание системы управления мероприятиями"
               />
             </Form.Item>
 
@@ -117,16 +116,6 @@ function AdminSystemSettings() {
               />
             </Form.Item>
 
-            <Form.Item
-              name="gift_exchange_enabled"
-              label="Разрешить обмен подарками"
-              valuePropName="checked"
-            >
-              <Switch 
-                checkedChildren="Включено" 
-                unCheckedChildren="Отключено"
-              />
-            </Form.Item>
 
             <Form.Item
               name="max_participants"
@@ -146,10 +135,6 @@ function AdminSystemSettings() {
               <div>
                 <Tag color="blue">Всего пользователей: 0</Tag>
                 <Tag color="green">Активных пользователей: 0</Tag>
-              </div>
-              <div>
-                <Tag color="orange">Всего подарков: 0</Tag>
-                <Tag color="purple">Завершенных обменов: 0</Tag>
               </div>
             </Space>
           </Card>

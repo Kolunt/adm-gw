@@ -1,6 +1,6 @@
 import React from 'react';
 import { List, Card, Avatar, Typography, Space, Tag } from 'antd';
-import { UserOutlined, GiftOutlined } from '@ant-design/icons';
+import { UserOutlined } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
 
@@ -34,17 +34,6 @@ const UserList = ({ users }) => {
                   {user.email}
                 </Text>
                 
-                <div className="wishlist-item">
-                  <Space direction="vertical" style={{ width: '100%' }}>
-                    <Space>
-                      <GiftOutlined style={{ color: '#d63031' }} />
-                      <Text strong>Список желаний:</Text>
-                    </Space>
-                    <Text style={{ fontSize: '14px', lineHeight: '1.4' }}>
-                      {user.wishlist}
-                    </Text>
-                  </Space>
-                </div>
                 
                 <Tag color="green" style={{ marginTop: '12px' }}>
                   Активный участник

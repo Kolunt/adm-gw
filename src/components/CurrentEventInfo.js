@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Typography, Statistic, Row, Col, Tag, Alert } from 'antd';
-import { CalendarOutlined, ClockCircleOutlined, CheckCircleOutlined, GiftOutlined } from '@ant-design/icons';
+import { CalendarOutlined, ClockCircleOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import moment from 'moment';
 
@@ -50,12 +50,12 @@ function CurrentEventInfo() {
       });
       nextPhase = regEnd;
     } else {
-      // Обмен подарками
+      // Мероприятие завершено
       setCurrentPhase({
-        name: 'Обмен подарками',
-        description: 'Мероприятие завершено, можно обмениваться подарками',
+        name: 'Завершено',
+        description: 'Регистрация завершена',
         color: 'red',
-        icon: <GiftOutlined />
+        icon: <CheckCircleOutlined />
       });
       nextPhase = null;
     }

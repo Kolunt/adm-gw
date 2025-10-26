@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Form, Input, Button, Card, message, Space } from 'antd';
-import { UserOutlined, MailOutlined, GiftOutlined } from '@ant-design/icons';
+import { UserOutlined, MailOutlined } from '@ant-design/icons';
 import axios from 'axios';
 
 const RegistrationForm = ({ onUserRegistered }) => {
@@ -79,7 +79,7 @@ const RegistrationForm = ({ onUserRegistered }) => {
               loading={loading}
               size="large"
               block
-              icon={<GiftOutlined />}
+              icon={<UserOutlined />}
             >
               Зарегистрироваться
             </Button>
