@@ -42,6 +42,13 @@ class User(Base):
     role = Column(String, default="user")  # user, admin
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Профиль пользователя
+    gwars_profile_url = Column(String)  # Ссылка на профиль в gwars.io
+    full_name = Column(String)  # ФИО
+    address = Column(String)  # Адрес для отправки подарков
+    interests = Column(String)  # Интересы пользователя
+    profile_completed = Column(Boolean, default=False)  # Заполнен ли профиль
 
 class Gift(Base):
     __tablename__ = "gifts"
@@ -98,11 +105,11 @@ def create_default_admin():
             )
             db.add(admin_user)
             db.commit()
-            print("✅ Создан дефолтный администратор: admin/admin")
+            print("Создан дефолтный администратор: admin/admin")
         else:
-            print("ℹ️ Администратор уже существует")
+            print("Администратор уже существует")
     except Exception as e:
-        print(f"❌ Ошибка при создании администратора: {e}")
+        print(f"Ошибка при создании администратора: {e}")
     finally:
         db.close()
 
@@ -113,6 +120,7 @@ create_default_admin()
 class UserCreate(BaseModel):
     email: str
     password: str
+    confirm_password: str
 
 class UserLogin(BaseModel):
     email: str
@@ -127,10 +135,33 @@ class UserResponse(BaseModel):
     role: str
     is_active: bool
     created_at: datetime
+    # Профиль пользователя
+    gwars_profile_url: str = None
+    full_name: str = None
+    address: str = None
+    interests: str = None
+    profile_completed: bool = False
 
 class Token(BaseModel):
     access_token: str
     token_type: str
+
+# Модели для пошагового заполнения профиля
+class ProfileStep1(BaseModel):
+    gwars_profile_url: str
+
+class ProfileStep2(BaseModel):
+    full_name: str
+    address: str
+
+class ProfileStep3(BaseModel):
+    interests: str
+
+class ProfileUpdate(BaseModel):
+    gwars_profile_url: str = None
+    full_name: str = None
+    address: str = None
+    interests: str = None
 
 class GiftCreate(BaseModel):
     receiver_id: int
@@ -145,7 +176,7 @@ class GiftResponse(BaseModel):
     created_at: datetime
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.0.8")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.0.12")
 
 # CORS middleware
 app.add_middleware(
@@ -195,6 +226,10 @@ async def root():
 
 @app.post("/auth/register", response_model=UserResponse)
 async def register_user(user: UserCreate, db: Session = Depends(get_db)):
+    # Проверяем совпадение паролей
+    if user.password != user.confirm_password:
+        raise HTTPException(status_code=400, detail="Пароли не совпадают")
+    
     # Check if user already exists
     db_user = db.query(User).filter(User.email == user.email).first()
     if db_user:
@@ -209,7 +244,12 @@ async def register_user(user: UserCreate, db: Session = Depends(get_db)):
         hashed_password=get_password_hash(user.password),
         name=username,  # Use email prefix as name
         wishlist="",
-        role="user"
+        role="user",
+        profile_completed=False,  # Профиль не заполнен
+        gwars_profile_url=None,
+        full_name=None,
+        address=None,
+        interests=None
     )
     db.add(db_user)
     db.commit()
@@ -246,6 +286,55 @@ async def get_user(user_id: int, db: Session = Depends(get_db)):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
+
+# API endpoints для пошагового заполнения профиля
+@app.post("/profile/step1")
+async def update_profile_step1(
+    step1_data: ProfileStep1,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Шаг 1: Обновление ссылки на профиль GWars"""
+    current_user.gwars_profile_url = step1_data.gwars_profile_url
+    db.commit()
+    return {"message": "Шаг 1 профиля обновлен", "step": 1}
+
+@app.post("/profile/step2")
+async def update_profile_step2(
+    step2_data: ProfileStep2,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Шаг 2: Обновление ФИО и адреса"""
+    current_user.full_name = step2_data.full_name
+    current_user.address = step2_data.address
+    db.commit()
+    return {"message": "Шаг 2 профиля обновлен", "step": 2}
+
+@app.post("/profile/step3")
+async def update_profile_step3(
+    step3_data: ProfileStep3,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Шаг 3: Обновление интересов и завершение профиля"""
+    current_user.interests = step3_data.interests
+    current_user.profile_completed = True
+    db.commit()
+    return {"message": "Профиль полностью заполнен", "step": 3, "completed": True}
+
+@app.get("/profile/status")
+async def get_profile_status(current_user: User = Depends(get_current_user)):
+    """Получение статуса заполнения профиля"""
+    return {
+        "profile_completed": current_user.profile_completed,
+        "step1_completed": bool(current_user.gwars_profile_url),
+        "step2_completed": bool(current_user.full_name and current_user.address),
+        "step3_completed": bool(current_user.interests),
+        "next_step": 1 if not current_user.gwars_profile_url else 
+                    (2 if not (current_user.full_name and current_user.address) else 
+                    (3 if not current_user.interests else None))
+    }
 
 @app.post("/admin/promote/{user_id}")
 async def promote_user_to_admin(

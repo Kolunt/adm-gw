@@ -10,6 +10,7 @@ import AdminPanel from './AdminPanel';
 import UserList from './UserList';
 import GiftExchange from './GiftExchange';
 import GiftList from './GiftList';
+import ProfileWizard from './ProfileWizard';
 
 const { Header, Content, Footer } = Layout;
 const { Title } = Typography;
@@ -20,6 +21,7 @@ function AppContent() {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [needsProfileCompletion, setNeedsProfileCompletion] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -32,6 +34,14 @@ function AppContent() {
         });
         setUser(response.data);
         setIsAuthenticated(true);
+        
+        // Проверяем заполненность профиля для обычных пользователей
+        if (response.data.role === 'user' && !response.data.profile_completed) {
+          setNeedsProfileCompletion(true);
+          navigate('/profile');
+          return;
+        }
+        
         // Если админ и на главной странице, перенаправляем в админ-панель
         if (response.data.role === 'admin' && location.pathname === '/') {
           navigate('/admin');
@@ -89,6 +99,14 @@ function AppContent() {
     localStorage.removeItem('token');
     setUser(null);
     setIsAuthenticated(false);
+    setNeedsProfileCompletion(false);
+    navigate('/');
+  };
+
+  const handleProfileCompleted = () => {
+    setNeedsProfileCompletion(false);
+    // Обновляем данные пользователя
+    checkAuth();
     navigate('/');
   };
 
@@ -281,6 +299,7 @@ function AppContent() {
           <Route path="/" element={<HomePage />} />
           <Route path="/register" element={<SimpleRegistrationForm onUserRegistered={handleUserRegistered} />} />
           <Route path="/login" element={<SimpleLoginForm onLogin={handleLogin} />} />
+          <Route path="/profile" element={<ProfileWizard onProfileCompleted={handleProfileCompleted} />} />
           <Route path="/admin" element={<AdminPanel currentUser={user} onLogout={handleLogout} />} />
           <Route path="/users" element={<UserList users={users} />} />
           <Route path="/gifts" element={<GiftList gifts={gifts} users={users} />} />

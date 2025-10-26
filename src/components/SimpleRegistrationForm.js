@@ -14,6 +14,7 @@ function SimpleRegistrationForm({ onUserRegistered }) {
       const response = await axios.post('/auth/register', {
         email: values.email,
         password: values.password,
+        confirm_password: values.confirm_password,
       });
       
       message.success('Регистрация успешна! Теперь вы можете войти.');
@@ -74,6 +75,27 @@ function SimpleRegistrationForm({ onUserRegistered }) {
             <Input.Password 
               prefix={<LockOutlined />} 
               placeholder="Пароль" 
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="confirm_password"
+            dependencies={['password']}
+            rules={[
+              { required: true, message: 'Пожалуйста, подтвердите пароль!' },
+              ({ getFieldValue }) => ({
+                validator(_, value) {
+                  if (!value || getFieldValue('password') === value) {
+                    return Promise.resolve();
+                  }
+                  return Promise.reject(new Error('Пароли не совпадают!'));
+                },
+              }),
+            ]}
+          >
+            <Input.Password 
+              prefix={<LockOutlined />} 
+              placeholder="Подтвердите пароль" 
             />
           </Form.Item>
 
