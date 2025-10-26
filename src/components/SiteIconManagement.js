@@ -34,7 +34,9 @@ const SiteIconManagement = ({ currentUser }) => {
   // Загрузка текущей иконки
   const fetchCurrentIcon = async () => {
     try {
-      const response = await axios.get('/admin/site-icon');
+      const response = await axios.get('/admin/site-icon', {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
       setCurrentIcon(response.data);
     } catch (error) {
       // Если пользователь не авторизован (401), это нормально
@@ -61,6 +63,7 @@ const SiteIconManagement = ({ currentUser }) => {
       const response = await axios.post('/admin/site-icon/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${localStorage.getItem('token')}`
         },
       });
       
@@ -89,7 +92,9 @@ const SiteIconManagement = ({ currentUser }) => {
   const handleDelete = async (iconId) => {
     setLoading(true);
     try {
-      await axios.delete(`/admin/site-icon/${iconId}`);
+      await axios.delete(`/admin/site-icon/${iconId}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
       setCurrentIcon(null);
       message.success('Иконка удалена');
       
