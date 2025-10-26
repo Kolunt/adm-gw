@@ -4,20 +4,7 @@ import { CalendarOutlined, ClockCircleOutlined, CheckCircleOutlined } from '@ant
 import axios from 'axios';
 import moment from 'moment';
 
-// Создаем кастомный axios instance для подавления 404 ошибок
-const silentAxios = axios.create({
-  baseURL: 'http://localhost:8004'
-});
-silentAxios.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    // Подавляем 404 ошибки для /events/current
-    if (error.config?.url?.includes('/events/current') && error.response?.status === 404) {
-      return Promise.reject({ ...error, silent: true });
-    }
-    return Promise.reject(error);
-  }
-);
+// Используем обычный axios без кастомных interceptor'ов
 
 const { Title, Text } = Typography;
 
@@ -26,6 +13,7 @@ function CurrentEventInfo() {
   const [timeLeft, setTimeLeft] = useState(null);
   const [currentPhase, setCurrentPhase] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [hasChecked, setHasChecked] = useState(false);
 
   const updateCountdown = useCallback((event = currentEvent) => {
     if (!event) return;
@@ -93,33 +81,48 @@ function CurrentEventInfo() {
   }, [currentEvent]);
 
   const fetchCurrentEvent = useCallback(async () => {
+    if (hasChecked) return; // Проверяем только один раз
+    
     try {
-      const response = await silentAxios.get('/events/current');
+      const response = await axios.get('/events/current');
       setCurrentEvent(response.data);
       updateCountdown(response.data);
       setLoading(false);
+      setHasChecked(true);
     } catch (error) {
       // Если нет активных мероприятий (404), это нормально - не логируем
-      if (error.response?.status === 404 || error.silent) {
+      if (error.response?.status === 404) {
         setCurrentEvent(null);
         setLoading(false);
+        setHasChecked(true);
         return;
       }
       // Не логируем никакие ошибки для этого компонента
       setLoading(false);
+      setHasChecked(true);
     }
-  }, [updateCountdown]);
+  }, [updateCountdown, hasChecked]);
+
+  // Если нет активных мероприятий, не рендерим компонент
+  if (!currentEvent && !loading) {
+    return null;
+  }
 
   useEffect(() => {
+    // Запускаем только один раз при монтировании
     fetchCurrentEvent();
+  }, [fetchCurrentEvent]);
+
+  useEffect(() => {
+    // Обновляем каждую секунду только если есть активное мероприятие
+    if (!currentEvent) return;
     
-    // Обновляем каждую секунду
     const interval = setInterval(() => {
       updateCountdown();
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [currentEvent, fetchCurrentEvent, updateCountdown]);
+  }, [currentEvent, updateCountdown]);
 
   if (loading) {
     return (
