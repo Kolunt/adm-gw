@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { List, Card, Avatar, Typography, Tag, Spin, Alert } from 'antd';
-import { UserOutlined, LinkOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import { List, Card, Typography, Tag, Spin, Alert } from 'antd';
+import { LinkOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import axios from 'axios';
+import UserAvatar from './UserAvatar';
 
 const { Title, Text } = Typography;
 
@@ -78,10 +79,11 @@ const UserList = () => {
               style={{ height: '100%' }}
             >
               <div style={{ textAlign: 'center' }}>
-                <Avatar 
+                <UserAvatar 
+                  user={user}
                   size={64} 
-                  icon={<UserOutlined />} 
-                  style={{ backgroundColor: '#d63031', marginBottom: '16px' }}
+                  style={{ marginBottom: '16px' }}
+                  showTooltip={true}
                 />
                 <Title level={4} style={{ marginBottom: '8px' }}>
                   {user.gwars_nickname || 'Пользователь'}

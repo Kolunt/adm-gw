@@ -66,6 +66,9 @@ class User(Base):
     # Верификация GWars.io
     gwars_verification_token = Column(String)  # Токен для верификации
     gwars_verified = Column(Boolean, default=False)  # Верифицирован ли профиль
+    
+    # Аватарка пользователя
+    avatar_seed = Column(String)  # Seed для генерации аватарки DiceBear
 
 class Event(Base):
     __tablename__ = "events"
@@ -300,6 +303,9 @@ class UserResponse(BaseModel):
     gwars_verification_token: str | None = None
     gwars_verified: bool = False
     
+    # Аватарка пользователя
+    avatar_seed: str | None = None
+    
     class Config:
         from_attributes = True
 
@@ -490,7 +496,7 @@ class SiteIconResponse(BaseModel):
 
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.0.87")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.0.88")
 
 # CORS middleware
 app.add_middleware(
@@ -576,7 +582,8 @@ async def register_user(user: UserCreate, db: Session = Depends(get_db)):
         address=None,
         interests=None,
         gwars_verification_token=None,
-        gwars_verified=False
+        gwars_verified=False,
+        avatar_seed=f"{username}_{user.email}_{datetime.utcnow().timestamp()}"  # Уникальный seed для аватарки
     )
     db.add(db_user)
     db.commit()
@@ -794,7 +801,9 @@ async def get_event_participants(event_id: int, db: Session = Depends(get_db)):
             participants_list.append({
                 "id": user.id,
                 "nickname": nickname,
+                "gwars_nickname": user.gwars_nickname,
                 "gwars_profile_url": user.gwars_profile_url,
+                "avatar_seed": user.avatar_seed,
                 "status": status,
                 "status_text": status_text,
                 "registration_type": registration.registration_type
@@ -831,7 +840,9 @@ async def get_event_participants_by_unique_id(unique_id: int, db: Session = Depe
             participants_list.append({
                 "id": user.id,
                 "nickname": nickname,
+                "gwars_nickname": user.gwars_nickname,
                 "gwars_profile_url": user.gwars_profile_url,
+                "avatar_seed": user.avatar_seed,
                 "status": status,
                 "status_text": status_text,
                 "registration_type": registration.registration_type
@@ -1556,6 +1567,7 @@ async def get_public_users(db: Session = Depends(get_db)):
             "gwars_nickname": user.gwars_nickname,
             "gwars_profile_url": user.gwars_profile_url,
             "gwars_verified": user.gwars_verified,
+            "avatar_seed": user.avatar_seed,
             "created_at": user.created_at
         })
     

@@ -3,6 +3,7 @@ import { Card, Typography, Statistic, Row, Col, Tag, Alert, List, Button, Space 
 import { CalendarOutlined, ClockCircleOutlined, CheckCircleOutlined, UserAddOutlined, CheckOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import moment from 'moment';
+import UserAvatar from './UserAvatar';
 
 const { Title, Text } = Typography;
 
@@ -336,6 +337,13 @@ function CurrentEventInfo({ user, isAuthenticated, onNavigate }) {
               return (
                 <List.Item>
                   <List.Item.Meta
+                    avatar={
+                      <UserAvatar 
+                        user={participant} 
+                        size={40} 
+                        showTooltip={true}
+                      />
+                    }
                     title={
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <span>{participant.gwars_nickname || 'Неизвестно'}</span>

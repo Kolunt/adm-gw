@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, Typography, Button, Space, Tag, Divider, Row, Col, Avatar, message, Form, Input } from 'antd';
-import { UserOutlined, EditOutlined, SaveOutlined, CloseOutlined } from '@ant-design/icons';
+import { Card, Typography, Button, Space, Tag, Divider, Row, Col, message, Form, Input } from 'antd';
+import { EditOutlined, SaveOutlined, CloseOutlined } from '@ant-design/icons';
 import axios from 'axios';
+import UserAvatar from './UserAvatar';
 
 const { Title, Text } = Typography;
 
@@ -83,10 +84,11 @@ function UserProfile() {
     <div style={{ maxWidth: '800px', margin: '0 auto' }}>
       <Card>
         <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-          <Avatar 
+          <UserAvatar 
+            user={user}
             size={80} 
-            icon={<UserOutlined />} 
-            style={{ backgroundColor: '#d63031', marginBottom: '16px' }}
+            style={{ marginBottom: '16px' }}
+            showTooltip={true}
           />
           <Title level={2} style={{ color: '#d63031', marginBottom: '8px' }}>
             {user.name}
