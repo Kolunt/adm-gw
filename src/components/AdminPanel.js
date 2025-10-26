@@ -10,13 +10,15 @@ import {
   DashboardOutlined,
   CalendarOutlined,
   HeartOutlined,
-  QuestionCircleOutlined
+  QuestionCircleOutlined,
+  RobotOutlined
 } from '@ant-design/icons';
 import AdminUserManagement from './AdminUserManagement';
 import AdminSystemSettings from './AdminSystemSettings';
 import EventManagement from './EventManagement';
 import AdminInterestsManagement from './AdminInterestsManagement';
 import AdminFAQManagement from './AdminFAQManagement';
+import AdminTelegramManagement from './AdminTelegramManagement';
 
 const { Sider, Content } = Layout;
 const { Title } = Typography;
@@ -33,6 +35,7 @@ function AdminPanel({ currentUser, onLogout }) {
     if (path === '/admin/events') return 'events';
     if (path === '/admin/interests') return 'interests';
     if (path === '/admin/faq') return 'faq';
+    if (path === '/admin/telegram') return 'telegram';
     if (path === '/admin/settings' || path.startsWith('/admin/settings/')) return 'settings';
     return 'dashboard'; // по умолчанию
   };
@@ -86,6 +89,12 @@ function AdminPanel({ currentUser, onLogout }) {
       path: '/admin/faq',
     },
     {
+      key: 'telegram',
+      icon: <RobotOutlined />,
+      label: 'Telegram бот',
+      path: '/admin/telegram',
+    },
+    {
       key: 'settings',
       icon: <SettingOutlined />,
       label: 'Настройки системы',
@@ -110,6 +119,8 @@ function AdminPanel({ currentUser, onLogout }) {
         return <AdminInterestsManagement currentUser={currentUser} />;
       case 'faq':
         return <AdminFAQManagement currentUser={currentUser} />;
+      case 'telegram':
+        return <AdminTelegramManagement currentUser={currentUser} />;
       case 'settings':
         return <AdminSystemSettings activeTab={activeSettingsTab} />;
       default:

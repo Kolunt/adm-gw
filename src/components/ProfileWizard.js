@@ -11,6 +11,7 @@ import axios from 'axios';
 import GWarsVerification from './GWarsVerification';
 import AddressAutocomplete from './AddressAutocomplete';
 import InterestTags from './InterestTags';
+import TelegramSubscription from './TelegramSubscription';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -240,17 +241,25 @@ function ProfileWizard({ onProfileCompleted }) {
 
   if (profileStatus?.profile_completed) {
     return (
-      <Card>
-        <div style={{ textAlign: 'center', padding: '40px' }}>
-          <CheckCircleOutlined style={{ fontSize: '64px', color: '#52c41a', marginBottom: '20px' }} />
-          <Title level={2} style={{ color: '#52c41a' }}>
-            Профиль заполнен!
-          </Title>
-          <Text style={{ fontSize: '16px' }}>
-            Спасибо! Ваш профиль полностью заполнен. Теперь вы можете участвовать в обмене подарками.
-          </Text>
-        </div>
-      </Card>
+      <div style={{ 
+        maxWidth: window.innerWidth <= 768 ? '100%' : '600px', 
+        margin: '0 auto',
+        padding: window.innerWidth <= 768 ? '10px' : '20px'
+      }}>
+        <Card style={{ marginBottom: '20px' }}>
+          <div style={{ textAlign: 'center', padding: '40px' }}>
+            <CheckCircleOutlined style={{ fontSize: '64px', color: '#52c41a', marginBottom: '20px' }} />
+            <Title level={2} style={{ color: '#52c41a' }}>
+              Профиль заполнен!
+            </Title>
+            <Text style={{ fontSize: '16px' }}>
+              Спасибо! Ваш профиль полностью заполнен. Теперь вы можете участвовать в обмене подарками.
+            </Text>
+          </div>
+        </Card>
+        
+        <TelegramSubscription currentUser={profileStatus} />
+      </div>
     );
   }
 

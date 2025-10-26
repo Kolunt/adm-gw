@@ -11,6 +11,7 @@ import os
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
+from backend.telegram_bot import TelegramBot, create_telegram_bot
 
 # Database setup
 SQLALCHEMY_DATABASE_URL = "sqlite:///./santa.db"
@@ -103,7 +104,7 @@ class Interest(Base):
 
 class FAQ(Base):
     __tablename__ = "faq"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     question = Column(String, nullable=False, index=True)
     answer = Column(String, nullable=False)
@@ -112,6 +113,29 @@ class FAQ(Base):
     created_by_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # Кто создал FAQ
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class TelegramBot(Base):
+    __tablename__ = "telegram_bot"
+
+    id = Column(Integer, primary_key=True, index=True)
+    bot_token = Column(String, nullable=False)  # Токен бота
+    bot_username = Column(String)  # Username бота
+    is_active = Column(Boolean, default=True)  # Активен ли бот
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class TelegramUser(Base):
+    __tablename__ = "telegram_users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)  # Связь с пользователем
+    telegram_id = Column(String, unique=True, nullable=False)  # Telegram ID пользователя
+    telegram_username = Column(String)  # Telegram username
+    is_active = Column(Boolean, default=True)  # Активны ли уведомления
+    subscribed_at = Column(DateTime, default=datetime.utcnow)
+    last_notification = Column(DateTime)  # Последнее уведомление
 
 
 # Password and JWT functions
@@ -381,8 +405,52 @@ class FAQResponse(BaseModel):
         from_attributes = True
 
 
+class TelegramBotCreate(BaseModel):
+    bot_token: str
+
+
+class TelegramBotUpdate(BaseModel):
+    bot_token: str | None = None
+    is_active: bool | None = None
+
+
+class TelegramBotResponse(BaseModel):
+    id: int
+    bot_token: str
+    bot_username: str | None = None
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class TelegramUserCreate(BaseModel):
+    telegram_id: str
+    telegram_username: str | None = None
+
+
+class TelegramUserResponse(BaseModel):
+    id: int
+    user_id: int
+    telegram_id: str
+    telegram_username: str | None = None
+    is_active: bool
+    subscribed_at: datetime
+    last_notification: datetime | None = None
+
+    class Config:
+        from_attributes = True
+
+
+class TelegramNotificationRequest(BaseModel):
+    message: str
+    event_id: int | None = None
+
+
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.0.78")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.0.79")
 
 # CORS middleware
 app.add_middleware(
@@ -1555,6 +1623,308 @@ async def delete_faq(
     db.delete(faq)
     db.commit()
     return {"message": "FAQ удален"}
+
+
+# Telegram Bot API endpoints
+
+@app.get("/admin/telegram/bot", response_model=TelegramBotResponse | None)
+async def get_telegram_bot(current_user: User = Depends(get_current_admin_user)):
+    """Получить настройки Telegram бота"""
+    db = SessionLocal()
+    try:
+        bot = db.query(TelegramBot).first()
+        if bot:
+            return bot
+        return None
+    finally:
+        db.close()
+
+
+@app.post("/admin/telegram/bot", response_model=TelegramBotResponse)
+async def create_or_update_telegram_bot(
+    bot_data: TelegramBotCreate,
+    current_user: User = Depends(get_current_admin_user)
+):
+    """Создать или обновить настройки Telegram бота"""
+    db = SessionLocal()
+    try:
+        # Проверяем валидность токена
+        telegram_bot = create_telegram_bot(bot_data.bot_token)
+        if not telegram_bot:
+            raise HTTPException(status_code=400, detail="Неверный токен Telegram бота")
+        
+        # Получаем информацию о боте
+        bot_info = telegram_bot.get_bot_info()
+        if not bot_info:
+            raise HTTPException(status_code=400, detail="Не удалось получить информацию о боте")
+        
+        # Проверяем, есть ли уже бот в базе
+        existing_bot = db.query(TelegramBot).first()
+        
+        if existing_bot:
+            # Обновляем существующего бота
+            existing_bot.bot_token = bot_data.bot_token
+            existing_bot.bot_username = bot_info.get("username")
+            existing_bot.is_active = True
+            existing_bot.updated_at = datetime.utcnow()
+            db.commit()
+            db.refresh(existing_bot)
+            return existing_bot
+        else:
+            # Создаем нового бота
+            new_bot = TelegramBot(
+                bot_token=bot_data.bot_token,
+                bot_username=bot_info.get("username"),
+                is_active=True
+            )
+            db.add(new_bot)
+            db.commit()
+            db.refresh(new_bot)
+            return new_bot
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Ошибка сохранения настроек бота: {str(e)}")
+    finally:
+        db.close()
+
+
+@app.put("/admin/telegram/bot/{bot_id}", response_model=TelegramBotResponse)
+async def update_telegram_bot(
+    bot_id: int,
+    bot_data: TelegramBotUpdate,
+    current_user: User = Depends(get_current_admin_user)
+):
+    """Обновить настройки Telegram бота"""
+    db = SessionLocal()
+    try:
+        bot = db.query(TelegramBot).filter(TelegramBot.id == bot_id).first()
+        if not bot:
+            raise HTTPException(status_code=404, detail="Telegram бот не найден")
+        
+        # Если обновляется токен, проверяем его валидность
+        if bot_data.bot_token:
+            telegram_bot = create_telegram_bot(bot_data.bot_token)
+            if not telegram_bot:
+                raise HTTPException(status_code=400, detail="Неверный токен Telegram бота")
+            
+            bot_info = telegram_bot.get_bot_info()
+            if not bot_info:
+                raise HTTPException(status_code=400, detail="Не удалось получить информацию о боте")
+            
+            bot.bot_token = bot_data.bot_token
+            bot.bot_username = bot_info.get("username")
+        
+        if bot_data.is_active is not None:
+            bot.is_active = bot_data.is_active
+        
+        bot.updated_at = datetime.utcnow()
+        db.commit()
+        db.refresh(bot)
+        return bot
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Ошибка обновления настроек бота: {str(e)}")
+    finally:
+        db.close()
+
+
+@app.get("/admin/telegram/users", response_model=list[TelegramUserResponse])
+async def get_telegram_users(current_user: User = Depends(get_current_admin_user)):
+    """Получить список пользователей, подписанных на Telegram уведомления"""
+    db = SessionLocal()
+    try:
+        telegram_users = db.query(TelegramUser).all()
+        return telegram_users
+    finally:
+        db.close()
+
+
+@app.post("/api/telegram/subscribe")
+async def subscribe_to_telegram(
+    telegram_data: TelegramUserCreate,
+    current_user: User = Depends(get_current_user)
+):
+    """Подписаться на Telegram уведомления"""
+    db = SessionLocal()
+    try:
+        # Проверяем, не подписан ли уже пользователь
+        existing_subscription = db.query(TelegramUser).filter(
+            TelegramUser.user_id == current_user.id
+        ).first()
+        
+        if existing_subscription:
+            # Обновляем существующую подписку
+            existing_subscription.telegram_id = telegram_data.telegram_id
+            existing_subscription.telegram_username = telegram_data.telegram_username
+            existing_subscription.is_active = True
+            existing_subscription.subscribed_at = datetime.utcnow()
+        else:
+            # Создаем новую подписку
+            new_subscription = TelegramUser(
+                user_id=current_user.id,
+                telegram_id=telegram_data.telegram_id,
+                telegram_username=telegram_data.telegram_username,
+                is_active=True
+            )
+            db.add(new_subscription)
+        
+        db.commit()
+        return {"message": "Подписка на Telegram уведомления активирована"}
+        
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Ошибка подписки: {str(e)}")
+    finally:
+        db.close()
+
+
+@app.delete("/api/telegram/unsubscribe")
+async def unsubscribe_from_telegram(current_user: User = Depends(get_current_user)):
+    """Отписаться от Telegram уведомлений"""
+    db = SessionLocal()
+    try:
+        subscription = db.query(TelegramUser).filter(
+            TelegramUser.user_id == current_user.id
+        ).first()
+        
+        if subscription:
+            subscription.is_active = False
+            db.commit()
+            return {"message": "Подписка на Telegram уведомления отключена"}
+        else:
+            raise HTTPException(status_code=404, detail="Подписка не найдена")
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Ошибка отписки: {str(e)}")
+    finally:
+        db.close()
+
+
+@app.post("/admin/telegram/send-notification")
+async def send_telegram_notification(
+    notification: TelegramNotificationRequest,
+    current_user: User = Depends(get_current_admin_user)
+):
+    """Отправить уведомление всем подписанным пользователям"""
+    db = SessionLocal()
+    try:
+        # Получаем настройки бота
+        bot_settings = db.query(TelegramBot).first()
+        if not bot_settings or not bot_settings.is_active:
+            raise HTTPException(status_code=400, detail="Telegram бот не настроен или неактивен")
+        
+        # Создаем экземпляр бота
+        telegram_bot = TelegramBot(bot_settings.bot_token)
+        
+        # Получаем список подписанных пользователей
+        telegram_users = db.query(TelegramUser).filter(
+            TelegramUser.is_active == True
+        ).all()
+        
+        if not telegram_users:
+            return {"message": "Нет активных подписчиков", "sent": 0}
+        
+        # Отправляем уведомления
+        results = telegram_bot.send_notification_to_all(
+            [{"telegram_id": user.telegram_id, "user_id": user.user_id} for user in telegram_users],
+            notification.message
+        )
+        
+        # Обновляем время последнего уведомления
+        for user in telegram_users:
+            user.last_notification = datetime.utcnow()
+        
+        db.commit()
+        
+        return {
+            "message": f"Уведомления отправлены",
+            "sent": results["success"],
+            "failed": results["failed"],
+            "errors": results["errors"]
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Ошибка отправки уведомлений: {str(e)}")
+    finally:
+        db.close()
+
+
+@app.post("/admin/telegram/send-event-notification/{event_id}")
+async def send_event_notification(
+    event_id: int,
+    notification_type: str,
+    current_user: User = Depends(get_current_admin_user)
+):
+    """Отправить уведомление о мероприятии"""
+    db = SessionLocal()
+    try:
+        # Получаем мероприятие
+        event = db.query(Event).filter(Event.id == event_id).first()
+        if not event:
+            raise HTTPException(status_code=404, detail="Мероприятие не найдено")
+        
+        # Получаем настройки бота
+        bot_settings = db.query(TelegramBot).first()
+        if not bot_settings or not bot_settings.is_active:
+            raise HTTPException(status_code=400, detail="Telegram бот не настроен или неактивен")
+        
+        # Создаем экземпляр бота
+        telegram_bot = TelegramBot(bot_settings.bot_token)
+        
+        # Получаем список подписанных пользователей
+        telegram_users = db.query(TelegramUser).filter(
+            TelegramUser.is_active == True
+        ).all()
+        
+        if not telegram_users:
+            return {"message": "Нет активных подписчиков", "sent": 0}
+        
+        # Отправляем уведомления о мероприятии
+        results = telegram_bot.send_event_notification(
+            [{"telegram_id": user.telegram_id, "user_id": user.user_id} for user in telegram_users],
+            {
+                "name": event.name,
+                "description": event.description,
+                "preregistration_start": event.preregistration_start.isoformat() if event.preregistration_start else None,
+                "registration_start": event.registration_start.isoformat() if event.registration_start else None,
+                "registration_end": event.registration_end.isoformat() if event.registration_end else None,
+            },
+            notification_type
+        )
+        
+        # Обновляем время последнего уведомления
+        for user in telegram_users:
+            user.last_notification = datetime.utcnow()
+        
+        db.commit()
+        
+        return {
+            "message": f"Уведомления о мероприятии отправлены",
+            "sent": results["success"],
+            "failed": results["failed"],
+            "errors": results["errors"]
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Ошибка отправки уведомлений: {str(e)}")
+    finally:
+        db.close()
+
 
 # Mount static files for React app
 if os.path.exists("dist"):
