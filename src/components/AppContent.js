@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
-import { Layout, Typography, Button, Space, Drawer } from 'antd';
+import { Layout, Typography, Button, Space, Drawer, Spin } from 'antd';
 import { UserAddOutlined, HomeOutlined, UserOutlined, CrownOutlined, MenuOutlined, LogoutOutlined, CalendarOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import axios from 'axios';
 
@@ -16,6 +16,7 @@ import CurrentEventInfo from './CurrentEventInfo';
 import AdminRouteGuard from './AdminRouteGuard';
 import AdminUserProfileEdit from './AdminUserProfileEdit';
 import FAQ from './FAQ';
+import './RouteTransition.css';
 
 const { Header, Content, Footer } = Layout;
 const { Title } = Typography;
@@ -25,6 +26,8 @@ function AppContent() {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [routeLoading, setRouteLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -50,12 +53,23 @@ function AppContent() {
         localStorage.removeItem('token');
       }
     }
-  }, [location.pathname, navigate]);
+    setIsLoading(false);
+  }, [navigate]);
 
   useEffect(() => {
     fetchUsers();
     checkAuth();
   }, [checkAuth]);
+
+  // Обработка изменений маршрута для предотвращения мелькания
+  useEffect(() => {
+    setRouteLoading(true);
+    const timer = setTimeout(() => {
+      setRouteLoading(false);
+    }, 100); // Небольшая задержка для плавного перехода
+    
+    return () => clearTimeout(timer);
+  }, [location.pathname]);
 
   const fetchUsers = async () => {
     try {
@@ -172,6 +186,7 @@ function AppContent() {
                     icon={<UserAddOutlined />}
                     onClick={() => navigate('/login')}
                     size="middle"
+                    className="nav-button"
                   >
                     Войти
                   </Button>
@@ -179,6 +194,7 @@ function AppContent() {
                     icon={<UserAddOutlined />}
                     onClick={() => navigate('/register')}
                     size="middle"
+                    className="nav-button"
                   >
                     Регистрация
                   </Button>
@@ -186,6 +202,7 @@ function AppContent() {
                     icon={<UserOutlined />}
                     onClick={() => navigate('/users')}
                     size="middle"
+                    className="nav-button"
                   >
                     Участники
                   </Button>
@@ -193,6 +210,7 @@ function AppContent() {
                     icon={<CalendarOutlined />}
                     onClick={() => navigate('/events')}
                     size="middle"
+                    className="nav-button"
                   >
                     Мероприятия
                   </Button>
@@ -200,6 +218,7 @@ function AppContent() {
                     icon={<QuestionCircleOutlined />}
                     onClick={() => navigate('/faq')}
                     size="middle"
+                    className="nav-button"
                   >
                     FAQ
                   </Button>
@@ -210,6 +229,7 @@ function AppContent() {
                     icon={<UserOutlined />}
                     onClick={() => navigate('/user-profile')}
                     size="middle"
+                    className="nav-button"
                   >
                     Профиль
                   </Button>
@@ -217,6 +237,7 @@ function AppContent() {
                     icon={<UserOutlined />}
                     onClick={() => navigate('/users')}
                     size="middle"
+                    className="nav-button"
                   >
                     Участники
                   </Button>
@@ -224,6 +245,7 @@ function AppContent() {
                     icon={<CalendarOutlined />}
                     onClick={() => navigate('/events')}
                     size="middle"
+                    className="nav-button"
                   >
                     Мероприятия
                   </Button>
@@ -231,6 +253,7 @@ function AppContent() {
                     icon={<QuestionCircleOutlined />}
                     onClick={() => navigate('/faq')}
                     size="middle"
+                    className="nav-button"
                   >
                     FAQ
                   </Button>
@@ -240,6 +263,7 @@ function AppContent() {
                       onClick={() => navigate('/admin')}
                       style={{ backgroundColor: '#d63031', borderColor: '#d63031' }}
                       size="middle"
+                      className="nav-button"
                     >
                       Админ
                     </Button>
@@ -262,8 +286,24 @@ function AppContent() {
         </div>
       </Header>
       
-      <Content style={{ padding: window.innerWidth <= 768 ? '20px 15px' : '50px' }}>
-        <Routes>
+      <Content 
+        style={{ padding: window.innerWidth <= 768 ? '20px 15px' : '50px' }}
+        className={`content-wrapper ${routeLoading ? 'loading' : ''}`}
+      >
+        {isLoading ? (
+          <div style={{ textAlign: 'center', padding: '50px' }}>
+            <Spin size="large" />
+            <div style={{ marginTop: '16px' }}>
+              <Typography.Text>Загрузка...</Typography.Text>
+            </div>
+          </div>
+        ) : routeLoading ? (
+          <div style={{ textAlign: 'center', padding: '20px' }}>
+            <Spin />
+          </div>
+        ) : (
+          <div className="route-transition fade-in">
+            <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/register" element={<SimpleRegistrationForm onUserRegistered={handleUserRegistered} />} />
           <Route path="/login" element={<SimpleLoginForm onLogin={handleLogin} />} />
@@ -333,7 +373,9 @@ function AppContent() {
           <Route path="/users" element={<UserList />} />
           <Route path="/events" element={<EventRegistration />} />
           <Route path="/event/:uniqueId" element={<EventDetail />} />
-        </Routes>
+            </Routes>
+          </div>
+        )}
       </Content>
 
       <Footer style={{ 
