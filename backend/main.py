@@ -236,7 +236,7 @@ class EventRegistrationResponse(BaseModel):
 
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.0.37")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.0.38")
 
 # CORS middleware
 app.add_middleware(
@@ -730,7 +730,12 @@ async def parse_gwars_profile(
         if not nickname_match:
             return {"success": False, "error": "Не удалось найти никнейм в профиле"}
         
-        nickname = nickname_match.group(1).strip()
+        # Извлекаем только никнейм из title, убирая " :: Информация ::  GWars.io"
+        full_title = nickname_match.group(1).strip()
+        # Разделяем по " :: " и берем первую часть (никнейм)
+        nickname_parts = full_title.split(' :: ')
+        nickname = nickname_parts[0].strip() if nickname_parts else full_title
+        
         level = level_match.group(1) if level_match else "Неизвестно"
         
         # Обновляем URL профиля и никнейм в базе данных
