@@ -338,7 +338,7 @@ class InterestResponse(BaseModel):
 
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.0.62")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.0.63")
 
 # CORS middleware
 app.add_middleware(
@@ -1294,6 +1294,28 @@ async def delete_interest(
     db.delete(interest)
     db.commit()
     return {"message": "Интерес успешно удален"}
+
+# Публичный API для получения списка пользователей (доступен всем)
+@app.get("/api/users/public")
+async def get_public_users(db: Session = Depends(get_db)):
+    """Получение публичного списка пользователей с игровой информацией"""
+    users = db.query(User).filter(
+        User.gwars_verified == True,
+        User.gwars_nickname.isnot(None),
+        User.gwars_profile_url.isnot(None)
+    ).all()
+    
+    public_users = []
+    for user in users:
+        public_users.append({
+            "id": user.id,
+            "gwars_nickname": user.gwars_nickname,
+            "gwars_profile_url": user.gwars_profile_url,
+            "gwars_verified": user.gwars_verified,
+            "created_at": user.created_at
+        })
+    
+    return public_users
 
 # API endpoint для автодополнения адресов через Dadata
 @app.post("/api/suggest-address")

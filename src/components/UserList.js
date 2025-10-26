@@ -1,12 +1,67 @@
-import React from 'react';
-import { List, Card, Avatar, Typography, Tag } from 'antd';
-import { UserOutlined } from '@ant-design/icons';
+import React, { useState, useEffect } from 'react';
+import { List, Card, Avatar, Typography, Tag, Spin, Alert } from 'antd';
+import { UserOutlined, LinkOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import axios from 'axios';
 
 const { Title, Text } = Typography;
 
-const UserList = ({ users }) => {
+const UserList = () => {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetchPublicUsers();
+  }, []);
+
+  const fetchPublicUsers = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await axios.get('/api/users/public');
+      setUsers(response.data);
+    } catch (error) {
+      setError('Ошибка при загрузке списка участников');
+      console.error('Error fetching public users:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
+        <Spin size="large" tip="Загрузка участников..." />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{ padding: '20px' }}>
+        <Alert message={error} type="error" showIcon />
+      </div>
+    );
+  }
+
+  if (users.length === 0) {
+    return (
+      <div style={{ padding: '20px', textAlign: 'center' }}>
+        <Title level={2} style={{ color: '#d63031', marginBottom: '20px' }}>
+          🎅 Участники Анонимного Дед Мороза
+        </Title>
+        <Alert 
+          message="Пока нет верифицированных участников" 
+          description="Участники появятся здесь после прохождения верификации GWars профиля"
+          type="info" 
+          showIcon 
+        />
+      </div>
+    );
+  }
+
   return (
-    <div>
+    <div style={{ padding: '20px' }}>
       <Title level={2} style={{ textAlign: 'center', color: '#d63031', marginBottom: '30px' }}>
         🎅 Участники Анонимного Дед Мороза
       </Title>
@@ -28,16 +83,39 @@ const UserList = ({ users }) => {
                   style={{ backgroundColor: '#d63031', marginBottom: '16px' }}
                 />
                 <Title level={4} style={{ marginBottom: '8px' }}>
-                  {user.name}
+                  {user.gwars_nickname}
                 </Title>
-                <Text type="secondary" style={{ display: 'block', marginBottom: '16px' }}>
-                  {user.email}
-                </Text>
                 
+                <div style={{ marginBottom: '16px' }}>
+                  <Tag 
+                    color="green" 
+                    icon={<CheckCircleOutlined />}
+                    style={{ marginBottom: '8px' }}
+                  >
+                    Верифицирован
+                  </Tag>
+                </div>
                 
-                <Tag color="green" style={{ marginTop: '12px' }}>
-                  Активный участник
-                </Tag>
+                <div style={{ marginTop: '12px' }}>
+                  <a 
+                    href={user.gwars_profile_url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    style={{ 
+                      color: '#1890ff', 
+                      textDecoration: 'none',
+                      fontSize: '14px'
+                    }}
+                  >
+                    <LinkOutlined /> Профиль GWars
+                  </a>
+                </div>
+                
+                <div style={{ marginTop: '8px' }}>
+                  <Text type="secondary" style={{ fontSize: '12px' }}>
+                    Участник с {new Date(user.created_at).toLocaleDateString()}
+                  </Text>
+                </div>
               </div>
             </Card>
           </List.Item>

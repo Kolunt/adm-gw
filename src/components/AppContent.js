@@ -323,7 +323,7 @@ function AppContent() {
               <AdminUserProfileEdit />
             </AdminRouteGuard>
           } />
-          <Route path="/users" element={<UserList users={users} />} />
+          <Route path="/users" element={<UserList />} />
           <Route path="/events" element={<EventRegistration />} />
           <Route path="/event/:uniqueId" element={<EventDetail />} />
         </Routes>
