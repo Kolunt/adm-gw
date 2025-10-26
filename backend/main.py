@@ -244,7 +244,7 @@ class GiftResponse(BaseModel):
     created_at: datetime
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.0.15")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.0.16")
 
 # CORS middleware
 app.add_middleware(
@@ -616,6 +616,23 @@ async def confirm_registration(
     db.commit()
     db.refresh(registration)
     return registration
+
+@app.get("/events/current", response_model=EventResponse)
+async def get_current_event(db: Session = Depends(get_db)):
+    """Получение ближайшего активного мероприятия"""
+    now = datetime.utcnow()
+    
+    # Ищем активные мероприятия, которые еще не завершились
+    active_events = db.query(Event).filter(
+        Event.is_active == True,
+        Event.registration_end > now
+    ).order_by(Event.preregistration_start.asc()).all()
+    
+    if not active_events:
+        raise HTTPException(status_code=404, detail="Нет активных мероприятий")
+    
+    # Возвращаем ближайшее мероприятие
+    return active_events[0]
 
 @app.post("/admin/promote/{user_id}")
 async def promote_user_to_admin(

@@ -12,6 +12,7 @@ import GiftExchange from './GiftExchange';
 import GiftList from './GiftList';
 import ProfileWizard from './ProfileWizard';
 import EventRegistration from './EventRegistration';
+import CurrentEventInfo from './CurrentEventInfo';
 
 const { Header, Content, Footer } = Layout;
 const { Title } = Typography;
@@ -119,73 +120,90 @@ function AppContent() {
   };
 
   const HomePage = () => (
-    <div style={{ textAlign: 'center', padding: '20px' }}>
-      <Title level={2} style={{ color: '#d63031', marginBottom: '20px', fontSize: window.innerWidth <= 768 ? '20px' : '32px' }}>
-        🎅 Добро пожаловать в Анонимный Дед Мороз! 🎁
-      </Title>
-      <Title level={4} style={{ color: '#636e72', marginBottom: '30px', fontSize: window.innerWidth <= 768 ? '14px' : '20px' }}>
-        {isAuthenticated 
-          ? `Добро пожаловать, ${user?.name}! Выберите действие:`
-          : 'Зарегистрируйтесь или войдите, чтобы участвовать в обмене подарками'
-        }
-      </Title>
-      <Space size="large" direction={window.innerWidth <= 768 ? "vertical" : "horizontal"} style={{ width: '100%' }}>
-        {!isAuthenticated ? (
-          <>
-            <Button 
-              type="primary" 
-              size={window.innerWidth <= 768 ? "middle" : "large"}
-              icon={<UserAddOutlined />}
-              onClick={() => navigate('/register')}
-              style={{ width: window.innerWidth <= 768 ? '100%' : 'auto' }}
-            >
-              Зарегистрироваться
-            </Button>
-            <Button 
-              size={window.innerWidth <= 768 ? "middle" : "large"}
-              icon={<UserAddOutlined />}
-              onClick={() => navigate('/login')}
-              style={{ width: window.innerWidth <= 768 ? '100%' : 'auto' }}
-            >
-              Войти
-            </Button>
-          </>
-        ) : (
-          <>
-            {user?.role === 'admin' && (
+    <div style={{ padding: '20px' }}>
+      <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+        <Title level={2} style={{ color: '#d63031', marginBottom: '20px', fontSize: window.innerWidth <= 768 ? '20px' : '32px' }}>
+          🎅 Добро пожаловать в Анонимный Дед Мороз! 🎁
+        </Title>
+        <Title level={4} style={{ color: '#636e72', marginBottom: '30px', fontSize: window.innerWidth <= 768 ? '14px' : '20px' }}>
+          {isAuthenticated 
+            ? `Добро пожаловать, ${user?.name}! Выберите действие:`
+            : 'Зарегистрируйтесь или войдите, чтобы участвовать в обмене подарками'
+          }
+        </Title>
+      </div>
+
+      {/* Информация о текущем мероприятии */}
+      <CurrentEventInfo />
+
+      {/* Кнопки действий */}
+      <div style={{ textAlign: 'center' }}>
+        <Space size="large" direction={window.innerWidth <= 768 ? "vertical" : "horizontal"} style={{ width: '100%' }}>
+          {!isAuthenticated ? (
+            <>
               <Button 
                 type="primary" 
                 size={window.innerWidth <= 768 ? "middle" : "large"}
-                icon={<CrownOutlined />}
-                onClick={() => navigate('/admin')}
-                style={{ 
-                  backgroundColor: '#d63031', 
-                  borderColor: '#d63031',
-                  width: window.innerWidth <= 768 ? '100%' : 'auto'
-                }}
+                icon={<UserAddOutlined />}
+                onClick={() => navigate('/register')}
+                style={{ width: window.innerWidth <= 768 ? '100%' : 'auto' }}
               >
-                Админ-панель
+                Зарегистрироваться
               </Button>
-            )}
-            <Button 
-              size={window.innerWidth <= 768 ? "middle" : "large"}
-              icon={<GiftOutlined />}
-              onClick={() => navigate('/exchange')}
-              style={{ width: window.innerWidth <= 768 ? '100%' : 'auto' }}
-            >
-              Обмен подарками
-            </Button>
-            <Button 
-              size={window.innerWidth <= 768 ? "middle" : "large"}
-              icon={<UserOutlined />}
-              onClick={() => navigate('/users')}
-              style={{ width: window.innerWidth <= 768 ? '100%' : 'auto' }}
-            >
-              Участники
-            </Button>
-          </>
-        )}
-      </Space>
+              <Button 
+                size={window.innerWidth <= 768 ? "middle" : "large"}
+                icon={<UserAddOutlined />}
+                onClick={() => navigate('/login')}
+                style={{ width: window.innerWidth <= 768 ? '100%' : 'auto' }}
+              >
+                Войти
+              </Button>
+            </>
+          ) : (
+            <>
+              {user?.role === 'admin' && (
+                <Button 
+                  type="primary" 
+                  size={window.innerWidth <= 768 ? "middle" : "large"}
+                  icon={<CrownOutlined />}
+                  onClick={() => navigate('/admin')}
+                  style={{ 
+                    backgroundColor: '#d63031', 
+                    borderColor: '#d63031',
+                    width: window.innerWidth <= 768 ? '100%' : 'auto'
+                  }}
+                >
+                  Админ-панель
+                </Button>
+              )}
+              <Button 
+                size={window.innerWidth <= 768 ? "middle" : "large"}
+                icon={<GiftOutlined />}
+                onClick={() => navigate('/exchange')}
+                style={{ width: window.innerWidth <= 768 ? '100%' : 'auto' }}
+              >
+                Обмен подарками
+              </Button>
+              <Button 
+                size={window.innerWidth <= 768 ? "middle" : "large"}
+                icon={<UserOutlined />}
+                onClick={() => navigate('/users')}
+                style={{ width: window.innerWidth <= 768 ? '100%' : 'auto' }}
+              >
+                Участники
+              </Button>
+              <Button 
+                size={window.innerWidth <= 768 ? "middle" : "large"}
+                icon={<CalendarOutlined />}
+                onClick={() => navigate('/events')}
+                style={{ width: window.innerWidth <= 768 ? '100%' : 'auto' }}
+              >
+                Мероприятия
+              </Button>
+            </>
+          )}
+        </Space>
+      </div>
     </div>
   );
 
