@@ -156,7 +156,6 @@ function AdminSystemSettings() {
             form={form}
             layout="vertical"
             onFinish={handleSave}
-            loading={loading}
           >
             <Card size="small" title="Настройки Dadata.ru">
               <Alert
