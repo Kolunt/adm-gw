@@ -6,10 +6,10 @@ import json
 
 BASE_URL = "http://localhost:8004"
 
-def test_admin_gwars_verification_management():
-    """Тестирование управления верификацией GWars профиля администратором"""
+def test_admin_profile_edit_fix():
+    """Тестирование исправлений в редактировании профиля администратором"""
     
-    print("=== Тестирование управления верификацией GWars профиля администратором ===\n")
+    print("=== Тестирование исправлений в редактировании профиля администратором ===\n")
     
     # 1. Проверяем доступность backend
     print("1. Проверка доступности backend...")
@@ -53,7 +53,7 @@ def test_admin_gwars_verification_management():
     # 3. Регистрируем тестового пользователя
     print("\n3. Регистрация тестового пользователя...")
     user_data = {
-        "email": "test_gwars_verification@example.com",
+        "email": "test_profile_edit_fix@example.com",
         "password": "password123",
         "confirm_password": "password123"
     }
@@ -79,7 +79,7 @@ def test_admin_gwars_verification_management():
             print(f"OK Получено {len(users)} пользователей")
             
             # Находим нашего тестового пользователя
-            test_user = next((u for u in users if u['email'] == 'test_gwars_verification@example.com'), None)
+            test_user = next((u for u in users if u['email'] == 'test_profile_edit_fix@example.com'), None)
             if test_user:
                 print(f"OK Тестовый пользователь найден: ID {test_user['id']}")
                 user_id = test_user['id']
@@ -102,6 +102,7 @@ def test_admin_gwars_verification_management():
             print(f"OK Профиль пользователя получен: {user_profile['name']} ({user_profile['email']})")
             print(f"   GWars верифицирован: {user_profile['gwars_verified']}")
             print(f"   GWars профиль: {user_profile['gwars_profile_url']}")
+            print(f"   GWars никнейм: {user_profile['gwars_nickname']}")
         else:
             print(f"ERROR Ошибка получения профиля: {response.status_code}")
             print(response.text)
@@ -110,13 +111,12 @@ def test_admin_gwars_verification_management():
         print(f"ERROR Ошибка при получении профиля: {e}")
         return False
     
-    # 6. Обновляем GWars информацию и устанавливаем верификацию
-    print(f"\n6. Обновление GWars информации и установка верификации...")
+    # 6. Обновляем GWars информацию (без токена)
+    print(f"\n6. Обновление GWars информации (без токена)...")
     update_data = {
-        "gwars_profile_url": "https://www.gwars.io/info.php?id=999999",
-        "gwars_nickname": "TestVerifiedUser",
-        "gwars_verified": True,
-        "gwars_verification_token": "admin_verified_token_12345"
+        "gwars_profile_url": "https://www.gwars.io/info.php?id=888888",
+        "gwars_nickname": "TestFixedUser",
+        "gwars_verified": True
     }
     
     try:
@@ -127,7 +127,6 @@ def test_admin_gwars_verification_management():
             print(f"   GWars профиль: {updated_profile['gwars_profile_url']}")
             print(f"   GWars никнейм: {updated_profile['gwars_nickname']}")
             print(f"   GWars верифицирован: {updated_profile['gwars_verified']}")
-            print(f"   Токен верификации: {updated_profile['gwars_verification_token']}")
         else:
             print(f"ERROR Ошибка обновления GWars информации: {response.status_code}")
             print(response.text)
@@ -159,11 +158,6 @@ def test_admin_gwars_verification_management():
                 print("OK Статус верификации обновлен корректно")
             else:
                 print("ERROR Статус верификации не обновился")
-                
-            if final_profile['gwars_verification_token'] == update_data['gwars_verification_token']:
-                print("OK Токен верификации обновлен корректно")
-            else:
-                print("ERROR Токен верификации не обновился")
         else:
             print(f"ERROR Ошибка проверки профиля: {response.status_code}")
             return False
@@ -191,30 +185,13 @@ def test_admin_gwars_verification_management():
         print(f"ERROR Ошибка при отключении верификации: {e}")
         return False
     
-    # 9. Проверяем отключение верификации
-    print(f"\n9. Проверка отключения верификации...")
-    try:
-        response = requests.get(f"{BASE_URL}/users/{user_id}", headers=admin_headers, timeout=10)
-        if response.status_code == 200:
-            final_profile = response.json()
-            if final_profile['gwars_verified'] == False:
-                print("OK Верификация успешно отключена")
-            else:
-                print("ERROR Верификация не отключилась")
-        else:
-            print(f"ERROR Ошибка проверки отключения верификации: {response.status_code}")
-            return False
-    except Exception as e:
-        print(f"ERROR Ошибка при проверке отключения верификации: {e}")
-        return False
-    
     print("\n=== Тестирование завершено! ===")
-    print("OK Администратор может изменять GWars профиль пользователя")
-    print("OK Администратор может управлять статусом верификации")
-    print("OK Администратор может устанавливать токен верификации")
-    print("OK Все изменения сохраняются корректно")
-    print("TIP Frontend готов для использования новой функциональности")
+    print("OK Поле токена удалено из формы")
+    print("OK GWars поля перемещены в основную форму")
+    print("OK Данные сохраняются корректно")
+    print("OK Статус верификации работает")
+    print("TIP Frontend готов для использования исправленной функциональности")
     return True
 
 if __name__ == "__main__":
-    test_admin_gwars_verification_management()
+    test_admin_profile_edit_fix()

@@ -39,7 +39,6 @@ function AdminUserProfileEdit() {
         gwars_profile_url: response.data.gwars_profile_url,
         gwars_nickname: response.data.gwars_nickname,
         gwars_verified: response.data.gwars_verified,
-        gwars_verification_token: response.data.gwars_verification_token,
       });
     } catch (error) {
       message.error('Ошибка при загрузке профиля пользователя');
@@ -159,6 +158,31 @@ function AdminUserProfileEdit() {
                   <TextArea rows={3} />
                 </Form.Item>
 
+                <Form.Item
+                  name="gwars_profile_url"
+                  label="Ссылка на GWars профиль"
+                >
+                  <Input prefix={<LinkOutlined />} />
+                </Form.Item>
+
+                <Form.Item
+                  name="gwars_nickname"
+                  label="GWars никнейм"
+                >
+                  <Input />
+                </Form.Item>
+
+                <Form.Item
+                  name="gwars_verified"
+                  label="Статус верификации"
+                  valuePropName="checked"
+                >
+                  <Switch 
+                    checkedChildren="Верифицирован" 
+                    unCheckedChildren="Не верифицирован"
+                  />
+                </Form.Item>
+
                 <Form.Item>
                   <Button 
                     type="primary" 
@@ -238,41 +262,6 @@ function AdminUserProfileEdit() {
                   </div>
                 </div>
 
-                <Divider />
-
-                <Card title="GWars информация" size="small">
-                  <Form.Item
-                    name="gwars_profile_url"
-                    label="Ссылка на GWars профиль"
-                  >
-                    <Input prefix={<LinkOutlined />} />
-                  </Form.Item>
-
-                  <Form.Item
-                    name="gwars_nickname"
-                    label="GWars никнейм"
-                  >
-                    <Input />
-                  </Form.Item>
-
-                  <Form.Item
-                    name="gwars_verified"
-                    label="Статус верификации"
-                    valuePropName="checked"
-                  >
-                    <Switch 
-                      checkedChildren="Верифицирован" 
-                      unCheckedChildren="Не верифицирован"
-                    />
-                  </Form.Item>
-
-                  <Form.Item
-                    name="gwars_verification_token"
-                    label="Токен верификации"
-                  >
-                    <Input.Password placeholder="Токен для верификации GWars профиля" />
-                  </Form.Item>
-                </Card>
               </Space>
             </Card>
           </Col>
