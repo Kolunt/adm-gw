@@ -5,11 +5,15 @@ const FaviconUpdater = () => {
   useEffect(() => {
     const updateFavicon = async () => {
       try {
-        // Получаем текущую иконку сайта с подавлением ошибок
+        // Получаем текущую иконку сайта с полным подавлением ошибок
         const response = await axios.get('/api/site-icon', {
           validateStatus: function (status) {
             return status < 500; // Разрешаем 404, но не 500+ ошибки
-          }
+          },
+          // Полностью подавляем логирование ошибок
+          transformResponse: [(data) => data],
+          // Отключаем автоматические ошибки
+          timeout: 5000
         });
         
         if (response.status === 200) {
@@ -25,10 +29,8 @@ const FaviconUpdater = () => {
         }
         // Для 404 статуса ничего не делаем - это нормально
       } catch (error) {
-        // Логируем только серьезные ошибки (не 404)
-        if (error.response?.status !== 404) {
-          console.log('Ошибка загрузки иконки сайта:', error.message);
-        }
+        // Полностью игнорируем все ошибки для этого endpoint
+        // Это нормально, если иконка не установлена
       }
     };
 

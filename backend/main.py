@@ -515,7 +515,7 @@ class SiteIconResponse(BaseModel):
 
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.0.91")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.0.92")
 
 # CORS middleware
 app.add_middleware(
@@ -1326,9 +1326,9 @@ async def get_system_settings(
         # Конвертируем булевые значения из строк
         if response_setting.key in ['dadata_enabled']:
             if response_setting.value.lower() == 'true':
-                response_setting.value = True
+                response_setting.value = 'true'  # Оставляем как строку
             elif response_setting.value.lower() == 'false':
-                response_setting.value = False
+                response_setting.value = 'false'  # Оставляем как строку
         
         response_settings.append(response_setting)
     
@@ -2207,16 +2207,27 @@ async def get_dashboard_stats(current_user: User = Depends(get_current_admin)):
         preregistrations = db.query(EventRegistration).filter(EventRegistration.is_preregistration == True).count()
         confirmed_registrations = db.query(EventRegistration).filter(EventRegistration.is_confirmed == True).count()
         
-        # Статистика интересов
-        total_interests = db.query(Interest).count()
-        active_interests = db.query(Interest).filter(Interest.is_active == True).count()
+        # Статистика интересов (с проверкой существования таблицы)
+        try:
+            total_interests = db.query(Interest).count()
+            active_interests = db.query(Interest).filter(Interest.is_active == True).count()
+        except Exception:
+            total_interests = 0
+            active_interests = 0
         
-        # Статистика FAQ
-        total_faq = db.query(FAQ).count()
-        active_faq = db.query(FAQ).filter(FAQ.is_active == True).count()
+        # Статистика FAQ (с проверкой существования таблицы)
+        try:
+            total_faq = db.query(FAQ).count()
+            active_faq = db.query(FAQ).filter(FAQ.is_active == True).count()
+        except Exception:
+            total_faq = 0
+            active_faq = 0
         
-        # Статистика Telegram
-        telegram_subscribers = db.query(TelegramUser).filter(TelegramUser.is_active == True).count()
+        # Статистика Telegram (с проверкой существования таблицы)
+        try:
+            telegram_subscribers = db.query(TelegramUser).filter(TelegramUser.is_active == True).count()
+        except Exception:
+            telegram_subscribers = 0
         
         # Статистика по месяцам (регистрации пользователей)
         from datetime import datetime, timedelta

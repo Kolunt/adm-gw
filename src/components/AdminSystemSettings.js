@@ -42,7 +42,10 @@ function AdminSystemSettings({ activeTab: initialActiveTab = 'general' }) {
       });
       
       setSettings(response.data);
-      form.setFieldsValue(settingsData);
+      // Устанавливаем значения формы только если форма существует
+      if (form) {
+        form.setFieldsValue(settingsData);
+      }
       setTokenValue(settingsData.dadata_token || '');
     } catch (error) {
       console.error('Error fetching settings:', error);
@@ -84,7 +87,10 @@ function AdminSystemSettings({ activeTab: initialActiveTab = 'general' }) {
     settings.forEach(setting => {
       settingsData[setting.key] = setting.value;
     });
-    form.setFieldsValue(settingsData);
+    // Устанавливаем значения формы только если форма существует
+    if (form) {
+      form.setFieldsValue(settingsData);
+    }
     setTokenValue(settingsData.dadata_token || '');
   };
 
