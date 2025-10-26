@@ -125,6 +125,16 @@ function AdminInterestsManagement({ currentUser }) {
       ),
     },
     {
+      title: 'Автор',
+      dataIndex: 'created_by_user_id',
+      key: 'created_by_user_id',
+      render: (userId) => (
+        <Tag color="blue">
+          {userId ? `Пользователь #${userId}` : 'Система'}
+        </Tag>
+      ),
+    },
+    {
       title: 'Дата добавления',
       dataIndex: 'created_at',
       key: 'created_at',

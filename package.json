@@ -1,6 +1,6 @@
 {
   "name": "anonymous-santa",
-  "version": "0.0.64",
+  "version": "0.0.65",
   "private": true,
   "dependencies": {
     "@testing-library/jest-dom": "^5.16.4",
@@ -8,6 +8,7 @@
     "@testing-library/user-event": "^13.5.0",
     "antd": "^5.12.8",
     "axios": "^1.6.2",
+    "lodash.debounce": "^4.0.8",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.8.1",
@@ -39,4 +40,4 @@
     ]
   },
   "homepage": "."
-  }
+}

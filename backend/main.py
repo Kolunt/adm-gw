@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.security import OAuth2PasswordBearer
-from sqlalchemy import create_engine, Column, Integer, String, Boolean, DateTime
+from sqlalchemy import create_engine, Column, Integer, String, Boolean, DateTime, ForeignKey
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from pydantic import BaseModel
@@ -96,6 +96,7 @@ class Interest(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, index=True)
     is_active = Column(Boolean, default=True)
+    created_by_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # Кто создал интерес
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -321,6 +322,7 @@ class SystemSettingUpdate(BaseModel):
 
 class InterestCreate(BaseModel):
     name: str
+    created_by_user_id: int | None = None
 
 class InterestUpdate(BaseModel):
     name: str | None = None
@@ -330,6 +332,7 @@ class InterestResponse(BaseModel):
     id: int
     name: str
     is_active: bool
+    created_by_user_id: int | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -338,7 +341,7 @@ class InterestResponse(BaseModel):
 
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.0.64")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.0.65")
 
 # CORS middleware
 app.add_middleware(
@@ -1245,7 +1248,8 @@ async def create_interest(
     
     interest = Interest(
         name=interest_data.name,
-        is_active=True
+        is_active=True,
+        created_by_user_id=interest_data.created_by_user_id
     )
     db.add(interest)
     db.commit()
@@ -1294,6 +1298,59 @@ async def delete_interest(
     db.delete(interest)
     db.commit()
     return {"message": "Интерес успешно удален"}
+
+# API эндпоинты для работы с интересами пользователей
+@app.get("/api/interests/search")
+async def search_interests(
+    query: str,
+    db: Session = Depends(get_db)
+):
+    """Поиск интересов по названию (доступен всем)"""
+    if len(query.strip()) < 2:
+        return []
+    
+    interests = db.query(Interest).filter(
+        Interest.is_active == True,
+        Interest.name.ilike(f"%{query.strip()}%")
+    ).limit(10).all()
+    
+    return [{"id": interest.id, "name": interest.name} for interest in interests]
+
+@app.post("/api/interests/create", response_model=InterestResponse)
+async def create_user_interest(
+    interest_data: InterestCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Создание нового интереса пользователем"""
+    # Проверяем, не существует ли уже такой интерес
+    existing_interest = db.query(Interest).filter(Interest.name == interest_data.name).first()
+    if existing_interest:
+        # Если интерес существует, возвращаем его
+        return existing_interest
+    
+    # Создаем новый интерес
+    interest = Interest(
+        name=interest_data.name,
+        is_active=True,
+        created_by_user_id=current_user.id
+    )
+    db.add(interest)
+    db.commit()
+    db.refresh(interest)
+    return interest
+
+@app.get("/api/interests/popular")
+async def get_popular_interests(
+    limit: int = 20,
+    db: Session = Depends(get_db)
+):
+    """Получение популярных активных интересов (доступен всем)"""
+    interests = db.query(Interest).filter(
+        Interest.is_active == True
+    ).order_by(Interest.created_at.desc()).limit(limit).all()
+    
+    return [{"id": interest.id, "name": interest.name} for interest in interests]
 
 # Публичный API для получения списка пользователей (доступен всем)
 @app.get("/api/users/public")

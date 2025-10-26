@@ -10,6 +10,7 @@ import {
 import axios from 'axios';
 import GWarsVerification from './GWarsVerification';
 import AddressAutocomplete from './AddressAutocomplete';
+import InterestTags from './InterestTags';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -97,7 +98,17 @@ function ProfileWizard({ onProfileCompleted }) {
   const onStep3Finish = async (values) => {
     setLoading(true);
     try {
-      await axios.post('/profile/step3', values, {
+      // Преобразуем массив интересов в строку для отправки на сервер
+      const interestsText = values.interests 
+        ? values.interests.map(interest => interest.name).join(', ')
+        : '';
+      
+      const dataToSend = {
+        ...values,
+        interests: interestsText
+      };
+      
+      await axios.post('/profile/step3', dataToSend, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       message.success('Профиль полностью заполнен!');
@@ -195,14 +206,11 @@ function ProfileWizard({ onProfileCompleted }) {
                 name="interests"
                 label="Ваши интересы и предпочтения"
                 rules={[
-                  { required: true, message: 'Пожалуйста, расскажите о ваших интересах!' },
-                  { min: 10, message: 'Описание должно содержать минимум 10 символов!' }
+                  { required: true, message: 'Пожалуйста, добавьте хотя бы один интерес!' }
                 ]}
               >
-                <TextArea 
-                  placeholder="Например: люблю читать фантастику, коллекционирую марки, увлекаюсь программированием, предпочитаю практичные подарки..."
-                  rows={4}
-                  prefix={<HeartOutlined />}
+                <InterestTags 
+                  placeholder="Начните вводить ваш интерес..."
                 />
               </Form.Item>
               <Form.Item>
