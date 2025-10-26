@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Button, Space, Tag, Modal, Form, Input, Select, message, Card, Typography, Popconfirm } from 'antd';
-import { EditOutlined, DeleteOutlined, PlusOutlined, CrownOutlined } from '@ant-design/icons';
+import { EditOutlined, DeleteOutlined, PlusOutlined, CrownOutlined, UserOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 const { Title } = Typography;
 const { Option } = Select;
 
 function AdminUserManagement({ currentUser }) {
+  const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -99,6 +101,11 @@ function AdminUserManagement({ currentUser }) {
     }
   };
 
+  const handleViewProfile = (user) => {
+    // Переходим к профилю пользователя с параметром для редактирования
+    navigate(`/admin/user-profile/${user.id}`);
+  };
+
   const columns = [
     {
       title: 'ID',
@@ -147,6 +154,14 @@ function AdminUserManagement({ currentUser }) {
       key: 'actions',
       render: (_, record) => (
         <Space>
+          <Button
+            icon={<UserOutlined />}
+            onClick={() => handleViewProfile(record)}
+            size="small"
+            type="default"
+          >
+            Профиль
+          </Button>
           <Button
             icon={<EditOutlined />}
             onClick={() => handleEdit(record)}

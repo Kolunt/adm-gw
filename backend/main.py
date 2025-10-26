@@ -253,6 +253,7 @@ class ProfileUpdate(BaseModel):
     full_name: str | None = None
     address: str | None = None
     interests: str | None = None
+    gwars_nickname: str | None = None
 
 class EventCreate(BaseModel):
     name: str
@@ -309,7 +310,7 @@ class SystemSettingUpdate(BaseModel):
 
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.0.58")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.0.59")
 
 # CORS middleware
 app.add_middleware(
@@ -417,10 +418,33 @@ async def get_users(db: Session = Depends(get_db)):
     return users
 
 @app.get("/users/{user_id}", response_model=UserResponse)
-async def get_user(user_id: int, db: Session = Depends(get_db)):
+async def get_user(user_id: int, current_admin: User = Depends(get_current_admin), db: Session = Depends(get_db)):
+    """Получение профиля пользователя по ID (только для администраторов)"""
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    return user
+
+@app.put("/users/{user_id}", response_model=UserResponse)
+async def update_user(
+    user_id: int,
+    user_update: ProfileUpdate,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """Обновление профиля пользователя администратором"""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Обновляем поля пользователя
+    update_data = user_update.dict(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(user, field, value)
+    
+    user.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(user)
     return user
 
 # API endpoints для пошагового заполнения профиля

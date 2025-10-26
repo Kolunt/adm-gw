@@ -14,6 +14,7 @@ import EventRegistration from './EventRegistration';
 import EventDetail from './EventDetail';
 import CurrentEventInfo from './CurrentEventInfo';
 import AdminRouteGuard from './AdminRouteGuard';
+import AdminUserProfileEdit from './AdminUserProfileEdit';
 
 const { Header, Content, Footer } = Layout;
 const { Title } = Typography;
@@ -310,6 +311,11 @@ function AppContent() {
           <Route path="/admin/settings/dadata" element={
             <AdminRouteGuard user={user}>
               <AdminPanel currentUser={user} onLogout={handleLogout} />
+            </AdminRouteGuard>
+          } />
+          <Route path="/admin/user-profile/:userId" element={
+            <AdminRouteGuard user={user}>
+              <AdminUserProfileEdit />
             </AdminRouteGuard>
           } />
           <Route path="/users" element={<UserList users={users} />} />
