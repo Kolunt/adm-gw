@@ -49,6 +49,10 @@ class User(Base):
     address = Column(String)  # Адрес для отправки подарков
     interests = Column(String)  # Интересы пользователя
     profile_completed = Column(Boolean, default=False)  # Заполнен ли профиль
+    
+    # Верификация GWars.io
+    gwars_verification_token = Column(String)  # Токен для верификации
+    gwars_verified = Column(Boolean, default=False)  # Верифицирован ли профиль
 
 class Event(Base):
     __tablename__ = "events"
@@ -157,6 +161,10 @@ class UserResponse(BaseModel):
     address: str | None = None
     interests: str | None = None
     profile_completed: bool = False
+    
+    # Верификация GWars.io
+    gwars_verification_token: str | None = None
+    gwars_verified: bool = False
 
 class Token(BaseModel):
     access_token: str
@@ -226,7 +234,7 @@ class EventRegistrationResponse(BaseModel):
 
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.0.19")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.0.20")
 
 # CORS middleware
 app.add_middleware(
@@ -655,6 +663,127 @@ async def update_user_profile(
     db.commit()
     db.refresh(current_user)
     return current_user
+
+
+@app.post("/auth/parse-gwars-profile")
+async def parse_gwars_profile(
+    profile_data: dict,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Парсинг GWars.io профиля для получения информации"""
+    import requests
+    import re
+    
+    profile_url = profile_data.get("profile_url")
+    if not profile_url:
+        raise HTTPException(status_code=400, detail="URL профиля не указан")
+    
+    try:
+        # Получаем страницу профиля
+        response = requests.get(profile_url, timeout=10)
+        response.raise_for_status()
+        
+        # Парсим никнейм и уровень
+        nickname_match = re.search(r'<title>([^<]+)</title>', response.text)
+        level_match = re.search(r'Уровень:\s*(\d+)', response.text)
+        
+        if not nickname_match:
+            return {"success": False, "error": "Не удалось найти никнейм в профиле"}
+        
+        nickname = nickname_match.group(1).strip()
+        level = level_match.group(1) if level_match else "Неизвестно"
+        
+        # Обновляем URL профиля в базе данных
+        current_user.gwars_profile_url = profile_url
+        db.commit()
+        
+        return {
+            "success": True,
+            "profile": {
+                "nickname": nickname,
+                "level": level,
+                "url": profile_url
+            }
+        }
+        
+    except requests.RequestException as e:
+        return {"success": False, "error": f"Ошибка при загрузке профиля: {str(e)}"}
+    except Exception as e:
+        return {"success": False, "error": f"Ошибка при парсинге: {str(e)}"}
+
+
+@app.post("/auth/generate-verification-token")
+async def generate_verification_token(
+    profile_data: dict,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Генерация уникального токена верификации"""
+    import secrets
+    import string
+    
+    profile_url = profile_data.get("profile_url")
+    if not profile_url:
+        raise HTTPException(status_code=400, detail="URL профиля не указан")
+    
+    # Генерируем уникальный токен из 20 символов
+    alphabet = string.ascii_letters + string.digits
+    token = ''.join(secrets.choice(alphabet) for _ in range(20))
+    
+    # Сохраняем токен в профиле пользователя (можно добавить отдельную таблицу для токенов)
+    current_user.gwars_verification_token = token
+    current_user.gwars_profile_url = profile_url
+    db.commit()
+    
+    return {
+        "success": True,
+        "token": token
+    }
+
+
+@app.post("/auth/verify-gwars-token")
+async def verify_gwars_token(
+    verification_data: dict,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Проверка токена верификации на GWars.io профиле"""
+    import requests
+    import re
+    
+    profile_url = verification_data.get("profile_url")
+    verification_token = verification_data.get("verification_token")
+    
+    if not profile_url or not verification_token:
+        raise HTTPException(status_code=400, detail="URL профиля или токен не указан")
+    
+    try:
+        # Получаем страницу профиля
+        response = requests.get(profile_url, timeout=10)
+        response.raise_for_status()
+        
+        # Ищем токен в тексте страницы
+        if verification_token in response.text:
+            # Токен найден - профиль верифицирован
+            current_user.gwars_verified = True
+            current_user.gwars_profile_url = profile_url
+            db.commit()
+            
+            return {
+                "success": True,
+                "message": "Профиль успешно верифицирован"
+            }
+        else:
+            return {
+                "success": False,
+                "error": "Токен не найден в профиле. Убедитесь, что вы разместили сообщение в поле 'Информация'"
+            }
+            
+    except requests.RequestException as e:
+        return {"success": False, "error": f"Ошибка при загрузке профиля: {str(e)}"}
+    except Exception as e:
+        return {"success": False, "error": f"Ошибка при проверке: {str(e)}"}
 
 
 # Mount static files for React app

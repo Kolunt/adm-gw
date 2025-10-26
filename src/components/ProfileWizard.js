@@ -8,6 +8,7 @@ import {
   CheckCircleOutlined 
 } from '@ant-design/icons';
 import axios from 'axios';
+import GWarsVerification from './GWarsVerification';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -80,6 +81,12 @@ function ProfileWizard({ onProfileCompleted }) {
     }
   };
 
+  const handleGWarsVerificationComplete = () => {
+    message.success('GWars профиль верифицирован!');
+    setCurrentStep(1);
+    fetchProfileStatus();
+  };
+
   const onStep2Finish = async (values) => {
     setLoading(true);
     try {
@@ -116,47 +123,7 @@ function ProfileWizard({ onProfileCompleted }) {
     switch (currentStep) {
       case 0:
         return (
-          <Card>
-            <Title level={3} style={{ color: '#d63031', marginBottom: '20px' }}>
-              <LinkOutlined /> Шаг 1: Профиль GWars
-            </Title>
-            <Text style={{ marginBottom: '20px', display: 'block' }}>
-              Введите ссылку на ваш профиль в GWars.io для подтверждения участия.
-            </Text>
-            <Form
-              form={form}
-              layout="vertical"
-              onFinish={onStep1Finish}
-              size={window.innerWidth <= 768 ? "middle" : "large"}
-            >
-              <Form.Item
-                name="gwars_profile_url"
-                label="Ссылка на профиль GWars"
-                rules={[
-                  { required: true, message: 'Пожалуйста, введите ссылку!' },
-                  { 
-                    pattern: /^https:\/\/www\.gwars\.io\/info\.php\?id=\d+$/,
-                    message: 'Введите корректную ссылку на профиль GWars (например: https://www.gwars.io/info.php?id=12345)'
-                  }
-                ]}
-              >
-                <Input 
-                  placeholder="https://www.gwars.io/info.php?id=12345"
-                  prefix={<LinkOutlined />}
-                />
-              </Form.Item>
-              <Form.Item>
-                <Button 
-                  type="primary" 
-                  htmlType="submit" 
-                  loading={loading}
-                  style={{ backgroundColor: '#d63031', borderColor: '#d63031' }}
-                >
-                  Сохранить и продолжить
-                </Button>
-              </Form.Item>
-            </Form>
-          </Card>
+          <GWarsVerification onVerificationComplete={handleGWarsVerificationComplete} />
         );
 
       case 1:
