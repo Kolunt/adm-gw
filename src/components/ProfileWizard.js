@@ -5,7 +5,9 @@ import {
   UserOutlined, 
   HomeOutlined, 
   HeartOutlined,
-  CheckCircleOutlined 
+  CheckCircleOutlined,
+  PhoneOutlined,
+  MessageOutlined
 } from '@ant-design/icons';
 import axios from 'axios';
 import GWarsVerification from './GWarsVerification';
@@ -31,7 +33,11 @@ function ProfileWizard({ onProfileCompleted }) {
       
       // Устанавливаем текущий шаг на основе статуса
       if (response.data.next_step) {
-        setCurrentStep(response.data.next_step - 1);
+        if (response.data.next_step === 2.5) {
+          setCurrentStep(2); // Шаг 2.5 соответствует индексу 2
+        } else {
+          setCurrentStep(response.data.next_step - 1);
+        }
       }
       
       // Заполняем форму существующими данными только если форма готова
@@ -42,6 +48,8 @@ function ProfileWizard({ onProfileCompleted }) {
             gwars_profile_url: response.data.step1_completed ? 'completed' : '',
             full_name: response.data.step2_completed ? 'completed' : '',
             address: response.data.step2_completed ? 'completed' : '',
+            phone_number: response.data.step2_5_completed ? 'completed' : '',
+            telegram_username: response.data.step2_5_completed ? 'completed' : '',
             interests: response.data.step3_completed ? 'completed' : ''
           });
         }, 100);
@@ -67,6 +75,11 @@ function ProfileWizard({ onProfileCompleted }) {
       description: 'ФИО и адрес'
     },
     {
+      title: 'Контакты',
+      icon: <PhoneOutlined />,
+      description: 'Телефон и Telegram (необязательно)'
+    },
+    {
       title: 'Интересы',
       icon: <HeartOutlined />,
       description: 'Ваши интересы и предпочтения'
@@ -87,10 +100,28 @@ function ProfileWizard({ onProfileCompleted }) {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       message.success('Шаг 2 завершен!');
-      setCurrentStep(2);
+      setCurrentStep(2); // Переходим к шагу 2.5 (контакты)
       fetchProfileStatus();
     } catch (error) {
       message.error('Ошибка при сохранении данных');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onStep2_5Finish = async (values) => {
+    setLoading(true);
+    try {
+      await axios.post('/profile/step2_5', values, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      
+      message.success('Контактная информация сохранена!');
+      setCurrentStep(3); // Переходим к шагу 3 (интересы)
+      await fetchProfileStatus();
+    } catch (error) {
+      console.error('Ошибка при сохранении контактной информации:', error);
+      message.error('Ошибка при сохранении контактной информации');
     } finally {
       setLoading(false);
     }
@@ -192,6 +223,64 @@ function ProfileWizard({ onProfileCompleted }) {
         return (
           <Card>
             <Title level={3} style={{ color: '#d63031', marginBottom: '20px' }}>
+              <PhoneOutlined /> Шаг 2.5: Контактная информация
+            </Title>
+            <Text style={{ marginBottom: '20px', display: 'block' }}>
+              Укажите дополнительные контактные данные (необязательно). Это поможет организаторам связаться с вами при необходимости.
+            </Text>
+            <Form
+              form={form}
+              layout="vertical"
+              onFinish={onStep2_5Finish}
+              size={window.innerWidth <= 768 ? "middle" : "large"}
+            >
+              <Form.Item
+                name="phone_number"
+                label="Номер телефона"
+                rules={[
+                  { pattern: /^[\+]?[0-9\s\-\(\)]{10,}$/, message: 'Введите корректный номер телефона!' }
+                ]}
+              >
+                <Input 
+                  placeholder="+7 (999) 123-45-67"
+                  prefix={<PhoneOutlined />}
+                />
+              </Form.Item>
+              <Form.Item
+                name="telegram_username"
+                label="Никнейм в Telegram"
+                rules={[
+                  { pattern: /^@?[a-zA-Z0-9_]{5,32}$/, message: 'Введите корректный никнейм Telegram!' }
+                ]}
+              >
+                <Input 
+                  placeholder="@username или username"
+                  prefix={<MessageOutlined />}
+                />
+              </Form.Item>
+              <Form.Item>
+                <Space>
+                  <Button onClick={() => setCurrentStep(1)}>
+                    Назад
+                  </Button>
+                  <Button 
+                    type="primary" 
+                    htmlType="submit" 
+                    loading={loading}
+                    style={{ backgroundColor: '#d63031', borderColor: '#d63031' }}
+                  >
+                    Продолжить
+                  </Button>
+                </Space>
+              </Form.Item>
+            </Form>
+          </Card>
+        );
+
+      case 3:
+        return (
+          <Card>
+            <Title level={3} style={{ color: '#d63031', marginBottom: '20px' }}>
               <HeartOutlined /> Шаг 3: Интересы
             </Title>
             <Text style={{ marginBottom: '20px', display: 'block' }}>
@@ -216,7 +305,7 @@ function ProfileWizard({ onProfileCompleted }) {
               </Form.Item>
               <Form.Item>
                 <Space>
-                  <Button onClick={() => setCurrentStep(1)}>
+                  <Button onClick={() => setCurrentStep(2)}>
                     Назад
                   </Button>
                   <Button 

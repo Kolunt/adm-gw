@@ -69,6 +69,10 @@ class User(Base):
     
     # Аватарка пользователя
     avatar_seed = Column(String)  # Seed для генерации аватарки DiceBear
+    
+    # Дополнительные поля профиля (необязательные)
+    phone_number = Column(String)  # Номер телефона
+    telegram_username = Column(String)  # Никнейм в Telegram
 
 class Event(Base):
     __tablename__ = "events"
@@ -325,6 +329,10 @@ class UserResponse(BaseModel):
     # Аватарка пользователя
     avatar_seed: str | None = None
     
+    # Дополнительные поля профиля (необязательные)
+    phone_number: str | None = None
+    telegram_username: str | None = None
+    
     class Config:
         from_attributes = True
 
@@ -343,6 +351,10 @@ class ProfileStep2(BaseModel):
 class ProfileStep3(BaseModel):
     interests: str
 
+class ProfileStep2_5(BaseModel):
+    phone_number: str | None = None
+    telegram_username: str | None = None
+
 class ProfileUpdate(BaseModel):
     name: str | None = None
     email: str | None = None
@@ -353,6 +365,9 @@ class ProfileUpdate(BaseModel):
     gwars_nickname: str | None = None
     gwars_verified: bool | None = None
     gwars_verification_token: str | None = None
+    # Дополнительные поля профиля (необязательные)
+    phone_number: str | None = None
+    telegram_username: str | None = None
 
 class EventCreate(BaseModel):
     name: str
@@ -515,7 +530,7 @@ class SiteIconResponse(BaseModel):
 
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.0.95")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.0.96")
 
 # CORS middleware
 app.add_middleware(
@@ -687,6 +702,20 @@ async def update_profile_step2(
     db.commit()
     return {"message": "Шаг 2 профиля обновлен", "step": 2}
 
+@app.post("/profile/step2_5")
+async def update_profile_step2_5(
+    step2_5_data: ProfileStep2_5,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Шаг 2.5: Обновление дополнительных полей (необязательных)"""
+    if step2_5_data.phone_number is not None:
+        current_user.phone_number = step2_5_data.phone_number
+    if step2_5_data.telegram_username is not None:
+        current_user.telegram_username = step2_5_data.telegram_username
+    db.commit()
+    return {"message": "Шаг 2.5 завершен", "step": 2.5}
+
 @app.post("/profile/step3")
 async def update_profile_step3(
     step3_data: ProfileStep3,
@@ -706,10 +735,12 @@ async def get_profile_status(current_user: User = Depends(get_current_user)):
         "profile_completed": current_user.profile_completed,
         "step1_completed": bool(current_user.gwars_profile_url),
         "step2_completed": bool(current_user.full_name and current_user.address),
+        "step2_5_completed": bool(current_user.phone_number or current_user.telegram_username),
         "step3_completed": bool(current_user.interests),
         "next_step": 1 if not current_user.gwars_profile_url else 
                     (2 if not (current_user.full_name and current_user.address) else 
-                    (3 if not current_user.interests else None))
+                    (2.5 if not (current_user.phone_number or current_user.telegram_username) else 
+                    (3 if not current_user.interests else None)))
     }
 
 # Функция для генерации уникального ID мероприятия
@@ -1170,6 +1201,10 @@ async def update_user_profile(
         current_user.address = profile_data.address
     if profile_data.interests is not None:
         current_user.interests = profile_data.interests
+    if profile_data.phone_number is not None:
+        current_user.phone_number = profile_data.phone_number
+    if profile_data.telegram_username is not None:
+        current_user.telegram_username = profile_data.telegram_username
     
     db.commit()
     db.refresh(current_user)
