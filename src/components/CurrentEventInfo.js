@@ -1,18 +1,19 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, Typography, Statistic, Row, Col, Tag, Alert, List } from 'antd';
-import { CalendarOutlined, ClockCircleOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import { Card, Typography, Statistic, Row, Col, Tag, Alert, List, Button, Space } from 'antd';
+import { CalendarOutlined, ClockCircleOutlined, CheckCircleOutlined, UserAddOutlined, CheckOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import moment from 'moment';
 
 const { Title, Text } = Typography;
 
-function CurrentEventInfo() {
+function CurrentEventInfo({ user, isAuthenticated, onNavigate }) {
   const [currentEvent, setCurrentEvent] = useState(null);
   const [timeLeft, setTimeLeft] = useState(null);
   const [currentPhase, setCurrentPhase] = useState(null);
   const [loading, setLoading] = useState(true);
   const [participants, setParticipants] = useState([]);
   const [hasChecked, setHasChecked] = useState(false);
+  const [userRegistration, setUserRegistration] = useState(null);
 
   const updateCountdown = useCallback((event = currentEvent) => {
     if (!event) return;
@@ -93,6 +94,96 @@ function CurrentEventInfo() {
     }
   }, []);
 
+  const fetchUserRegistration = useCallback(async (eventId) => {
+    if (!eventId || !isAuthenticated || !user) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`/events/${eventId}/user-registration`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setUserRegistration(response.data);
+    } catch (error) {
+      if (error.response?.status === 404) {
+        // Пользователь не зарегистрирован
+        setUserRegistration(null);
+      } else {
+        console.error('Error fetching user registration:', error);
+        setUserRegistration(null);
+      }
+    }
+  }, [isAuthenticated, user]);
+
+  const getActionButton = () => {
+    if (!isAuthenticated || !user) {
+      return null;
+    }
+
+    if (!currentEvent) {
+      return null;
+    }
+
+    const now = moment();
+    const preregStart = moment(currentEvent.preregistration_start);
+    const regStart = moment(currentEvent.registration_start);
+    const regEnd = moment(currentEvent.registration_end);
+
+    // Проверяем, может ли пользователь участвовать
+    const canPreregister = now.isAfter(preregStart) && now.isBefore(regStart);
+    const canRegister = now.isAfter(regStart) && now.isBefore(regEnd);
+    const canConfirm = userRegistration && userRegistration.is_preregistration && !userRegistration.is_confirmed && now.isAfter(regStart);
+
+    if (userRegistration) {
+      if (userRegistration.is_confirmed) {
+        return (
+          <Button 
+            type="primary" 
+            icon={<CheckOutlined />}
+            disabled
+            style={{ backgroundColor: '#52c41a', borderColor: '#52c41a' }}
+          >
+            Вы участвуете в мероприятии
+          </Button>
+        );
+      } else if (canConfirm) {
+        return (
+          <Button 
+            type="primary" 
+            icon={<CheckOutlined />}
+            onClick={() => onNavigate('/events')}
+            style={{ backgroundColor: '#fa8c16', borderColor: '#fa8c16' }}
+          >
+            Подтвердить участие
+          </Button>
+        );
+      } else {
+        return (
+          <Button 
+            type="primary" 
+            icon={<ClockCircleOutlined />}
+            disabled
+            style={{ backgroundColor: '#1890ff', borderColor: '#1890ff' }}
+          >
+            Предварительно зарегистрированы
+          </Button>
+        );
+      }
+    } else if (canPreregister || canRegister) {
+      return (
+        <Button 
+          type="primary" 
+          icon={<UserAddOutlined />}
+          onClick={() => onNavigate('/events')}
+          style={{ backgroundColor: '#d63031', borderColor: '#d63031' }}
+        >
+          Принять участие
+        </Button>
+      );
+    }
+
+    return null;
+  };
+
   const fetchCurrentEvent = useCallback(async () => {
     // Если уже проверяли, не делаем повторный запрос
     if (hasChecked) return;
@@ -104,8 +195,9 @@ function CurrentEventInfo() {
       setLoading(false);
       setHasChecked(true);
       
-      // Загружаем участников
+      // Загружаем участников и регистрацию пользователя
       fetchParticipants(response.data.id);
+      fetchUserRegistration(response.data.id);
     } catch (error) {
       if (error.response?.status === 404) {
         // Нет активных мероприятий - это нормально
@@ -120,7 +212,7 @@ function CurrentEventInfo() {
       setLoading(false);
       setHasChecked(true);
     }
-  }, [updateCountdown, fetchParticipants, hasChecked]);
+  }, [updateCountdown, fetchParticipants, fetchUserRegistration, hasChecked]);
 
   // Запускаем проверку только один раз при монтировании
   useEffect(() => {
@@ -209,6 +301,13 @@ function CurrentEventInfo() {
           />
         </Col>
       </Row>
+
+      {/* Кнопка действия для авторизованных пользователей */}
+      {isAuthenticated && (
+        <div style={{ marginTop: '24px', textAlign: 'center' }}>
+          {getActionButton()}
+        </div>
+      )}
 
       {/* Список участников */}
       {participants.length > 0 && (

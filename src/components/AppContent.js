@@ -130,7 +130,11 @@ function AppContent() {
       </div>
 
       {/* Информация о текущем мероприятии */}
-      <CurrentEventInfo />
+      <CurrentEventInfo 
+        user={user} 
+        isAuthenticated={isAuthenticated} 
+        onNavigate={handleNavigation}
+      />
 
     </div>
   );

@@ -490,7 +490,7 @@ class SiteIconResponse(BaseModel):
 
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.0.86")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.0.87")
 
 # CORS middleware
 app.add_middleware(
@@ -838,6 +838,38 @@ async def get_event_participants_by_unique_id(unique_id: int, db: Session = Depe
             })
     
     return participants_list
+
+@app.get("/events/{event_id}/user-registration")
+async def get_user_registration(
+    event_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Получение регистрации текущего пользователя на мероприятие"""
+    # Проверяем существование мероприятия
+    event = db.query(Event).filter(Event.id == event_id).first()
+    if not event:
+        raise HTTPException(status_code=404, detail="Мероприятие не найдено")
+    
+    # Ищем регистрацию пользователя на мероприятие
+    registration = db.query(EventRegistration).filter(
+        EventRegistration.event_id == event_id,
+        EventRegistration.user_id == current_user.id
+    ).first()
+    
+    if not registration:
+        raise HTTPException(status_code=404, detail="Регистрация не найдена")
+    
+    return {
+        "id": registration.id,
+        "event_id": registration.event_id,
+        "user_id": registration.user_id,
+        "is_preregistration": registration.is_preregistration,
+        "is_confirmed": registration.is_confirmed,
+        "registration_type": registration.registration_type,
+        "created_at": registration.created_at.isoformat(),
+        "updated_at": registration.updated_at.isoformat() if registration.updated_at else None
+    }
 
 @app.put("/events/{event_id}", response_model=EventResponse)
 async def update_event(
