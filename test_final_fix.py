@@ -7,22 +7,26 @@ from datetime import datetime, timedelta
 
 BASE_URL = "http://localhost:8004"
 
-def test_event_registration_fix():
-    """Тестирование исправления регистрации на мероприятие"""
+def test_registration_fix():
+    """Тестирование исправления регистрации"""
     
     print("=== Тестирование исправления регистрации ===\n")
     
     # 1. Регистрация нового пользователя
     print("1. Регистрация нового пользователя...")
     register_data = {
-        "email": "test_registration_working@example.com",
+        "email": "test_final_fix@example.com",
         "password": "testpass123",
         "confirm_password": "testpass123"
     }
     
     response = requests.post(f"{BASE_URL}/auth/register", json=register_data)
     if response.status_code == 200:
+        user_data = response.json()
         print("OK Пользователь зарегистрирован")
+        print(f"   ID: {user_data['id']}")
+        print(f"   Email: {user_data['email']}")
+        print(f"   Profile completed: {user_data['profile_completed']}")
     else:
         print(f"ERROR Ошибка регистрации: {response.status_code}")
         print(response.text)
@@ -31,7 +35,7 @@ def test_event_registration_fix():
     # 2. Вход в систему
     print("\n2. Вход в систему...")
     login_data = {
-        "email": "test_registration_working@example.com",
+        "email": "test_final_fix@example.com",
         "password": "testpass123"
     }
     
@@ -101,4 +105,4 @@ def test_event_registration_fix():
     return True
 
 if __name__ == "__main__":
-    test_event_registration_fix()
+    test_registration_fix()

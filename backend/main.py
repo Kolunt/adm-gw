@@ -167,6 +167,9 @@ class UserResponse(BaseModel):
     # Верификация GWars.io
     gwars_verification_token: str | None = None
     gwars_verified: bool = False
+    
+    class Config:
+        from_attributes = True
 
 class Token(BaseModel):
     access_token: str
@@ -235,7 +238,7 @@ class EventRegistrationResponse(BaseModel):
 
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.0.41")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.0.42")
 
 # CORS middleware
 app.add_middleware(
@@ -304,7 +307,14 @@ async def register_user(user: UserCreate, db: Session = Depends(get_db)):
         name=username,  # Use email prefix as name
         wishlist="",
         role="user",
-        profile_completed=False  # Профиль не заполнен
+        profile_completed=False,  # Профиль не заполнен
+        gwars_profile_url=None,
+        gwars_nickname=None,
+        full_name=None,
+        address=None,
+        interests=None,
+        gwars_verification_token=None,
+        gwars_verified=False
     )
     db.add(db_user)
     db.commit()

@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 
 BASE_URL = "http://localhost:8004"
 
-def create_new_event():
+def create_fresh_event():
     """Создание нового мероприятия с правильным временем"""
     
     print("=== Создание нового мероприятия ===\n")
@@ -34,11 +34,11 @@ def create_new_event():
     print("\n2. Создание нового мероприятия...")
     now = datetime.now()
     event_data = {
-        "name": "Новое мероприятие для тестирования",
-        "description": "Мероприятие с правильным временем",
-        "preregistration_start": (now - timedelta(minutes=10)).isoformat(),  # Началось 10 минут назад
-        "registration_start": (now + timedelta(hours=1)).isoformat(),        # Начнется через час
-        "registration_end": (now + timedelta(hours=3)).isoformat()           # Закончится через 3 часа
+        "name": "Свежее мероприятие для тестирования",
+        "description": "Мероприятие с актуальным временем",
+        "preregistration_start": (now - timedelta(minutes=5)).isoformat(),  # Началось 5 минут назад
+        "registration_start": (now + timedelta(hours=2)).isoformat(),       # Начнется через 2 часа
+        "registration_end": (now + timedelta(hours=4)).isoformat()          # Закончится через 4 часа
     }
     
     response = requests.post(f"{BASE_URL}/events/", json=event_data, headers=headers)
@@ -56,4 +56,4 @@ def create_new_event():
         return False
 
 if __name__ == "__main__":
-    create_new_event()
+    create_fresh_event()
