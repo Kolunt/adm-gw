@@ -27,6 +27,20 @@ function CurrentEventInfo() {
   const [currentPhase, setCurrentPhase] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Переопределяем console.error для подавления 404 ошибок
+  const originalConsoleError = console.error;
+  console.error = (...args) => {
+    const message = args[0];
+    if (typeof message === 'string' && message.includes('Error fetching current event')) {
+      // Проверяем, есть ли в аргументах 404 ошибка
+      const error = args[1];
+      if (error && error.response && error.response.status === 404) {
+        return; // Не логируем 404 ошибки
+      }
+    }
+    originalConsoleError.apply(console, args);
+  };
+
   const updateCountdown = useCallback((event = currentEvent) => {
     if (!event) return;
 
@@ -105,8 +119,10 @@ function CurrentEventInfo() {
         setLoading(false);
         return;
       }
-      // Логируем только реальные ошибки (не 404)
-      console.error('Error fetching current event:', error);
+      // Логируем только реальные ошибки (не 404) - но только если это не 404
+      if (error.response?.status !== 404) {
+        console.error('Error fetching current event:', error);
+      }
       setLoading(false);
     }
   }, [updateCountdown]);
@@ -119,7 +135,11 @@ function CurrentEventInfo() {
       updateCountdown();
     }, 1000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      // Восстанавливаем оригинальный console.error
+      console.error = originalConsoleError;
+    };
   }, [currentEvent, fetchCurrentEvent, updateCountdown]);
 
   if (loading) {

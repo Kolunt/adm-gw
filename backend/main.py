@@ -234,7 +234,7 @@ class EventRegistrationResponse(BaseModel):
 
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.0.25")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.0.26")
 
 # CORS middleware
 app.add_middleware(
