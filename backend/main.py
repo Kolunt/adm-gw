@@ -236,7 +236,7 @@ class EventRegistrationResponse(BaseModel):
 
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.0.38")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.0.39")
 
 # CORS middleware
 app.add_middleware(
@@ -305,11 +305,7 @@ async def register_user(user: UserCreate, db: Session = Depends(get_db)):
         name=username,  # Use email prefix as name
         wishlist="",
         role="user",
-        profile_completed=False,  # Профиль не заполнен
-        gwars_profile_url=None,
-        full_name=None,
-        address=None,
-        interests=None
+        profile_completed=False  # Профиль не заполнен
     )
     db.add(db_user)
     db.commit()
