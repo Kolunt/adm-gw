@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Button, Space, Tag, Modal, Form, Input, Select, message, Card, Typography, Popconfirm } from 'antd';
-import { EditOutlined, DeleteOutlined, PlusOutlined, CrownOutlined, UserOutlined } from '@ant-design/icons';
+import { DeleteOutlined, PlusOutlined, CrownOutlined, UserOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
@@ -12,7 +12,6 @@ function AdminUserManagement({ currentUser }) {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
-  const [editingUser, setEditingUser] = useState(null);
   const [form] = Form.useForm();
 
   useEffect(() => {
@@ -33,17 +32,6 @@ function AdminUserManagement({ currentUser }) {
     }
   };
 
-  const handleEdit = (user) => {
-    setEditingUser(user);
-    form.setFieldsValue({
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      wishlist: user.wishlist
-    });
-    setModalVisible(true);
-  };
-
   const handleDelete = async (userId) => {
     try {
       await axios.delete(`/users/${userId}`, {
@@ -60,23 +48,14 @@ function AdminUserManagement({ currentUser }) {
     try {
       const values = await form.validateFields();
       
-      if (editingUser) {
-        // Обновление пользователя
-        await axios.put(`/users/${editingUser.id}`, values, {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-        });
-        message.success('Пользователь обновлен');
-      } else {
-        // Создание нового пользователя
-        await axios.post('/users/', values, {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-        });
-        message.success('Пользователь создан');
-      }
+      // Создание нового пользователя
+      await axios.post('/users/', values, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      message.success('Пользователь создан');
       
       setModalVisible(false);
       form.resetFields();
-      setEditingUser(null);
       fetchUsers();
     } catch (error) {
       message.error('Ошибка при сохранении пользователя');
@@ -86,7 +65,6 @@ function AdminUserManagement({ currentUser }) {
   const handleModalCancel = () => {
     setModalVisible(false);
     form.resetFields();
-    setEditingUser(null);
   };
 
   const promoteToAdmin = async (userId) => {
@@ -162,13 +140,6 @@ function AdminUserManagement({ currentUser }) {
           >
             Профиль
           </Button>
-          <Button
-            icon={<EditOutlined />}
-            onClick={() => handleEdit(record)}
-            size="small"
-          >
-            Редактировать
-          </Button>
           {record.role !== 'admin' && (
             <Button
               icon={<CrownOutlined />}
@@ -211,7 +182,6 @@ function AdminUserManagement({ currentUser }) {
             type="primary"
             icon={<PlusOutlined />}
             onClick={() => {
-              setEditingUser(null);
               form.resetFields();
               setModalVisible(true);
             }}
@@ -234,7 +204,7 @@ function AdminUserManagement({ currentUser }) {
       </Card>
 
       <Modal
-        title={editingUser ? 'Редактировать пользователя' : 'Добавить пользователя'}
+        title="Добавить пользователя"
         open={modalVisible}
         onOk={handleModalOk}
         onCancel={handleModalCancel}
