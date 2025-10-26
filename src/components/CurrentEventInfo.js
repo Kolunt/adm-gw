@@ -25,11 +25,10 @@ function CurrentEventInfo() {
     let nextPhase = null;
 
     if (now.isBefore(preregStart)) {
-      // Ожидание предварительной регистрации
+      // Предварительная регистрация
       nextPhase = {
-        name: "Ожидание предварительной регистрации",
+        name: "Предварительная регистрация",
         color: "blue",
-        description: "До начала предварительной регистрации",
         timeLeft: preregStart.diff(now)
       };
     } else if (now.isBefore(regStart)) {
@@ -37,7 +36,6 @@ function CurrentEventInfo() {
       nextPhase = {
         name: "Предварительная регистрация",
         color: "orange",
-        description: "До начала основной регистрации",
         timeLeft: regStart.diff(now)
       };
     } else if (now.isBefore(regEnd)) {
@@ -45,7 +43,6 @@ function CurrentEventInfo() {
       nextPhase = {
         name: "Основная регистрация",
         color: "green",
-        description: "До окончания регистрации",
         timeLeft: regEnd.diff(now)
       };
     } else {
@@ -53,7 +50,6 @@ function CurrentEventInfo() {
       nextPhase = {
         name: "Мероприятие завершено",
         color: "red",
-        description: "Регистрация закрыта",
         timeLeft: 0
       };
     }
@@ -210,13 +206,6 @@ function CurrentEventInfo() {
             title="До следующего этапа"
             value={timeLeft?.formatted || '00:00:00:00'}
             valueStyle={{ color: '#52c41a', fontSize: '24px', fontFamily: 'monospace' }}
-          />
-        </Col>
-        <Col xs={24} sm={12}>
-          <Statistic
-            title="Описание этапа"
-            value={currentPhase?.description || 'Нет информации'}
-            valueStyle={{ color: '#666' }}
           />
         </Col>
       </Row>
