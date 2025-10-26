@@ -194,6 +194,7 @@ function AdminSystemSettings() {
                     placeholder="Введите API токен Dadata.ru"
                     prefix={<KeyOutlined />}
                     style={{ flex: 1 }}
+                    value={tokenValue}
                     onChange={(e) => {
                       setTokenValue(e.target.value);
                       form.setFieldValue('dadata_token', e.target.value);
