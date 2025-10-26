@@ -103,8 +103,8 @@ function AppContent() {
 
   const HomePage = () => (
     <div style={{ padding: '20px' }}>
-      {/* Информация о текущем мероприятии */}
-      <CurrentEventInfo />
+      {/* Информация о текущем мероприятии - отключено для отладки */}
+      {/* <CurrentEventInfo /> */}
 
       {/* Кнопки действий для авторизованных пользователей */}
       {isAuthenticated && (
