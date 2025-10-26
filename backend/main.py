@@ -244,7 +244,7 @@ class GiftResponse(BaseModel):
     created_at: datetime
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.0.16")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.0.17")
 
 # CORS middleware
 app.add_middleware(
@@ -438,6 +438,23 @@ async def get_events(db: Session = Depends(get_db)):
     events = db.query(Event).order_by(Event.created_at.desc()).all()
     return events
 
+@app.get("/events/current", response_model=EventResponse)
+async def get_current_event(db: Session = Depends(get_db)):
+    """Получение ближайшего активного мероприятия"""
+    now = datetime.utcnow()
+    
+    # Ищем активные мероприятия, которые еще не завершились
+    active_events = db.query(Event).filter(
+        Event.is_active == True,
+        Event.registration_end > now
+    ).order_by(Event.preregistration_start.asc()).all()
+    
+    if not active_events:
+        raise HTTPException(status_code=404, detail="Нет активных мероприятий")
+    
+    # Возвращаем ближайшее мероприятие
+    return active_events[0]
+
 @app.get("/events/{event_id}", response_model=EventResponse)
 async def get_event(event_id: int, db: Session = Depends(get_db)):
     """Получение конкретного мероприятия"""
@@ -616,23 +633,6 @@ async def confirm_registration(
     db.commit()
     db.refresh(registration)
     return registration
-
-@app.get("/events/current", response_model=EventResponse)
-async def get_current_event(db: Session = Depends(get_db)):
-    """Получение ближайшего активного мероприятия"""
-    now = datetime.utcnow()
-    
-    # Ищем активные мероприятия, которые еще не завершились
-    active_events = db.query(Event).filter(
-        Event.is_active == True,
-        Event.registration_end > now
-    ).order_by(Event.preregistration_start.asc()).all()
-    
-    if not active_events:
-        raise HTTPException(status_code=404, detail="Нет активных мероприятий")
-    
-    # Возвращаем ближайшее мероприятие
-    return active_events[0]
 
 @app.post("/admin/promote/{user_id}")
 async def promote_user_to_admin(

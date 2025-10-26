@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Button, Space, Tag, Modal, Form, Input, Select, message, Card, Typography, Popconfirm } from 'antd';
-import { UserOutlined, EditOutlined, DeleteOutlined, PlusOutlined, CrownOutlined } from '@ant-design/icons';
+import { EditOutlined, DeleteOutlined, PlusOutlined, CrownOutlined } from '@ant-design/icons';
 import axios from 'axios';
 
 const { Title } = Typography;

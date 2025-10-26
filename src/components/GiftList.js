@@ -1,6 +1,6 @@
 import React from 'react';
-import { List, Card, Typography, Space, Tag, Avatar } from 'antd';
-import { GiftOutlined, UserOutlined, ClockCircleOutlined } from '@ant-design/icons';
+import { List, Card, Typography, Space, Tag } from 'antd';
+import { GiftOutlined, ClockCircleOutlined } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
 

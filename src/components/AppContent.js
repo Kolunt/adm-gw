@@ -23,7 +23,6 @@ function AppContent() {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [needsProfileCompletion, setNeedsProfileCompletion] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -37,12 +36,11 @@ function AppContent() {
         setUser(response.data);
         setIsAuthenticated(true);
         
-        // Проверяем заполненность профиля для обычных пользователей
-        if (response.data.role === 'user' && !response.data.profile_completed) {
-          setNeedsProfileCompletion(true);
-          navigate('/profile');
-          return;
-        }
+             // Проверяем заполненность профиля для обычных пользователей
+             if (response.data.role === 'user' && !response.data.profile_completed) {
+               navigate('/profile');
+               return;
+             }
         
         // Если админ и на главной странице, перенаправляем в админ-панель
         if (response.data.role === 'admin' && location.pathname === '/') {
@@ -101,12 +99,10 @@ function AppContent() {
     localStorage.removeItem('token');
     setUser(null);
     setIsAuthenticated(false);
-    setNeedsProfileCompletion(false);
     navigate('/');
   };
 
   const handleProfileCompleted = () => {
-    setNeedsProfileCompletion(false);
     // Обновляем данные пользователя
     checkAuth();
     navigate('/');

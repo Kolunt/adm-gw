@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Typography, Statistic, Row, Col, Tag, Alert } from 'antd';
 import { CalendarOutlined, ClockCircleOutlined, CheckCircleOutlined, GiftOutlined } from '@ant-design/icons';
 import axios from 'axios';
@@ -12,30 +12,7 @@ function CurrentEventInfo() {
   const [currentPhase, setCurrentPhase] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchCurrentEvent();
-    
-    // Обновляем каждую секунду
-    const interval = setInterval(() => {
-      updateCountdown();
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [currentEvent]);
-
-  const fetchCurrentEvent = async () => {
-    try {
-      const response = await axios.get('/events/current');
-      setCurrentEvent(response.data);
-      updateCountdown(response.data);
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching current event:', error);
-      setLoading(false);
-    }
-  };
-
-  const updateCountdown = (event = currentEvent) => {
+  const updateCountdown = useCallback((event = currentEvent) => {
     if (!event) return;
 
     const now = moment();
@@ -44,7 +21,6 @@ function CurrentEventInfo() {
     const regEnd = moment(event.registration_end);
 
     let nextPhase = null;
-    let timeUntilNext = null;
 
     if (now.isBefore(preregStart)) {
       // Ожидание предварительной регистрации
@@ -99,7 +75,30 @@ function CurrentEventInfo() {
     } else {
       setTimeLeft(null);
     }
-  };
+  }, [currentEvent]);
+
+  const fetchCurrentEvent = useCallback(async () => {
+    try {
+      const response = await axios.get('/events/current');
+      setCurrentEvent(response.data);
+      updateCountdown(response.data);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching current event:', error);
+      setLoading(false);
+    }
+  }, [updateCountdown]);
+
+  useEffect(() => {
+    fetchCurrentEvent();
+    
+    // Обновляем каждую секунду
+    const interval = setInterval(() => {
+      updateCountdown();
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [currentEvent, fetchCurrentEvent, updateCountdown]);
 
   if (loading) {
     return (
@@ -147,18 +146,19 @@ function CurrentEventInfo() {
           <Card size="small" style={{ textAlign: 'center' }}>
             <Statistic
               title="Текущий этап"
-              value={
+              value={currentPhase?.name || 'Неизвестно'}
+              valueRender={() => (
                 <Tag 
-                  color={currentPhase?.color} 
+                  color={currentPhase?.color || 'default'} 
                   icon={currentPhase?.icon}
                   style={{ fontSize: '14px', padding: '4px 8px' }}
                 >
-                  {currentPhase?.name}
+                  {currentPhase?.name || 'Неизвестно'}
                 </Tag>
-              }
+              )}
             />
             <Text type="secondary" style={{ fontSize: '12px' }}>
-              {currentPhase?.description}
+              {currentPhase?.description || 'Описание недоступно'}
             </Text>
           </Card>
         </Col>
@@ -167,18 +167,8 @@ function CurrentEventInfo() {
           <Card size="small" style={{ textAlign: 'center' }}>
             <Statistic
               title="До следующего этапа"
-              value={
-                timeLeft ? (
-                  <div style={{ fontSize: '18px', fontWeight: 'bold' }}>
-                    {timeLeft.days > 0 && `${timeLeft.days}д `}
-                    {String(timeLeft.hours).padStart(2, '0')}:
-                    {String(timeLeft.minutes).padStart(2, '0')}:
-                    {String(timeLeft.seconds).padStart(2, '0')}
-                  </div>
-                ) : (
-                  <Text type="secondary">Этап завершен</Text>
-                )
-              }
+              value={timeLeft ? `${timeLeft.days > 0 ? timeLeft.days + 'д ' : ''}${String(timeLeft.hours).padStart(2, '0')}:${String(timeLeft.minutes).padStart(2, '0')}:${String(timeLeft.seconds).padStart(2, '0')}` : 'Этап завершен'}
+              valueStyle={{ fontSize: '18px', fontWeight: 'bold', color: '#1890ff' }}
             />
           </Card>
         </Col>

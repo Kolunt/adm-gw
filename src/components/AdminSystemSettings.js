@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Form, Input, Button, Switch, Divider, Typography, message, Space, Tag } from 'antd';
 import { SettingOutlined, SaveOutlined, ReloadOutlined } from '@ant-design/icons';
-import axios from 'axios';
 
 const { Title, Paragraph } = Typography;
 
@@ -17,11 +16,7 @@ function AdminSystemSettings() {
     admin_email: 'admin@example.com',
   });
 
-  useEffect(() => {
-    fetchSettings();
-  }, []);
-
-  const fetchSettings = async () => {
+  const fetchSettings = useCallback(async () => {
     setLoading(true);
     try {
       // В реальном приложении здесь был бы API для получения настроек
@@ -32,7 +27,11 @@ function AdminSystemSettings() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [form, settings]);
+
+  useEffect(() => {
+    fetchSettings();
+  }, [fetchSettings]);
 
   const handleSave = async (values) => {
     setLoading(true);

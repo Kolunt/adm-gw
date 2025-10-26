@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Steps, Card, Form, Input, Button, Typography, message, Space } from 'antd';
 import { 
   LinkOutlined, 
@@ -18,11 +18,7 @@ function ProfileWizard({ onProfileCompleted }) {
   const [profileStatus, setProfileStatus] = useState(null);
   const [form] = Form.useForm();
 
-  useEffect(() => {
-    fetchProfileStatus();
-  }, []);
-
-  const fetchProfileStatus = async () => {
+  const fetchProfileStatus = useCallback(async () => {
     try {
       const response = await axios.get('/profile/status', {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
@@ -44,7 +40,11 @@ function ProfileWizard({ onProfileCompleted }) {
     } catch (error) {
       console.error('Ошибка при получении статуса профиля:', error);
     }
-  };
+  }, [form]);
+
+  useEffect(() => {
+    fetchProfileStatus();
+  }, [fetchProfileStatus]);
 
   const steps = [
     {

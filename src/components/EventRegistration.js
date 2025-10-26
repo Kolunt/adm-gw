@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Button, Table, Tag, Modal, Form, Input, message, Typography, Space, Alert } from 'antd';
-import { CalendarOutlined, UserOutlined, CheckCircleOutlined, ClockCircleOutlined } from '@ant-design/icons';
+import { CalendarOutlined, CheckCircleOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import moment from 'moment';
 
@@ -59,10 +59,6 @@ function EventRegistration() {
     } else {
       return { status: 'ended', text: 'Завершено', color: 'red' };
     }
-  };
-
-  const isUserRegistered = (eventId) => {
-    return userRegistrations.some(reg => reg.event_id === eventId);
   };
 
   const getUserRegistration = (eventId) => {
