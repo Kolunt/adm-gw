@@ -90,6 +90,15 @@ class SystemSettings(Base):
     description = Column(String)  # Описание настройки
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+class Interest(Base):
+    __tablename__ = "interests"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, index=True)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
 
 # Password and JWT functions
 def verify_password(plain_password, hashed_password):
@@ -310,9 +319,26 @@ class SystemSettingResponse(BaseModel):
 class SystemSettingUpdate(BaseModel):
     value: str | bool
 
+class InterestCreate(BaseModel):
+    name: str
+
+class InterestUpdate(BaseModel):
+    name: str | None = None
+    is_active: bool | None = None
+
+class InterestResponse(BaseModel):
+    id: int
+    name: str
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.0.61")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.0.62")
 
 # CORS middleware
 app.add_middleware(
@@ -1194,6 +1220,80 @@ async def verify_dadata_token_endpoint(
             "valid": False,
             "error": token_check["error"]
         }
+
+# API endpoints для управления интересами (только для администраторов)
+@app.get("/admin/interests", response_model=list[InterestResponse])
+async def get_interests(
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """Получение списка всех интересов (только для администраторов)"""
+    interests = db.query(Interest).order_by(Interest.created_at.desc()).all()
+    return interests
+
+@app.post("/admin/interests", response_model=InterestResponse)
+async def create_interest(
+    interest_data: InterestCreate,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """Создание нового интереса (только для администраторов)"""
+    # Проверяем, не существует ли уже такой интерес
+    existing_interest = db.query(Interest).filter(Interest.name == interest_data.name).first()
+    if existing_interest:
+        raise HTTPException(status_code=400, detail="Интерес с таким названием уже существует")
+    
+    interest = Interest(
+        name=interest_data.name,
+        is_active=True
+    )
+    db.add(interest)
+    db.commit()
+    db.refresh(interest)
+    return interest
+
+@app.put("/admin/interests/{interest_id}", response_model=InterestResponse)
+async def update_interest(
+    interest_id: int,
+    interest_data: InterestUpdate,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """Обновление интереса (только для администраторов)"""
+    interest = db.query(Interest).filter(Interest.id == interest_id).first()
+    if not interest:
+        raise HTTPException(status_code=404, detail="Интерес не найден")
+    
+    # Проверяем уникальность названия, если оно изменяется
+    if interest_data.name and interest_data.name != interest.name:
+        existing_interest = db.query(Interest).filter(Interest.name == interest_data.name).first()
+        if existing_interest:
+            raise HTTPException(status_code=400, detail="Интерес с таким названием уже существует")
+    
+    # Обновляем поля
+    update_data = interest_data.dict(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(interest, field, value)
+    
+    interest.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(interest)
+    return interest
+
+@app.delete("/admin/interests/{interest_id}")
+async def delete_interest(
+    interest_id: int,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """Удаление интереса (только для администраторов)"""
+    interest = db.query(Interest).filter(Interest.id == interest_id).first()
+    if not interest:
+        raise HTTPException(status_code=404, detail="Интерес не найден")
+    
+    db.delete(interest)
+    db.commit()
+    return {"message": "Интерес успешно удален"}
 
 # API endpoint для автодополнения адресов через Dadata
 @app.post("/api/suggest-address")

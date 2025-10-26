@@ -8,11 +8,13 @@ import {
   LogoutOutlined,
   TeamOutlined,
   DashboardOutlined,
-  CalendarOutlined
+  CalendarOutlined,
+  HeartOutlined
 } from '@ant-design/icons';
 import AdminUserManagement from './AdminUserManagement';
 import AdminSystemSettings from './AdminSystemSettings';
 import EventManagement from './EventManagement';
+import AdminInterestsManagement from './AdminInterestsManagement';
 
 const { Sider, Content } = Layout;
 const { Title } = Typography;
@@ -27,6 +29,7 @@ function AdminPanel({ currentUser, onLogout }) {
     if (path === '/admin' || path === '/admin/dashboard') return 'dashboard';
     if (path === '/admin/users') return 'users';
     if (path === '/admin/events') return 'events';
+    if (path === '/admin/interests') return 'interests';
     if (path === '/admin/settings' || path.startsWith('/admin/settings/')) return 'settings';
     return 'dashboard'; // по умолчанию
   };
@@ -68,6 +71,12 @@ function AdminPanel({ currentUser, onLogout }) {
       path: '/admin/users',
     },
     {
+      key: 'interests',
+      icon: <HeartOutlined />,
+      label: 'Интересы',
+      path: '/admin/interests',
+    },
+    {
       key: 'settings',
       icon: <SettingOutlined />,
       label: 'Настройки системы',
@@ -88,6 +97,8 @@ function AdminPanel({ currentUser, onLogout }) {
         return <EventManagement />;
       case 'users':
         return <AdminUserManagement currentUser={currentUser} />;
+      case 'interests':
+        return <AdminInterestsManagement currentUser={currentUser} />;
       case 'settings':
         return <AdminSystemSettings activeTab={activeSettingsTab} />;
       default:
