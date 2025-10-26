@@ -7,15 +7,15 @@ from datetime import datetime, timedelta
 
 BASE_URL = "http://localhost:8004"
 
-def test_event_registration():
-    """Тестирование регистрации на мероприятие"""
+def test_full_system():
+    """Тестирование полной системы"""
     
-    print("=== Тестирование регистрации на мероприятие ===\n")
+    print("=== Тестирование полной системы ===\n")
     
     # 1. Регистрация нового пользователя
     print("1. Регистрация нового пользователя...")
     register_data = {
-        "email": "test_event_registration_final@example.com",
+        "email": "test_full_system@example.com",
         "password": "testpass123",
         "confirm_password": "testpass123"
     }
@@ -35,7 +35,7 @@ def test_event_registration():
     # 2. Вход в систему
     print("\n2. Вход в систему...")
     login_data = {
-        "email": "test_event_registration_final@example.com",
+        "email": "test_full_system@example.com",
         "password": "testpass123"
     }
     
@@ -72,14 +72,38 @@ def test_event_registration():
     if response.status_code == 200:
         print("OK Шаг 3 профиля выполнен")
     
-    # 4. Получение активного мероприятия
-    print("\n4. Получение активного мероприятия...")
-    response = requests.get(f"{BASE_URL}/events/current")
+    # 4. Создание мероприятия (как админ)
+    print("\n4. Создание мероприятия...")
+    admin_login_data = {
+        "email": "admin@example.com",
+        "password": "admin"
+    }
+    
+    response = requests.post(f"{BASE_URL}/auth/login", json=admin_login_data)
     if response.status_code == 200:
-        event = response.json()
-        print(f"OK Активное мероприятие: {event['name']} (ID: {event['id']})")
+        admin_token_data = response.json()
+        admin_token = admin_token_data["access_token"]
+        admin_headers = {"Authorization": f"Bearer {admin_token}"}
+        
+        now = datetime.utcnow()
+        event_data = {
+            "name": "Финальное тестовое мероприятие",
+            "description": "Мероприятие для финального тестирования",
+            "preregistration_start": (now - timedelta(minutes=5)).isoformat(),
+            "registration_start": (now + timedelta(hours=2)).isoformat(),
+            "registration_end": (now + timedelta(hours=4)).isoformat()
+        }
+        
+        response = requests.post(f"{BASE_URL}/events/", json=event_data, headers=admin_headers)
+        if response.status_code == 200:
+            event = response.json()
+            print(f"OK Мероприятие создано: {event['name']} (ID: {event['id']})")
+        else:
+            print(f"ERROR Ошибка создания мероприятия: {response.status_code}")
+            print(response.text)
+            return False
     else:
-        print(f"ERROR Нет активного мероприятия: {response.status_code}")
+        print(f"ERROR Ошибка входа как админ: {response.status_code}")
         return False
     
     # 5. Регистрация на мероприятие
@@ -100,9 +124,9 @@ def test_event_registration():
         print(response.text)
         return False
     
-    print("\n=== Тест завершен успешно ===")
-    print("Регистрация на мероприятие работает корректно!")
+    print("\n=== Все тесты пройдены успешно ===")
+    print("Система работает корректно!")
     return True
 
 if __name__ == "__main__":
-    test_event_registration()
+    test_full_system()

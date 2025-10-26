@@ -7,10 +7,10 @@ from datetime import datetime, timedelta
 
 BASE_URL = "http://localhost:8004"
 
-def test_backend_connection():
-    """Тестирование подключения к backend"""
+def test_backend_status():
+    """Тестирование статуса backend"""
     
-    print("=== Тестирование подключения к backend ===\n")
+    print("=== Тестирование статуса backend ===\n")
     
     try:
         # Проверяем доступность API
@@ -27,32 +27,29 @@ def test_backend_connection():
         print(f"ERROR Ошибка подключения: {e}")
         return False
     
-    # Тестируем регистрацию пользователя
-    print("\n1. Тестирование регистрации пользователя...")
-    register_data = {
-        "email": "test_backend_connection@example.com",
-        "password": "testpass123",
-        "confirm_password": "testpass123"
+    # Тестируем вход как админ
+    print("\n1. Тестирование входа как администратор...")
+    admin_login_data = {
+        "email": "admin@example.com",
+        "password": "admin"
     }
     
     try:
-        response = requests.post(f"{BASE_URL}/auth/register", json=register_data, timeout=10)
+        response = requests.post(f"{BASE_URL}/auth/login", json=admin_login_data, timeout=10)
         if response.status_code == 200:
-            user_data = response.json()
-            print("OK Регистрация пользователя работает")
-            print(f"   ID: {user_data['id']}")
-            print(f"   Email: {user_data['email']}")
-            print(f"   Profile completed: {user_data['profile_completed']}")
+            token_data = response.json()
+            print("OK Вход как администратор работает")
+            print(f"   Token получен: {len(token_data['access_token'])} символов")
         else:
-            print(f"ERROR Ошибка регистрации: {response.status_code}")
+            print(f"ERROR Ошибка входа: {response.status_code}")
             print(response.text)
             return False
     except Exception as e:
-        print(f"ERROR Ошибка при регистрации: {e}")
+        print(f"ERROR Ошибка при входе: {e}")
         return False
     
     print("\n=== Backend работает корректно ===")
     return True
 
 if __name__ == "__main__":
-    test_backend_connection()
+    test_backend_status()

@@ -1,6 +1,6 @@
 {
   "name": "anonymous-santa",
-  "version": "0.0.43",
+  "version": "0.0.44",
   "private": true,
   "dependencies": {
     "@testing-library/jest-dom": "^5.16.4",
