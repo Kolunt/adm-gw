@@ -233,31 +233,60 @@ function CurrentEventInfo() {
           Участники мероприятия ({participants.length})
         </Title>
         
+        {/* Легенда */}
+        <div style={{ marginBottom: 16, display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <Tag color="green" icon={<CheckCircleOutlined />} style={{ fontSize: '12px' }}>
+              Подтвержден
+            </Tag>
+            <Text type="secondary" style={{ fontSize: '12px' }}>точно участвует</Text>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <Tag color="red" icon={<ClockCircleOutlined />} style={{ fontSize: '12px' }}>
+              Предварительная регистрация
+            </Tag>
+            <Text type="secondary" style={{ fontSize: '12px' }}>ожидает подтверждения</Text>
+          </div>
+        </div>
+        
         {participants.length > 0 ? (
           <List
             dataSource={participants}
-            renderItem={(participant) => (
-              <List.Item>
-                <List.Item.Meta
-                  avatar={<Avatar icon={<UserOutlined />} />}
-                  title={
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <Text strong>{participant.nickname}</Text>
-                      {participant.gwars_profile_url && (
-                        <a 
-                          href={participant.gwars_profile_url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          style={{ color: '#1890ff' }}
+            renderItem={(participant) => {
+              // Определяем цвет в зависимости от статуса
+              const statusColor = participant.status === 'confirmed' ? 'green' : 'red';
+              const statusIcon = participant.status === 'confirmed' ? <CheckCircleOutlined /> : <ClockCircleOutlined />;
+              
+              return (
+                <List.Item>
+                  <List.Item.Meta
+                    avatar={<Avatar icon={<UserOutlined />} />}
+                    title={
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                        <Text strong>{participant.nickname}</Text>
+                        <Tag 
+                          color={statusColor} 
+                          icon={statusIcon}
+                          style={{ fontSize: '12px', margin: '0' }}
                         >
-                          <LinkOutlined /> Профиль GWars
-                        </a>
-                      )}
-                    </div>
-                  }
-                />
-              </List.Item>
-            )}
+                          {participant.status_text}
+                        </Tag>
+                        {participant.gwars_profile_url && (
+                          <a 
+                            href={participant.gwars_profile_url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            style={{ color: '#1890ff' }}
+                          >
+                            <LinkOutlined /> Профиль GWars
+                          </a>
+                        )}
+                      </div>
+                    }
+                  />
+                </List.Item>
+              );
+            }}
             style={{ backgroundColor: '#fafafa', borderRadius: '6px', padding: '12px' }}
           />
         ) : (

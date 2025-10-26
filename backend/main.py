@@ -234,7 +234,7 @@ class EventRegistrationResponse(BaseModel):
 
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.0.34")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.0.35")
 
 # CORS middleware
 app.add_middleware(
@@ -463,11 +463,10 @@ async def get_event_participants(event_id: int, db: Session = Depends(get_db)):
     
     # Получаем всех участников мероприятия через EventRegistration
     registrations = db.query(EventRegistration).filter(
-        EventRegistration.event_id == event_id,
-        EventRegistration.is_confirmed == True
+        EventRegistration.event_id == event_id
     ).all()
     
-    # Формируем список участников с никнеймом и ссылкой на профиль
+    # Формируем список участников с никнеймом, ссылкой на профиль и статусом
     participants_list = []
     for registration in registrations:
         # Получаем пользователя
@@ -482,10 +481,17 @@ async def get_event_participants(event_id: int, db: Session = Depends(get_db)):
                 if match:
                     nickname = f"Игрок #{match.group(1)}"
             
+            # Определяем статус участника
+            status = "confirmed" if registration.is_confirmed else "preregistered"
+            status_text = "Подтвержден" if registration.is_confirmed else "Предварительная регистрация"
+            
             participants_list.append({
                 "id": user.id,
                 "nickname": nickname,
-                "gwars_profile_url": user.gwars_profile_url
+                "gwars_profile_url": user.gwars_profile_url,
+                "status": status,
+                "status_text": status_text,
+                "registration_type": registration.registration_type
             })
     
     return participants_list
