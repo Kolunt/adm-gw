@@ -1,19 +1,31 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Form, Input, Button, Switch, Divider, Typography, message, Space, Tag, Alert, Tabs } from 'antd';
 import { SettingOutlined, SaveOutlined, ReloadOutlined, KeyOutlined, CheckCircleOutlined, CheckOutlined, GlobalOutlined, DatabaseOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 const { Title, Paragraph, Text } = Typography;
 const { TabPane } = Tabs;
 const { TextArea } = Input;
 
-function AdminSystemSettings() {
+function AdminSystemSettings({ activeTab: initialActiveTab = 'general' }) {
+  const navigate = useNavigate();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [settings, setSettings] = useState([]);
   const [tokenVerifying, setTokenVerifying] = useState(false);
   const [tokenValue, setTokenValue] = useState('');
-  const [activeTab, setActiveTab] = useState('general');
+  const [activeTab, setActiveTab] = useState(initialActiveTab);
+
+  // Обновляем активный таб при изменении пропса
+  useEffect(() => {
+    setActiveTab(initialActiveTab);
+  }, [initialActiveTab]);
+
+  const handleTabChange = (tabKey) => {
+    setActiveTab(tabKey);
+    navigate(`/admin/settings/${tabKey}`);
+  };
 
   const fetchSettings = useCallback(async () => {
     setLoading(true);
@@ -311,7 +323,7 @@ function AdminSystemSettings() {
 
           <Tabs 
             activeKey={activeTab} 
-            onChange={setActiveTab}
+            onChange={handleTabChange}
             items={[
               {
                 key: 'general',

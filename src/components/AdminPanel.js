@@ -27,15 +27,25 @@ function AdminPanel({ currentUser, onLogout }) {
     if (path === '/admin' || path === '/admin/dashboard') return 'dashboard';
     if (path === '/admin/users') return 'users';
     if (path === '/admin/events') return 'events';
-    if (path === '/admin/settings') return 'settings';
+    if (path === '/admin/settings' || path.startsWith('/admin/settings/')) return 'settings';
     return 'dashboard'; // по умолчанию
   };
   
+  // Определяем активный таб настроек на основе URL
+  const getActiveSettingsTab = () => {
+    const path = location.pathname;
+    if (path === '/admin/settings/general') return 'general';
+    if (path === '/admin/settings/dadata') return 'dadata';
+    return 'general'; // по умолчанию
+  };
+  
   const [selectedMenu, setSelectedMenu] = useState(getActiveMenuFromPath());
+  const [activeSettingsTab, setActiveSettingsTab] = useState(getActiveSettingsTab());
 
   // Обновляем активное меню при изменении URL
   useEffect(() => {
     setSelectedMenu(getActiveMenuFromPath());
+    setActiveSettingsTab(getActiveSettingsTab());
   }, [location.pathname]);
 
   const menuItems = [
@@ -79,7 +89,7 @@ function AdminPanel({ currentUser, onLogout }) {
       case 'users':
         return <AdminUserManagement currentUser={currentUser} />;
       case 'settings':
-        return <AdminSystemSettings />;
+        return <AdminSystemSettings activeTab={activeSettingsTab} />;
       default:
         return (
           <Card>

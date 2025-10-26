@@ -281,6 +281,8 @@ function AppContent() {
           <Route path="/admin/users" element={<AdminPanel currentUser={user} onLogout={handleLogout} />} />
           <Route path="/admin/events" element={<AdminPanel currentUser={user} onLogout={handleLogout} />} />
           <Route path="/admin/settings" element={<AdminPanel currentUser={user} onLogout={handleLogout} />} />
+          <Route path="/admin/settings/general" element={<AdminPanel currentUser={user} onLogout={handleLogout} />} />
+          <Route path="/admin/settings/dadata" element={<AdminPanel currentUser={user} onLogout={handleLogout} />} />
           <Route path="/users" element={<UserList users={users} />} />
           <Route path="/events" element={<EventRegistration />} />
           <Route path="/event/:uniqueId" element={<EventDetail />} />
