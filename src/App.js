@@ -82,42 +82,68 @@ const AppContent = () => {
 
   const rightContentRender = () => {
     if (!user) {
-      return [
-        {
-          key: 'login',
-          icon: <LoginOutlined />,
-          label: 'Войти',
-          onClick: () => window.location.href = '/login',
-        },
-        {
-          key: 'register',
-          icon: <UserOutlined />,
-          label: 'Регистрация',
-          onClick: () => window.location.href = '/register',
-        },
-      ];
+      return (
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <a 
+            href="/login" 
+            style={{ 
+              padding: '8px 16px', 
+              borderRadius: '4px', 
+              background: '#1890ff', 
+              color: 'white', 
+              textDecoration: 'none' 
+            }}
+          >
+            <LoginOutlined /> Войти
+          </a>
+          <a 
+            href="/register" 
+            style={{ 
+              padding: '8px 16px', 
+              borderRadius: '4px', 
+              background: '#52c41a', 
+              color: 'white', 
+              textDecoration: 'none' 
+            }}
+          >
+            <UserOutlined /> Регистрация
+          </a>
+        </div>
+      );
     }
 
-    return [
-      {
-        key: 'profile',
-        icon: <UserOutlined />,
-        label: user.name || user.email,
-        children: [
-          {
-            key: 'profile',
-            label: 'Мой профиль',
-            onClick: () => window.location.href = '/profile',
-          },
-          {
-            key: 'logout',
-            icon: <LogoutOutlined />,
-            label: 'Выйти',
-            onClick: logout,
-          },
-        ],
-      },
-    ];
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <span style={{ color: '#1890ff' }}>
+          <UserOutlined /> {user.name || user.email}
+        </span>
+        <a 
+          href="/profile" 
+          style={{ 
+            padding: '8px 16px', 
+            borderRadius: '4px', 
+            background: '#f0f0f0', 
+            color: '#333', 
+            textDecoration: 'none' 
+          }}
+        >
+          Профиль
+        </a>
+        <button 
+          onClick={logout}
+          style={{ 
+            padding: '8px 16px', 
+            borderRadius: '4px', 
+            background: '#ff4d4f', 
+            color: 'white', 
+            border: 'none',
+            cursor: 'pointer'
+          }}
+        >
+          <LogoutOutlined /> Выйти
+        </button>
+      </div>
+    );
   };
 
   return (
