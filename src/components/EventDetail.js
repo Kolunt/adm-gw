@@ -26,6 +26,7 @@ import {
 } from '@ant-design/icons';
 import axios from 'axios';
 import moment from 'moment';
+import useButtonSettings from '../hooks/useButtonSettings';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -35,6 +36,7 @@ const EventDetail = () => {
   const [event, setEvent] = useState(null);
   const [participants, setParticipants] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { buttonSettings } = useButtonSettings();
   const [participantsLoading, setParticipantsLoading] = useState(false);
   const [countdown, setCountdown] = useState({});
   const [currentPhase, setCurrentPhase] = useState(null);
@@ -303,7 +305,7 @@ const EventDetail = () => {
                     icon={<CheckCircleOutlined />}
                     onClick={() => handleRegister('preregistration')}
                   >
-                    Предварительная регистрация
+                    {buttonSettings.button_preregistration}
                   </Button>
                 )}
                 {canRegister && (
@@ -312,7 +314,7 @@ const EventDetail = () => {
                     icon={<CheckCircleOutlined />}
                     onClick={() => handleRegister('registration')}
                   >
-                    Основная регистрация
+                    {buttonSettings.button_registration}
                   </Button>
                 )}
                 {!canPreregister && !canRegister && (

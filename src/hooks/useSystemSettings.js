@@ -14,11 +14,8 @@ export const useSystemSettings = () => {
     const fetchSettings = async () => {
       try {
         const response = await axios.get('/api/settings/public');
-        const settingsData = {};
-        response.data.forEach(setting => {
-          settingsData[setting.key] = setting.value;
-        });
-        setSettings(settingsData);
+        // API теперь возвращает объект напрямую, а не массив
+        setSettings(response.data);
       } catch (error) {
         console.error('Error fetching settings:', error);
         setError(error);

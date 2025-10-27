@@ -52,7 +52,9 @@ function UserProfile() {
   const handleSave = async (values) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.put('/auth/profile', values, {
+      // Исключаем gwars_profile_url из данных для обычных пользователей
+      const { gwars_profile_url, ...profileData } = values;
+      await axios.put('/auth/profile', profileData, {
         headers: { Authorization: `Bearer ${token}` }
       });
       message.success('Профиль обновлен успешно');
@@ -186,8 +188,15 @@ function UserProfile() {
                 name="gwars_profile_url"
                 label="Ссылка на профиль GWars.io"
               >
-                <Input placeholder="https://www.gwars.io/info.php?id=..." />
+                <Input 
+                  placeholder="https://www.gwars.io/info.php?id=..." 
+                  disabled={true}
+                  style={{ backgroundColor: '#f5f5f5' }}
+                />
               </Form.Item>
+              <Text type="secondary" style={{ fontSize: '12px' }}>
+                ⚠️ Изменение игрового профиля недоступно. Обратитесь к администратору для изменения ссылки на GWars профиль.
+              </Text>
             </Col>
           </Row>
 

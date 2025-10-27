@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Card,
   Button,
@@ -10,42 +10,53 @@ import {
   Popconfirm,
   Tag,
   Typography,
-  Divider,
-  Alert
+  Alert,
+  Result
 } from 'antd';
 import {
   UserAddOutlined,
   DeleteOutlined,
   ReloadOutlined,
-  ExclamationCircleOutlined
+  ExclamationCircleOutlined,
+  LockOutlined
 } from '@ant-design/icons';
 import axios from 'axios';
 
 const { Title, Text } = Typography;
 
-const TestUsersManagement = () => {
+const TestUsersManagement = ({ user }) => {
   const [loading, setLoading] = useState(false);
   const [testUsers, setTestUsers] = useState([]);
   const [userCount, setUserCount] = useState(10);
   const [password, setPassword] = useState('test123');
 
   // Загружаем список тестовых пользователей
-  const fetchTestUsers = async () => {
+  const fetchTestUsers = useCallback(async () => {
+    // Проверяем авторизацию перед выполнением
+    if (!user || user.role !== 'admin') {
+      return;
+    }
+
     try {
-      const response = await axios.get('/admin/test-users');
+      const response = await axios.get('/admin/testing');
       setTestUsers(response.data.users || []);
     } catch (error) {
-      console.error('Ошибка загрузки тестовых пользователей:', error);
-      message.error('Ошибка загрузки тестовых пользователей');
+      // Если ошибка авторизации, не показываем её
+      if (error.response?.status === 401) {
+        return;
+      }
+      // Для других ошибок показываем сообщение
+      message.error('Ошибка при загрузке тестовых пользователей');
     }
-  };
-
-  useEffect(() => {
-    fetchTestUsers();
-  }, []);
+  }, [user]);
 
   // Генерация тестовых пользователей
-  const generateTestUsers = async () => {
+  const generateTestUsers = useCallback(async () => {
+    // Проверяем авторизацию перед выполнением
+    if (!user || user.role !== 'admin') {
+      return;
+    }
+
     if (userCount < 1 || userCount > 100) {
       message.error('Количество пользователей должно быть от 1 до 100');
       return;
@@ -58,7 +69,7 @@ const TestUsersManagement = () => {
 
     setLoading(true);
     try {
-      const response = await axios.post('/admin/generate-test-users', {
+      const response = await axios.post('/admin/generate-testing', {
         count: userCount,
         password: password
       });
@@ -66,27 +77,71 @@ const TestUsersManagement = () => {
       message.success(response.data.message);
       await fetchTestUsers();
     } catch (error) {
-      console.error('Ошибка генерации тестовых пользователей:', error);
-      message.error(error.response?.data?.detail || 'Ошибка генерации тестовых пользователей');
+      // Если ошибка авторизации, не показываем её
+      if (error.response?.status === 401) {
+        return;
+      }
+      // Для других ошибок показываем сообщение
+      message.error('Ошибка при создании тестовых пользователей');
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, userCount, password, fetchTestUsers]);
 
   // Удаление всех тестовых пользователей
-  const deleteAllTestUsers = async () => {
+  const deleteAllTestUsers = useCallback(async () => {
+    // Проверяем авторизацию перед выполнением
+    if (!user || user.role !== 'admin') {
+      return;
+    }
+
     setLoading(true);
     try {
-      const response = await axios.delete('/admin/delete-test-users');
+      const response = await axios.delete('/admin/delete-testing');
       message.success(response.data.message);
       await fetchTestUsers();
     } catch (error) {
-      console.error('Ошибка удаления тестовых пользователей:', error);
-      message.error(error.response?.data?.detail || 'Ошибка удаления тестовых пользователей');
+      // Если ошибка авторизации, не показываем её
+      if (error.response?.status === 401) {
+        return;
+      }
+      // Для других ошибок показываем сообщение
+      message.error('Ошибка при удалении тестовых пользователей');
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, fetchTestUsers]);
+
+  useEffect(() => {
+    // Загружаем данные только если пользователь авторизован и является админом
+    if (user && user.role === 'admin') {
+      fetchTestUsers();
+    }
+  }, [user, fetchTestUsers]);
+
+  // Проверяем авторизацию
+  if (!user) {
+    return (
+      <Result
+        status="403"
+        title="403"
+        subTitle="Доступ запрещен"
+        icon={<LockOutlined />}
+      />
+    );
+  }
+
+  // Проверяем роль администратора
+  if (user.role !== 'admin') {
+    return (
+      <Result
+        status="403"
+        title="403"
+        subTitle="У вас нет прав доступа к управлению тестовыми пользователями"
+        icon={<LockOutlined />}
+      />
+    );
+  }
 
   const columns = [
     {

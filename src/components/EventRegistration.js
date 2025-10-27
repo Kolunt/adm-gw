@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import moment from 'moment';
 import AddressAutocomplete from './AddressAutocomplete';
+import useButtonSettings from '../hooks/useButtonSettings';
 
 const { Title, Text } = Typography;
 
@@ -16,6 +17,7 @@ function EventRegistration() {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [form] = Form.useForm();
   const navigate = useNavigate();
+  const { buttonSettings } = useButtonSettings();
 
   useEffect(() => {
     fetchEvents();
@@ -234,7 +236,7 @@ function EventRegistration() {
                 loading={loading}
                 icon={<CalendarOutlined />}
               >
-                Предварительная регистрация
+                {buttonSettings.button_preregistration}
               </Button>
             );
           } else if (status.status === 'registration') {
@@ -245,7 +247,7 @@ function EventRegistration() {
                 loading={loading}
                 icon={<CalendarOutlined />}
               >
-                Регистрация
+                {buttonSettings.button_registration}
               </Button>
             );
           } else {
@@ -263,7 +265,20 @@ function EventRegistration() {
                 loading={loading}
                 icon={<CheckCircleOutlined />}
               >
-                Подтвердить участие
+                {buttonSettings.button_confirm_participation}
+              </Button>
+            );
+          } else if (userReg.registration_type === 'preregistration' && 
+                     status.status === 'preregistration' && 
+                     !userReg.is_confirmed) {
+            return (
+              <Button 
+                type="default" 
+                disabled
+                icon={<ClockCircleOutlined />}
+                style={{ backgroundColor: '#faad14', borderColor: '#faad14', color: 'white' }}
+              >
+                {buttonSettings.button_soon}
               </Button>
             );
           } else if (userReg.is_confirmed) {

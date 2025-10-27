@@ -334,7 +334,7 @@ function AppContent() {
               <AdminPanel currentUser={user} onLogout={handleLogout} />
             </AdminRouteGuard>
           } />
-          <Route path="/admin/test-users" element={
+          <Route path="/admin/testing" element={
             <AdminRouteGuard user={user}>
               <AdminPanel currentUser={user} onLogout={handleLogout} />
             </AdminRouteGuard>

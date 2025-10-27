@@ -36,7 +36,7 @@ function AdminPanel({ currentUser, onLogout }) {
     const path = location.pathname;
     if (path === '/admin' || path === '/admin/dashboard') return 'dashboard';
     if (path === '/admin/users') return 'users';
-    if (path === '/admin/test-users') return 'test-users';
+    if (path === '/admin/testing') return 'testing';
     if (path === '/admin/events') return 'events';
     if (path === '/admin/gift-assignments') return 'gift-assignments';
     if (path === '/admin/interests') return 'interests';
@@ -61,6 +61,7 @@ function AdminPanel({ currentUser, onLogout }) {
       const path = location.pathname;
       if (path === '/admin' || path === '/admin/dashboard') return 'dashboard';
       if (path === '/admin/users') return 'users';
+      if (path === '/admin/testing') return 'testing';
       if (path === '/admin/events') return 'events';
       if (path === '/admin/gift-assignments') return 'gift-assignments';
       if (path === '/admin/interests') return 'interests';
@@ -109,10 +110,10 @@ function AdminPanel({ currentUser, onLogout }) {
       path: '/admin/users',
     },
     {
-      key: 'test-users',
+      key: 'testing',
       icon: <ExperimentOutlined />,
-      label: 'Тестовые пользователи',
-      path: '/admin/test-users',
+      label: 'Тестирование',
+      path: '/admin/testing',
     },
     {
       key: 'interests',
@@ -155,8 +156,8 @@ function AdminPanel({ currentUser, onLogout }) {
         return <AdminGiftAssignmentsManager />;
       case 'users':
         return <AdminUserManagement currentUser={currentUser} />;
-      case 'test-users':
-        return <TestUsersManagement />;
+      case 'testing':
+        return <TestUsersManagement user={currentUser} />;
       case 'interests':
         return <AdminInterestsManagement currentUser={currentUser} />;
       case 'faq':

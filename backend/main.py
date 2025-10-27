@@ -299,6 +299,47 @@ def create_default_settings():
             )
             db.add(welcome_subtitle_setting)
         
+        # Инициализация настроек кнопок мероприятий
+        button_settings = [
+            ("button_preregistration", "Хочу!", "Текст кнопки для предварительной регистрации"),
+            ("button_registration", "Регистрация", "Текст кнопки для основной регистрации"),
+            ("button_confirm_participation", "Подтвердить участие", "Текст кнопки для подтверждения участия"),
+            ("button_soon", "Уже скоро :)", "Текст кнопки для предварительно зарегистрированных пользователей"),
+            ("button_participating", "Вы участвуете в мероприятии", "Текст кнопки для подтвержденных участников")
+        ]
+        
+        for key, default_value, description in button_settings:
+            setting = db.query(SystemSettings).filter(SystemSettings.key == key).first()
+            if not setting:
+                new_setting = SystemSettings(
+                    key=key,
+                    value=default_value,
+                    description=description
+                )
+                db.add(new_setting)
+        
+        # Инициализация настроек SMTP
+        smtp_settings = [
+            ("smtp_enabled", "false", "Включить отправку писем через SMTP"),
+            ("smtp_host", "", "Адрес SMTP сервера"),
+            ("smtp_port", "587", "Порт SMTP сервера"),
+            ("smtp_username", "", "Имя пользователя для SMTP"),
+            ("smtp_password", "", "Пароль для SMTP"),
+            ("smtp_from_email", "", "Email адрес отправителя"),
+            ("smtp_from_name", "Анонимный Дед Мороз", "Имя отправителя"),
+            ("smtp_use_tls", "true", "Использовать TLS для SMTP")
+        ]
+        
+        for key, default_value, description in smtp_settings:
+            setting = db.query(SystemSettings).filter(SystemSettings.key == key).first()
+            if not setting:
+                new_setting = SystemSettings(
+                    key=key,
+                    value=default_value,
+                    description=description
+                )
+                db.add(new_setting)
+        
         db.commit()
         print("Настройки системы инициализированы")
     except Exception as e:
@@ -577,7 +618,7 @@ class GiftAssignmentApproval(BaseModel):
 
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.1.3")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.1.5")
 
 # CORS middleware
 app.add_middleware(
@@ -1051,11 +1092,10 @@ async def get_user_registration(
         "id": registration.id,
         "event_id": registration.event_id,
         "user_id": registration.user_id,
-        "is_preregistration": registration.is_preregistration,
+        "is_preregistration": registration.registration_type == "preregistration",
         "is_confirmed": registration.is_confirmed,
         "registration_type": registration.registration_type,
-        "created_at": registration.created_at.isoformat(),
-        "updated_at": registration.updated_at.isoformat() if registration.updated_at else None
+        "created_at": registration.created_at.isoformat()
     }
 
 @app.put("/events/{event_id}", response_model=EventResponse)
@@ -1738,16 +1778,22 @@ async def get_popular_interests(
 @app.get("/api/settings/public")
 async def get_public_settings(db: Session = Depends(get_db)):
     """Получение публичных настроек системы (доступно всем)"""
-    public_keys = ['welcome_title', 'welcome_subtitle', 'site_title', 'site_description']
+    public_keys = [
+        'welcome_title', 'welcome_subtitle', 'site_title', 'site_description',
+        'button_preregistration', 'button_registration', 'button_confirm_participation',
+        'button_soon', 'button_participating'
+    ]
     settings = db.query(SystemSettings).filter(SystemSettings.key.in_(public_keys)).all()
     
-    return [
-        {
-            "key": setting.key,
-            "value": setting.value
-        }
-        for setting in settings
-    ]
+    # Преобразуем список в словарь для удобства использования
+    settings_dict = {}
+    for setting in settings:
+        settings_dict[setting.key] = setting.value
+    
+    return settings_dict
+
+@app.get("/users/")
+async def get_public_users(db: Session = Depends(get_db)):
     """Получение публичного списка пользователей с игровой информацией"""
     users = db.query(User).all()
     
@@ -2672,7 +2718,7 @@ async def get_user_gift_assignments(
 
 
 # Test Users Management
-@app.post("/admin/generate-test-users")
+@app.post("/admin/generate-testing")
 async def generate_test_users(
     count: int = 10,
     password: str = "test123",
@@ -2745,7 +2791,7 @@ async def generate_test_users(
         db.close()
 
 
-@app.delete("/admin/delete-test-users")
+@app.delete("/admin/delete-testing")
 async def delete_test_users(current_user: User = Depends(get_current_admin_user)):
     """Удаление всех тестовых пользователей"""
     db = SessionLocal()
@@ -2782,7 +2828,7 @@ async def delete_test_users(current_user: User = Depends(get_current_admin_user)
         db.close()
 
 
-@app.get("/admin/test-users")
+@app.get("/admin/testing")
 async def get_test_users(current_user: User = Depends(get_current_admin_user)):
     """Получение списка тестовых пользователей"""
     db = SessionLocal()

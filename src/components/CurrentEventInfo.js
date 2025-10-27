@@ -4,6 +4,7 @@ import { CalendarOutlined, ClockCircleOutlined, CheckCircleOutlined, UserAddOutl
 import axios from 'axios';
 import moment from 'moment';
 import UserAvatar from './UserAvatar';
+import useButtonSettings from '../hooks/useButtonSettings';
 
 const { Title, Text } = Typography;
 
@@ -15,6 +16,7 @@ function CurrentEventInfo({ user, isAuthenticated, onNavigate }) {
   const [participants, setParticipants] = useState([]);
   const [hasChecked, setHasChecked] = useState(false);
   const [userRegistration, setUserRegistration] = useState(null);
+  const { buttonSettings } = useButtonSettings();
 
   const updateCountdown = useCallback((event = currentEvent) => {
     if (!event) return;
@@ -99,7 +101,10 @@ function CurrentEventInfo({ user, isAuthenticated, onNavigate }) {
     if (!eventId || !isAuthenticated || !user) return;
     
     const token = localStorage.getItem('token');
-    if (!token) return;
+    if (!token) {
+      // Токен не найден - пользователь не авторизован, это нормально
+      return;
+    }
     
     try {
       const response = await axios.get(`/events/${eventId}/user-registration`, {
@@ -109,6 +114,9 @@ function CurrentEventInfo({ user, isAuthenticated, onNavigate }) {
     } catch (error) {
       if (error.response?.status === 404) {
         // Пользователь не зарегистрирован - это нормально, не логируем
+        setUserRegistration(null);
+      } else if (error.response?.status === 401) {
+        // Пользователь не авторизован - это нормально, не логируем
         setUserRegistration(null);
       } else {
         console.error('Error fetching user registration:', error);
@@ -145,7 +153,7 @@ function CurrentEventInfo({ user, isAuthenticated, onNavigate }) {
             disabled
             style={{ backgroundColor: '#52c41a', borderColor: '#52c41a' }}
           >
-            Вы участвуете в мероприятии
+            {buttonSettings.button_participating}
           </Button>
         );
       } else if (canConfirm) {
@@ -156,7 +164,18 @@ function CurrentEventInfo({ user, isAuthenticated, onNavigate }) {
             onClick={() => onNavigate('/events')}
             style={{ backgroundColor: '#fa8c16', borderColor: '#fa8c16' }}
           >
-            Подтвердить участие
+            {buttonSettings.button_confirm_participation}
+          </Button>
+        );
+      } else if (userRegistration.is_preregistration && canPreregister) {
+        return (
+          <Button 
+            type="default" 
+            icon={<ClockCircleOutlined />}
+            disabled
+            style={{ backgroundColor: '#faad14', borderColor: '#faad14', color: 'white' }}
+          >
+            {buttonSettings.button_soon}
           </Button>
         );
       } else {
@@ -179,7 +198,7 @@ function CurrentEventInfo({ user, isAuthenticated, onNavigate }) {
           onClick={() => onNavigate('/events')}
           style={{ backgroundColor: '#d63031', borderColor: '#d63031' }}
         >
-          Принять участие
+          {buttonSettings.button_preregistration}
         </Button>
       );
     }

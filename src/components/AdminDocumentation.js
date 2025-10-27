@@ -509,9 +509,9 @@ const AdminDocumentation = () => {
             <List
               size="small"
               dataSource={[
-                'Backend: http://localhost:8006',
+                'Backend: http://localhost:8004',
                 'Frontend: http://localhost:3000',
-                'API документация: http://localhost:8006/docs'
+                'API документация: http://localhost:8004/docs'
               ]}
               renderItem={item => <List.Item><Text code>{item}</Text></List.Item>}
             />

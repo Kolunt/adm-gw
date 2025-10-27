@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Form, Input, Button, Switch, Divider, Typography, message, Space, Tag, Alert, Tabs } from 'antd';
-import { SettingOutlined, SaveOutlined, ReloadOutlined, KeyOutlined, CheckCircleOutlined, CheckOutlined, GlobalOutlined, DatabaseOutlined, PictureOutlined, RobotOutlined } from '@ant-design/icons';
+import { SettingOutlined, SaveOutlined, ReloadOutlined, KeyOutlined, CheckCircleOutlined, CheckOutlined, GlobalOutlined, DatabaseOutlined, PictureOutlined, RobotOutlined, MailOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import SiteIconManagement from './SiteIconManagement';
@@ -26,7 +26,6 @@ function AdminSystemSettings({ activeTab: initialActiveTab = 'general' }) {
 
   const handleTabChange = (tabKey) => {
     setActiveTab(tabKey);
-    navigate(`/admin/settings/${tabKey}`);
   };
 
   const fetchSettings = useCallback(async () => {
@@ -48,10 +47,8 @@ function AdminSystemSettings({ activeTab: initialActiveTab = 'general' }) {
       });
       
       setSettings(response.data);
-      // Устанавливаем значения формы только если форма существует
-      if (form) {
-        form.setFieldsValue(settingsData);
-      }
+      // Устанавливаем значения формы
+      form.setFieldsValue(settingsData);
       setTokenValue(settingsData.dadata_token || '');
     } catch (error) {
       // Только логируем ошибку если это не 401 (неавторизован)
@@ -65,12 +62,7 @@ function AdminSystemSettings({ activeTab: initialActiveTab = 'general' }) {
   }, [form]);
 
   useEffect(() => {
-    // Небольшая задержка для инициализации формы
-    const timer = setTimeout(() => {
-      fetchSettings();
-    }, 100);
-    
-    return () => clearTimeout(timer);
+    fetchSettings();
   }, [fetchSettings]);
 
   const handleSave = async (values) => {
@@ -157,6 +149,158 @@ function AdminSystemSettings({ activeTab: initialActiveTab = 'general' }) {
 
   const dadataStatus = getDadataStatus();
 
+  const renderSmtpTab = () => (
+    <Form
+      form={form}
+      layout="vertical"
+      onFinish={handleSave}
+    >
+      <Card size="small" title="Настройки SMTP">
+        <Alert
+          message="Настройки почтового сервера"
+          description="Настройте SMTP сервер для отправки уведомлений пользователям. Функциональность отправки писем будет добавлена позже."
+          type="info"
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
+        
+        <Form.Item
+          name="smtp_enabled"
+          label="Включить SMTP"
+          valuePropName="checked"
+        >
+          <Switch
+            checkedChildren="Включено"
+            unCheckedChildren="Отключено"
+          />
+        </Form.Item>
+
+        <Form.Item
+          name="smtp_host"
+          label="SMTP сервер"
+          rules={[
+            { max: 255, message: 'Адрес сервера не должен превышать 255 символов' }
+          ]}
+        >
+          <Input
+            placeholder="smtp.gmail.com"
+            prefix={<SettingOutlined />}
+            maxLength={255}
+            showCount
+          />
+        </Form.Item>
+
+        <Form.Item
+          name="smtp_port"
+          label="Порт SMTP"
+          rules={[
+            { pattern: /^\d+$/, message: 'Порт должен содержать только цифры' },
+            { max: 5, message: 'Порт не должен превышать 5 символов' }
+          ]}
+        >
+          <Input
+            placeholder="587"
+            prefix={<SettingOutlined />}
+            maxLength={5}
+            showCount
+          />
+        </Form.Item>
+
+        <Form.Item
+          name="smtp_username"
+          label="Имя пользователя SMTP"
+          rules={[
+            { max: 255, message: 'Имя пользователя не должно превышать 255 символов' }
+          ]}
+        >
+          <Input
+            placeholder="your-email@gmail.com"
+            prefix={<SettingOutlined />}
+            maxLength={255}
+            showCount
+          />
+        </Form.Item>
+
+        <Form.Item
+          name="smtp_password"
+          label="Пароль SMTP"
+          rules={[
+            { max: 255, message: 'Пароль не должен превышать 255 символов' }
+          ]}
+        >
+          <Input.Password
+            placeholder="Введите пароль приложения"
+            prefix={<SettingOutlined />}
+            maxLength={255}
+            showCount
+          />
+        </Form.Item>
+
+        <Form.Item
+          name="smtp_from_email"
+          label="Email отправителя"
+          rules={[
+            { type: 'email', message: 'Введите корректный email адрес' },
+            { max: 255, message: 'Email не должен превышать 255 символов' }
+          ]}
+        >
+          <Input
+            placeholder="noreply@yourdomain.com"
+            prefix={<SettingOutlined />}
+            maxLength={255}
+            showCount
+          />
+        </Form.Item>
+
+        <Form.Item
+          name="smtp_from_name"
+          label="Имя отправителя"
+          rules={[
+            { max: 100, message: 'Имя отправителя не должно превышать 100 символов' }
+          ]}
+        >
+          <Input
+            placeholder="Анонимный Дед Мороз"
+            prefix={<SettingOutlined />}
+            maxLength={100}
+            showCount
+          />
+        </Form.Item>
+
+        <Form.Item
+          name="smtp_use_tls"
+          label="Использовать TLS"
+          valuePropName="checked"
+        >
+          <Switch
+            checkedChildren="Да"
+            unCheckedChildren="Нет"
+          />
+        </Form.Item>
+      </Card>
+
+      <Divider />
+
+      <Space>
+        <Button
+          type="primary"
+          htmlType="submit"
+          icon={<SaveOutlined />}
+          loading={loading}
+        >
+          Сохранить настройки
+        </Button>
+        <Button
+          icon={<ReloadOutlined />}
+          onClick={handleReset}
+          disabled={loading}
+        >
+          Сбросить
+        </Button>
+      </Space>
+    </Form>
+  );
+
   const renderGeneralTab = () => (
     <Form
       form={form}
@@ -242,6 +386,96 @@ function AdminSystemSettings({ activeTab: initialActiveTab = 'general' }) {
             placeholder="Введите подзаголовок приветствия"
             prefix={<SettingOutlined />}
             maxLength={200}
+            showCount
+          />
+        </Form.Item>
+      </Card>
+
+      <Card size="small" title="Настройки кнопок мероприятий" style={{ marginTop: 16 }}>
+        <Alert
+          message="Тексты кнопок для этапов мероприятий"
+          description="Настройте названия кнопок для разных этапов участия в мероприятиях."
+          type="info"
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
+        
+        <Form.Item
+          name="button_preregistration"
+          label="Кнопка предварительной регистрации"
+          rules={[
+            { required: true, message: 'Текст кнопки обязателен' },
+            { max: 50, message: 'Текст кнопки не должен превышать 50 символов' }
+          ]}
+        >
+          <Input
+            placeholder="Хочу!"
+            prefix={<SettingOutlined />}
+            maxLength={50}
+            showCount
+          />
+        </Form.Item>
+
+        <Form.Item
+          name="button_registration"
+          label="Кнопка основной регистрации"
+          rules={[
+            { required: true, message: 'Текст кнопки обязателен' },
+            { max: 50, message: 'Текст кнопки не должен превышать 50 символов' }
+          ]}
+        >
+          <Input
+            placeholder="Регистрация"
+            prefix={<SettingOutlined />}
+            maxLength={50}
+            showCount
+          />
+        </Form.Item>
+
+        <Form.Item
+          name="button_confirm_participation"
+          label="Кнопка подтверждения участия"
+          rules={[
+            { required: true, message: 'Текст кнопки обязателен' },
+            { max: 50, message: 'Текст кнопки не должен превышать 50 символов' }
+          ]}
+        >
+          <Input
+            placeholder="Подтвердить участие"
+            prefix={<SettingOutlined />}
+            maxLength={50}
+            showCount
+          />
+        </Form.Item>
+
+        <Form.Item
+          name="button_soon"
+          label="Кнопка ожидания (предварительно зарегистрирован)"
+          rules={[
+            { required: true, message: 'Текст кнопки обязателен' },
+            { max: 50, message: 'Текст кнопки не должен превышать 50 символов' }
+          ]}
+        >
+          <Input
+            placeholder="Уже скоро :)"
+            prefix={<SettingOutlined />}
+            maxLength={50}
+            showCount
+          />
+        </Form.Item>
+
+        <Form.Item
+          name="button_participating"
+          label="Кнопка для подтвержденных участников"
+          rules={[
+            { required: true, message: 'Текст кнопки обязателен' },
+            { max: 50, message: 'Текст кнопки не должен превышать 50 символов' }
+          ]}
+        >
+          <Input
+            placeholder="Вы участвуете в мероприятии"
+            prefix={<SettingOutlined />}
+            maxLength={50}
             showCount
           />
         </Form.Item>
@@ -387,6 +621,7 @@ function AdminSystemSettings({ activeTab: initialActiveTab = 'general' }) {
           <Tabs 
             activeKey={activeTab} 
             onChange={handleTabChange}
+            defaultActiveKey="general"
             items={[
               {
                 key: 'general',
@@ -407,6 +642,16 @@ function AdminSystemSettings({ activeTab: initialActiveTab = 'general' }) {
                   </span>
                 ),
                 children: renderDadataTab(),
+              },
+              {
+                key: 'smtp',
+                label: (
+                  <span>
+                    <MailOutlined />
+                    SMTP
+                  </span>
+                ),
+                children: renderSmtpTab(),
               },
               {
                 key: 'icon',
