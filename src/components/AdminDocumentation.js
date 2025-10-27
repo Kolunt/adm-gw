@@ -8,8 +8,7 @@ import {
   GlobalOutlined,
   PictureOutlined,
   CheckCircleOutlined,
-  InfoCircleOutlined,
-  WarningOutlined
+  InfoCircleOutlined
 } from '@ant-design/icons';
 
 const { Title, Paragraph, Text } = Typography;

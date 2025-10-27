@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Button, Table, Tag, Modal, Form, Input, message, Typography, Space, Alert } from 'antd';
+import { Card, Button, Table, Tag, Modal, Form, message, Typography, Space, Alert } from 'antd';
 import { CalendarOutlined, CheckCircleOutlined, ClockCircleOutlined, LinkOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -26,7 +26,7 @@ function EventRegistration() {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.get('/events/', {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
       setEvents(response.data);
     } catch (error) {
@@ -36,14 +36,21 @@ function EventRegistration() {
   };
 
   const fetchUserRegistrations = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      // Если пользователь не авторизован, не делаем запрос
+      setUserRegistrations([]);
+      return;
+    }
+    
     try {
-      const token = localStorage.getItem('token');
       const response = await axios.get('/user/registrations', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setUserRegistrations(response.data);
     } catch (error) {
       console.error('Error fetching user registrations:', error);
+      setUserRegistrations([]);
     }
   };
 
@@ -87,7 +94,7 @@ function EventRegistration() {
         return;
       }
       
-      const response = await axios.post(`/events/${event.id}/register`, {
+      await axios.post(`/events/${event.id}/register`, {
         registration_type: registrationType
       }, {
         headers: { Authorization: `Bearer ${token}` }

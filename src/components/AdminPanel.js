@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Card, Typography, Space, Button, Avatar, Dropdown } from 'antd';
+import { Layout, Typography, Button, Avatar, Dropdown } from 'antd';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   UserOutlined, 
@@ -28,8 +28,7 @@ function AdminPanel({ currentUser, onLogout }) {
   const location = useLocation();
   const navigate = useNavigate();
   
-  // Определяем активное меню на основе URL
-  const getActiveMenuFromPath = () => {
+  const [selectedMenu, setSelectedMenu] = useState(() => {
     const path = location.pathname;
     if (path === '/admin' || path === '/admin/dashboard') return 'dashboard';
     if (path === '/admin/users') return 'users';
@@ -38,24 +37,41 @@ function AdminPanel({ currentUser, onLogout }) {
     if (path === '/admin/faq') return 'faq';
     if (path === '/admin/documentation') return 'documentation';
     if (path === '/admin/settings' || path.startsWith('/admin/settings/')) return 'settings';
-    return 'dashboard'; // по умолчанию
-  };
+    return 'dashboard';
+  });
   
-  // Определяем активный таб настроек на основе URL
-  const getActiveSettingsTab = () => {
+  const [activeSettingsTab, setActiveSettingsTab] = useState(() => {
     const path = location.pathname;
     if (path === '/admin/settings/general') return 'general';
     if (path === '/admin/settings/dadata') return 'dadata';
     if (path === '/admin/settings/icon') return 'icon';
     if (path === '/admin/settings/telegram') return 'telegram';
-    return 'general'; // по умолчанию
-  };
-  
-  const [selectedMenu, setSelectedMenu] = useState(getActiveMenuFromPath());
-  const [activeSettingsTab, setActiveSettingsTab] = useState(getActiveSettingsTab());
+    return 'general';
+  });
 
   // Обновляем активное меню при изменении URL
   useEffect(() => {
+    const getActiveMenuFromPath = () => {
+      const path = location.pathname;
+      if (path === '/admin' || path === '/admin/dashboard') return 'dashboard';
+      if (path === '/admin/users') return 'users';
+      if (path === '/admin/events') return 'events';
+      if (path === '/admin/interests') return 'interests';
+      if (path === '/admin/faq') return 'faq';
+      if (path === '/admin/documentation') return 'documentation';
+      if (path === '/admin/settings' || path.startsWith('/admin/settings/')) return 'settings';
+      return 'dashboard'; // по умолчанию
+    };
+    
+    const getActiveSettingsTab = () => {
+      const path = location.pathname;
+      if (path === '/admin/settings/general') return 'general';
+      if (path === '/admin/settings/dadata') return 'dadata';
+      if (path === '/admin/settings/icon') return 'icon';
+      if (path === '/admin/settings/telegram') return 'telegram';
+      return 'general'; // по умолчанию
+    };
+    
     setSelectedMenu(getActiveMenuFromPath());
     setActiveSettingsTab(getActiveSettingsTab());
   }, [location.pathname]);

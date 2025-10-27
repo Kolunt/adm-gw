@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Card,
   Form,
@@ -9,15 +9,12 @@ import {
   Modal,
   message,
   Space,
-  Typography,
   Alert,
   Tag,
-  Tooltip,
   Select,
   Divider
 } from 'antd';
 import {
-  RobotOutlined,
   SendOutlined,
   UserOutlined,
   CheckCircleOutlined,
@@ -27,7 +24,6 @@ import {
 } from '@ant-design/icons';
 import axios from 'axios';
 
-const { Title, Text } = Typography;
 const { TextArea } = Input;
 const { Option } = Select;
 
@@ -43,7 +39,7 @@ const TelegramTab = () => {
   const [notificationType, setNotificationType] = useState('');
 
   // Загрузка настроек бота
-  const fetchBotSettings = async () => {
+  const fetchBotSettings = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.get('/admin/telegram/bot', {
@@ -59,10 +55,10 @@ const TelegramTab = () => {
     } catch (error) {
       console.error('Ошибка загрузки настроек бота:', error);
     }
-  };
+  }, [form]);
 
   // Загрузка подписчиков
-  const fetchTelegramUsers = async () => {
+  const fetchTelegramUsers = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.get('/admin/telegram/users', {
@@ -72,23 +68,23 @@ const TelegramTab = () => {
     } catch (error) {
       console.error('Ошибка загрузки подписчиков:', error);
     }
-  };
+  }, []);
 
   // Загрузка мероприятий
-  const fetchEvents = async () => {
+  const fetchEvents = useCallback(async () => {
     try {
       const response = await axios.get('/events/');
       setEvents(response.data);
     } catch (error) {
       console.error('Ошибка загрузки мероприятий:', error);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchBotSettings();
     fetchTelegramUsers();
     fetchEvents();
-  }, []);
+  }, [fetchBotSettings, fetchTelegramUsers, fetchEvents]);
 
   // Сохранение настроек бота
   const handleSaveBotSettings = async (values) => {
