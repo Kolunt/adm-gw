@@ -12,7 +12,8 @@ import {
   HeartOutlined,
   QuestionCircleOutlined,
   BookOutlined,
-  GiftOutlined
+  GiftOutlined,
+  ExperimentOutlined
 } from '@ant-design/icons';
 import AdminUserManagement from './AdminUserManagement';
 import AdminSystemSettings from './AdminSystemSettings';
@@ -22,6 +23,7 @@ import AdminFAQManagement from './AdminFAQManagement';
 import AdminDocumentation from './AdminDocumentation';
 import AdminDashboard from './AdminDashboard';
 import AdminGiftAssignmentsManager from './AdminGiftAssignmentsManager';
+import TestUsersManagement from './TestUsersManagement';
 
 const { Sider, Content } = Layout;
 const { Title } = Typography;
@@ -34,6 +36,7 @@ function AdminPanel({ currentUser, onLogout }) {
     const path = location.pathname;
     if (path === '/admin' || path === '/admin/dashboard') return 'dashboard';
     if (path === '/admin/users') return 'users';
+    if (path === '/admin/test-users') return 'test-users';
     if (path === '/admin/events') return 'events';
     if (path === '/admin/gift-assignments') return 'gift-assignments';
     if (path === '/admin/interests') return 'interests';
@@ -105,6 +108,12 @@ function AdminPanel({ currentUser, onLogout }) {
       path: '/admin/users',
     },
     {
+      key: 'test-users',
+      icon: <ExperimentOutlined />,
+      label: 'Тестовые пользователи',
+      path: '/admin/test-users',
+    },
+    {
       key: 'interests',
       icon: <HeartOutlined />,
       label: 'Интересы',
@@ -145,6 +154,8 @@ function AdminPanel({ currentUser, onLogout }) {
         return <AdminGiftAssignmentsManager />;
       case 'users':
         return <AdminUserManagement currentUser={currentUser} />;
+      case 'test-users':
+        return <TestUsersManagement />;
       case 'interests':
         return <AdminInterestsManagement currentUser={currentUser} />;
       case 'faq':

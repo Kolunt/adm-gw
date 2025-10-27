@@ -73,6 +73,9 @@ class User(Base):
     # Дополнительные поля профиля (необязательные)
     phone_number = Column(String)  # Номер телефона
     telegram_username = Column(String)  # Никнейм в Telegram
+    
+    # Тестовые пользователи
+    is_test = Column(Boolean, default=False)  # Флаг тестового пользователя
 
 class Event(Base):
     __tablename__ = "events"
@@ -2666,6 +2669,144 @@ async def get_user_gift_assignments(
         result.append(assignment_data)
     
     return result
+
+
+# Test Users Management
+@app.post("/admin/generate-test-users")
+async def generate_test_users(
+    count: int = 10,
+    password: str = "test123",
+    current_user: User = Depends(get_current_admin_user)
+):
+    """Генерация тестовых пользователей для ручного тестирования"""
+    if count < 1 or count > 100:
+        raise HTTPException(status_code=400, detail="Количество пользователей должно быть от 1 до 100")
+    
+    db = SessionLocal()
+    try:
+        generated_users = []
+        
+        for i in range(count):
+            # Проверяем, не существует ли уже пользователь с таким email
+            existing_user = db.query(User).filter(User.email == f"test_user_{i+1}@test.com").first()
+            if existing_user:
+                continue
+                
+            # Создаем нового тестового пользователя
+            hashed_password = pwd_context.hash(password)
+            avatar_seed = f"test_user_{i+1}"
+            
+            new_user = User(
+                username=f"test_user_{i+1}",
+                email=f"test_user_{i+1}@test.com",
+                hashed_password=hashed_password,
+                name=f"Тестовый пользователь {i+1}",
+                wishlist=f"Тестовые интересы пользователя {i+1}",
+                role="user",
+                is_active=True,
+                gwars_profile_url=f"https://www.gwars.io/info.php?id={1000+i}",
+                gwars_nickname=f"TestPlayer_{i+1}",
+                full_name=f"Тестовый Пользователь {i+1}",
+                address=f"Тестовый адрес {i+1}",
+                interests=f"Тест, Игры, Развлечения",
+                profile_completed=True,
+                gwars_verification_token=f"test_token_{i+1}",
+                gwars_verified=True,
+                avatar_seed=avatar_seed,
+                phone_number=f"+7-900-{100+i:03d}-{1000+i:04d}",
+                telegram_username=f"@test_user_{i+1}",
+                is_test=True
+            )
+            
+            db.add(new_user)
+            generated_users.append(new_user)
+        
+        db.commit()
+        
+        return {
+            "message": f"Создано {len(generated_users)} тестовых пользователей",
+            "count": len(generated_users),
+            "password": password,
+            "users": [
+                {
+                    "id": user.id,
+                    "email": user.email,
+                    "name": user.name,
+                    "username": user.username
+                }
+                for user in generated_users
+            ]
+        }
+        
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Ошибка создания тестовых пользователей: {str(e)}")
+    finally:
+        db.close()
+
+
+@app.delete("/admin/delete-test-users")
+async def delete_test_users(current_user: User = Depends(get_current_admin_user)):
+    """Удаление всех тестовых пользователей"""
+    db = SessionLocal()
+    try:
+        # Находим всех тестовых пользователей
+        test_users = db.query(User).filter(User.is_test == True).all()
+        
+        if not test_users:
+            return {"message": "Тестовые пользователи не найдены", "deleted_count": 0}
+        
+        # Удаляем регистрации тестовых пользователей
+        for user in test_users:
+            db.query(EventRegistration).filter(EventRegistration.user_id == user.id).delete()
+            db.query(GiftAssignment).filter(
+                (GiftAssignment.giver_id == user.id) | 
+                (GiftAssignment.receiver_id == user.id)
+            ).delete()
+        
+        # Удаляем самих пользователей
+        deleted_count = len(test_users)
+        db.query(User).filter(User.is_test == True).delete()
+        
+        db.commit()
+        
+        return {
+            "message": f"Удалено {deleted_count} тестовых пользователей",
+            "deleted_count": deleted_count
+        }
+        
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Ошибка удаления тестовых пользователей: {str(e)}")
+    finally:
+        db.close()
+
+
+@app.get("/admin/test-users")
+async def get_test_users(current_user: User = Depends(get_current_admin_user)):
+    """Получение списка тестовых пользователей"""
+    db = SessionLocal()
+    try:
+        test_users = db.query(User).filter(User.is_test == True).all()
+        
+        return {
+            "count": len(test_users),
+            "users": [
+                {
+                    "id": user.id,
+                    "email": user.email,
+                    "name": user.name,
+                    "username": user.username,
+                    "created_at": user.created_at.isoformat() if user.created_at else None
+                }
+                for user in test_users
+            ]
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Ошибка получения тестовых пользователей: {str(e)}")
+    finally:
+        db.close()
 
 
 # Mount static files for React app
