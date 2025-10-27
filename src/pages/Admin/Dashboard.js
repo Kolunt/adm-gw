@@ -10,7 +10,7 @@ import {
 } from '@ant-design/icons';
 import ProCard from '@ant-design/pro-card';
 import ProTable from '@ant-design/pro-table';
-import axios from 'axios';
+import axios from '../../utils/axiosConfig';
 
 const { Title, Text } = Typography;
 

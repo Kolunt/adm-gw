@@ -3,7 +3,7 @@ import { Avatar, Tag, Space, Typography, Card, Row, Col, Spin } from 'antd';
 import { UserOutlined, GiftOutlined, TeamOutlined } from '@ant-design/icons';
 import ProList from '@ant-design/pro-list';
 import ProCard from '@ant-design/pro-card';
-import axios from 'axios';
+import axios from '../../utils/axiosConfig';
 import { generateAvatar } from '../../utils/avatarUtils';
 
 const { Title, Text } = Typography;

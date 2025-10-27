@@ -3,7 +3,7 @@ import { Card, Typography, Space, Tag, Button, Row, Col, Spin, Alert } from 'ant
 import { CalendarOutlined, GiftOutlined, TeamOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import ProCard from '@ant-design/pro-card';
 import ProList from '@ant-design/pro-list';
-import axios from 'axios';
+import axios from '../../utils/axiosConfig';
 
 const { Title, Text, Paragraph } = Typography;
 

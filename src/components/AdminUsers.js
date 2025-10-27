@@ -11,7 +11,7 @@ import {
 import ProCard from '@ant-design/pro-card';
 import ProTable from '@ant-design/pro-table';
 import ProDescriptions from '@ant-design/pro-descriptions';
-import axios from 'axios';
+import axios from '../utils/axiosConfig';
 import { getUserAvatar } from '../utils/avatarUtils';
 
 const { Title, Text } = Typography;

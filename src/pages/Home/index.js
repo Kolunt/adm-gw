@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, Row, Col, Typography, Button, Space, Spin, Alert } from 'antd';
 import { GiftOutlined, TeamOutlined, CalendarOutlined } from '@ant-design/icons';
 import ProCard from '@ant-design/pro-card';
-import axios from 'axios';
+import axios from '../../utils/axiosConfig';
 
 const { Title, Paragraph, Text } = Typography;
 

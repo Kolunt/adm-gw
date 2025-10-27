@@ -10,7 +10,7 @@ import {
 } from '@ant-design/icons';
 import ProForm from '@ant-design/pro-form';
 import ProCard from '@ant-design/pro-card';
-import axios from 'axios';
+import axios from '../utils/axiosConfig';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;

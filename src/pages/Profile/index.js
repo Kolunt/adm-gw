@@ -5,7 +5,7 @@ import ProCard from '@ant-design/pro-card';
 import ProDescriptions from '@ant-design/pro-descriptions';
 import { useAuth } from '../../services/AuthService';
 import { getUserAvatar } from '../../utils/avatarUtils';
-import axios from 'axios';
+import axios from '../../utils/axiosConfig';
 
 const { Title, Text } = Typography;
 
