@@ -157,18 +157,6 @@ const AppContent = () => {
         <span style={{ color: '#1890ff' }}>
           <UserOutlined /> {user.name || user.email}
         </span>
-        <a 
-          href="/profile" 
-          style={{ 
-            padding: '8px 16px', 
-            borderRadius: '4px', 
-            background: '#f0f0f0', 
-            color: '#333', 
-            textDecoration: 'none' 
-          }}
-        >
-          Профиль
-        </a>
         <button 
           onClick={logout}
           style={{ 
