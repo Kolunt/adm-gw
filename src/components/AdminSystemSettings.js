@@ -30,9 +30,14 @@ function AdminSystemSettings({ activeTab: initialActiveTab = 'general' }) {
   };
 
   const fetchSettings = useCallback(async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
       const response = await axios.get('/admin/settings', {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -49,8 +54,11 @@ function AdminSystemSettings({ activeTab: initialActiveTab = 'general' }) {
       }
       setTokenValue(settingsData.dadata_token || '');
     } catch (error) {
-      console.error('Error fetching settings:', error);
-      message.error('Ошибка при загрузке настроек');
+      // Только логируем ошибку если это не 401 (неавторизован)
+      if (error.response?.status !== 401) {
+        console.error('Error fetching settings:', error);
+        message.error('Ошибка при загрузке настроек');
+      }
     } finally {
       setLoading(false);
     }

@@ -34,25 +34,36 @@ function AppContent() {
 
   const checkAuth = useCallback(async () => {
     const token = localStorage.getItem('token');
-    if (token) {
-      try {
-        const response = await axios.get('/auth/me', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setUser(response.data);
-        setIsAuthenticated(true);
-        
-        // Проверяем заполненность профиля для обычных пользователей
-        if (response.data.role === 'user' && !response.data.profile_completed) {
-          navigate('/profile');
-          return;
-        }
-        
-        // Убираем автоматическое перенаправление админа на /admin
-        // Админ может оставаться на главной странице
-      } catch (error) {
-        localStorage.removeItem('token');
+    if (!token) {
+      setUser(null);
+      setIsAuthenticated(false);
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const response = await axios.get('/auth/me', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setUser(response.data);
+      setIsAuthenticated(true);
+      
+      // Проверяем заполненность профиля для обычных пользователей
+      if (response.data.role === 'user' && !response.data.profile_completed) {
+        navigate('/profile');
+        return;
       }
+      
+      // Убираем автоматическое перенаправление админа на /admin
+      // Админ может оставаться на главной странице
+    } catch (error) {
+      // Только логируем ошибку если это не 401 (неавторизован)
+      if (error.response?.status !== 401) {
+        console.error('Auth check error:', error);
+      }
+      localStorage.removeItem('token');
+      setUser(null);
+      setIsAuthenticated(false);
     }
     setIsLoading(false);
   }, [navigate]);
