@@ -3,6 +3,7 @@ import { Card, Row, Col, Typography, Button, Space, Spin, Alert } from 'antd';
 import { GiftOutlined, TeamOutlined, CalendarOutlined } from '@ant-design/icons';
 import ProCard from '@ant-design/pro-card';
 import axios from '../../utils/axiosConfig';
+import CountdownTimer from '../../components/CountdownTimer';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -19,11 +20,11 @@ const HomePage = () => {
     try {
       const [settingsResponse, eventResponse] = await Promise.all([
         axios.get('/api/settings/public'),
-        axios.get('/events/current')
+        axios.get('/events/current').catch(() => null)
       ]);
       
       setSettings(settingsResponse.data);
-      setCurrentEvent(eventResponse.data);
+      setCurrentEvent(eventResponse?.data || null);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -60,6 +61,11 @@ const HomePage = () => {
           </Col>
         </Row>
       </ProCard>
+
+      {/* Countdown Timer */}
+      {currentEvent && (
+        <CountdownTimer event={currentEvent} />
+      )}
 
       {/* Current Event Section */}
       {currentEvent && (

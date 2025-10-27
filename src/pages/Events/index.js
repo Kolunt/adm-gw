@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Typography, Space, Tag, Button, Row, Col, Spin, Alert } from 'antd';
+import { Card, Typography, Space, Tag, Button, Row, Col, Spin, Alert, List } from 'antd';
 import { CalendarOutlined, GiftOutlined, TeamOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import ProCard from '@ant-design/pro-card';
-import ProList from '@ant-design/pro-list';
 import axios from '../../utils/axiosConfig';
 
 const { Title, Text, Paragraph } = Typography;
@@ -132,7 +131,7 @@ const EventsPage = () => {
 
       {/* All Events */}
       <ProCard>
-        <ProList
+        <List
           dataSource={events}
           rowKey="id"
           pagination={{
@@ -145,7 +144,7 @@ const EventsPage = () => {
           renderItem={(event) => {
             const eventStatus = getEventStatus(event);
             return (
-              <ProList.Item
+              <List.Item
                 actions={[
                   <Space key="actions">
                     <Tag color={eventStatus.color}>
@@ -157,7 +156,7 @@ const EventsPage = () => {
                   </Space>
                 ]}
               >
-                <ProList.Item.Meta
+                <List.Item.Meta
                   title={
                     <Space>
                       <Text strong style={{ fontSize: '16px' }}>
@@ -182,7 +181,7 @@ const EventsPage = () => {
                     </Space>
                   }
                 />
-              </ProList.Item>
+              </List.Item>
             );
           }}
         />

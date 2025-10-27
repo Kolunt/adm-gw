@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Avatar, Typography, Space, Tag, Button, Divider, Row, Col, Spin } from 'antd';
+import { Card, Avatar, Typography, Space, Tag, Button, Divider, Row, Col, Spin, Descriptions } from 'antd';
 import { UserOutlined, EditOutlined, GiftOutlined, CalendarOutlined } from '@ant-design/icons';
 import ProCard from '@ant-design/pro-card';
-import ProDescriptions from '@ant-design/pro-descriptions';
 import { useAuth } from '../../services/AuthService';
 import { getUserAvatar } from '../../utils/avatarUtils';
 import axios from '../../utils/axiosConfig';
@@ -75,27 +74,29 @@ const UserProfile = () => {
             <Space direction="vertical" size="large" style={{ width: '100%' }}>
               <div>
                 <Title level={4}>Основная информация</Title>
-                <ProDescriptions
+                <Descriptions
                   column={2}
-                  dataSource={profileData}
-                  columns={[
+                  bordered
+                  items={[
                     {
-                      title: 'Email',
-                      dataIndex: 'email',
-                      copyable: true,
+                      key: 'email',
+                      label: 'Email',
+                      children: profileData.email,
                     },
                     {
-                      title: 'Имя пользователя',
-                      dataIndex: 'name',
+                      key: 'name',
+                      label: 'Имя пользователя',
+                      children: profileData.name,
                     },
                     {
-                      title: 'Полное имя',
-                      dataIndex: 'full_name',
+                      key: 'full_name',
+                      label: 'Полное имя',
+                      children: profileData.full_name,
                     },
                     {
-                      title: 'Дата регистрации',
-                      dataIndex: 'created_at',
-                      render: (text) => new Date(text).toLocaleDateString('ru-RU'),
+                      key: 'created_at',
+                      label: 'Дата регистрации',
+                      children: new Date(profileData.created_at).toLocaleDateString('ru-RU'),
                     },
                   ]}
                 />
@@ -104,20 +105,21 @@ const UserProfile = () => {
               {profileData.gwars_nickname && (
                 <div>
                   <Title level={4}>GWars.io профиль</Title>
-                  <ProDescriptions
+                  <Descriptions
                     column={2}
-                    dataSource={profileData}
-                    columns={[
+                    bordered
+                    items={[
                       {
-                        title: 'Никнейм',
-                        dataIndex: 'gwars_nickname',
+                        key: 'gwars_nickname',
+                        label: 'Никнейм',
+                        children: profileData.gwars_nickname,
                       },
                       {
-                        title: 'Статус верификации',
-                        dataIndex: 'gwars_verified',
-                        render: (verified) => (
-                          <Tag color={verified ? 'green' : 'orange'}>
-                            {verified ? 'Верифицирован' : 'Не верифицирован'}
+                        key: 'gwars_verified',
+                        label: 'Статус верификации',
+                        children: (
+                          <Tag color={profileData.gwars_verified ? 'green' : 'orange'}>
+                            {profileData.gwars_verified ? 'Верифицирован' : 'Не верифицирован'}
                           </Tag>
                         ),
                       },

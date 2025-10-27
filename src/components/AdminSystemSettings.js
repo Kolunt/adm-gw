@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Form, Input, Button, Typography, Space, Alert, Tabs, Switch, Row, Col } from 'antd';
+import { Card, Form, Input, Button, Typography, Space, Alert, Tabs, Switch, Row, Col, ColorPicker } from 'antd';
 import { 
   SettingOutlined, 
   SaveOutlined, 
   ReloadOutlined, 
   GlobalOutlined, 
   UserOutlined,
-  MailOutlined 
+  MailOutlined,
+  BgColorsOutlined
 } from '@ant-design/icons';
 import ProForm from '@ant-design/pro-form';
 import ProCard from '@ant-design/pro-card';
@@ -17,6 +18,8 @@ const { TextArea } = Input;
 
 const AdminSystemSettings = () => {
   const [form] = Form.useForm();
+  const [colorsForm] = Form.useForm();
+  const [smtpForm] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [settings, setSettings] = useState([]);
   const [activeTab, setActiveTab] = useState('general');
@@ -30,12 +33,14 @@ const AdminSystemSettings = () => {
       const response = await axios.get('/admin/settings');
       setSettings(response.data);
       
-      // Заполняем форму данными
+      // Заполняем формы данными
       const formData = {};
       response.data.forEach(setting => {
         formData[setting.key] = setting.value;
       });
       form.setFieldsValue(formData);
+      colorsForm.setFieldsValue(formData);
+      smtpForm.setFieldsValue(formData);
     } catch (error) {
       console.error('Error fetching settings:', error);
     }
@@ -288,9 +293,237 @@ const AdminSystemSettings = () => {
     </ProForm>
   );
 
+  const renderColorsTab = () => (
+    <ProForm
+      form={colorsForm}
+      layout="vertical"
+      onFinish={handleSave}
+    >
+      <ProCard size="small" title="Настройки цветовой схемы">
+        <Alert
+          message="Цветовая схема интерфейса"
+          description="Настройте основные цвета интерфейса для персонализации внешнего вида системы."
+          type="info"
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
+        
+        <Row gutter={[16, 16]}>
+          <Col xs={24} md={12}>
+            <ProForm.Item
+              name="primary_color"
+              label="Основной цвет кнопок"
+              rules={[
+                { required: true, message: 'Основной цвет обязателен' }
+              ]}
+            >
+              <ColorPicker
+                showText
+                format="hex"
+                placeholder="#1890ff"
+                style={{ width: '100%' }}
+              />
+            </ProForm.Item>
+          </Col>
+          
+          <Col xs={24} md={12}>
+            <ProForm.Item
+              name="primary_hover_color"
+              label="Цвет кнопок при наведении"
+              rules={[
+                { required: true, message: 'Цвет при наведении обязателен' }
+              ]}
+            >
+              <ColorPicker
+                showText
+                format="hex"
+                placeholder="#40a9ff"
+                style={{ width: '100%' }}
+              />
+            </ProForm.Item>
+          </Col>
+        </Row>
+
+        <Row gutter={[16, 16]}>
+          <Col xs={24} md={12}>
+            <ProForm.Item
+              name="success_color"
+              label="Цвет успеха"
+              rules={[
+                { required: true, message: 'Цвет успеха обязателен' }
+              ]}
+            >
+              <ColorPicker
+                showText
+                format="hex"
+                placeholder="#52c41a"
+                style={{ width: '100%' }}
+              />
+            </ProForm.Item>
+          </Col>
+          
+          <Col xs={24} md={12}>
+            <ProForm.Item
+              name="warning_color"
+              label="Цвет предупреждения"
+              rules={[
+                { required: true, message: 'Цвет предупреждения обязателен' }
+              ]}
+            >
+              <ColorPicker
+                showText
+                format="hex"
+                placeholder="#faad14"
+                style={{ width: '100%' }}
+              />
+            </ProForm.Item>
+          </Col>
+        </Row>
+
+        <Row gutter={[16, 16]}>
+          <Col xs={24} md={12}>
+            <ProForm.Item
+              name="error_color"
+              label="Цвет ошибки"
+              rules={[
+                { required: true, message: 'Цвет ошибки обязателен' }
+              ]}
+            >
+              <ColorPicker
+                showText
+                format="hex"
+                placeholder="#ff4d4f"
+                style={{ width: '100%' }}
+              />
+            </ProForm.Item>
+          </Col>
+          
+          <Col xs={24} md={12}>
+            <ProForm.Item
+              name="link_color"
+              label="Цвет ссылок"
+              rules={[
+                { required: true, message: 'Цвет ссылок обязателен' }
+              ]}
+            >
+              <ColorPicker
+                showText
+                format="hex"
+                placeholder="#1890ff"
+                style={{ width: '100%' }}
+              />
+            </ProForm.Item>
+          </Col>
+        </Row>
+      </ProCard>
+
+      <ProCard size="small" title="Предварительный просмотр" style={{ marginTop: 16 }}>
+        <Alert
+          message="Примеры цветов"
+          description="Посмотрите, как будут выглядеть цвета в интерфейсе."
+          type="info"
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
+        
+        <Row gutter={[16, 16]}>
+          <Col xs={24} md={6}>
+            <div style={{ textAlign: 'center' }}>
+              <Button 
+                type="primary" 
+                style={{ 
+                  marginBottom: '8px',
+                  backgroundColor: colorsForm.getFieldValue('primary_color') || '#1890ff',
+                  borderColor: colorsForm.getFieldValue('primary_color') || '#1890ff'
+                }}
+              >
+                Основная кнопка
+              </Button>
+              <br />
+              <Text type="secondary" style={{ fontSize: '12px' }}>
+                Основной цвет
+              </Text>
+            </div>
+          </Col>
+          
+          <Col xs={24} md={6}>
+            <div style={{ textAlign: 'center' }}>
+              <Button 
+                style={{ 
+                  marginBottom: '8px',
+                  backgroundColor: colorsForm.getFieldValue('success_color') || '#52c41a',
+                  borderColor: colorsForm.getFieldValue('success_color') || '#52c41a',
+                  color: 'white'
+                }}
+              >
+                Успех
+              </Button>
+              <br />
+              <Text type="secondary" style={{ fontSize: '12px' }}>
+                Цвет успеха
+              </Text>
+            </div>
+          </Col>
+          
+          <Col xs={24} md={6}>
+            <div style={{ textAlign: 'center' }}>
+              <Button 
+                style={{ 
+                  marginBottom: '8px',
+                  backgroundColor: colorsForm.getFieldValue('warning_color') || '#faad14',
+                  borderColor: colorsForm.getFieldValue('warning_color') || '#faad14',
+                  color: 'white'
+                }}
+              >
+                Предупреждение
+              </Button>
+              <br />
+              <Text type="secondary" style={{ fontSize: '12px' }}>
+                Цвет предупреждения
+              </Text>
+            </div>
+          </Col>
+          
+          <Col xs={24} md={6}>
+            <div style={{ textAlign: 'center' }}>
+              <Button 
+                style={{ 
+                  marginBottom: '8px',
+                  backgroundColor: colorsForm.getFieldValue('error_color') || '#ff4d4f',
+                  borderColor: colorsForm.getFieldValue('error_color') || '#ff4d4f',
+                  color: 'white'
+                }}
+              >
+                Ошибка
+              </Button>
+              <br />
+              <Text type="secondary" style={{ fontSize: '12px' }}>
+                Цвет ошибки
+              </Text>
+            </div>
+          </Col>
+        </Row>
+      </ProCard>
+
+      <div style={{ textAlign: 'center', marginTop: '24px' }}>
+        <Space size="middle">
+          <Button 
+            type="primary" 
+            htmlType="submit"
+            loading={loading}
+            icon={<SaveOutlined />}
+            size="large"
+          >
+            Сохранить цвета
+          </Button>
+        </Space>
+      </div>
+    </ProForm>
+  );
+
   const renderSmtpTab = () => (
     <ProForm
-      form={form}
+      form={smtpForm}
       layout="vertical"
       onFinish={handleSave}
     >
@@ -428,6 +661,16 @@ const AdminSystemSettings = () => {
                 </span>
               ),
               children: renderGeneralTab(),
+            },
+            {
+              key: 'colors',
+              label: (
+                <span>
+                  <BgColorsOutlined />
+                  Цвета
+                </span>
+              ),
+              children: renderColorsTab(),
             },
             {
               key: 'smtp',

@@ -5,7 +5,7 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy import create_engine, Column, Integer, String, Boolean, DateTime, ForeignKey, func
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from datetime import datetime
 import os
 import uuid
@@ -366,10 +366,38 @@ class UserCreate(BaseModel):
     email: str
     password: str
     confirm_password: str
+    
+    @field_validator('email')
+    @classmethod
+    def validate_email_length(cls, v):
+        if len(v) < 6:
+            raise ValueError('Email должен содержать минимум 6 символов')
+        return v
+    
+    @field_validator('password')
+    @classmethod
+    def validate_password_length(cls, v):
+        if len(v) < 6:
+            raise ValueError('Пароль должен содержать минимум 6 символов')
+        return v
 
 class UserLogin(BaseModel):
     email: str
     password: str
+    
+    @field_validator('email')
+    @classmethod
+    def validate_email_length(cls, v):
+        if len(v) < 6:
+            raise ValueError('Email должен содержать минимум 6 символов')
+        return v
+    
+    @field_validator('password')
+    @classmethod
+    def validate_password_length(cls, v):
+        if len(v) < 6:
+            raise ValueError('Пароль должен содержать минимум 6 символов')
+        return v
 
 class UserResponse(BaseModel):
     id: int
@@ -629,7 +657,7 @@ class GiftAssignmentApproval(BaseModel):
 
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.1.15")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.1.16")
 
 # CORS middleware
 app.add_middleware(

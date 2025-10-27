@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, Typography, Space, Collapse, Spin } from 'antd';
 import { QuestionCircleOutlined } from '@ant-design/icons';
 import ProCard from '@ant-design/pro-card';
-import axios from '../utils/axiosConfig';
+import axios from '../../utils/axiosConfig';
 
 const { Title, Text, Paragraph } = Typography;
 const { Panel } = Collapse;

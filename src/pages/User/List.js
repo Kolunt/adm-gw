@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Avatar, Tag, Space, Typography, Card, Row, Col, Spin } from 'antd';
+import { Avatar, Tag, Space, Typography, Card, Row, Col, Spin, List } from 'antd';
 import { UserOutlined, GiftOutlined, TeamOutlined } from '@ant-design/icons';
-import ProList from '@ant-design/pro-list';
 import ProCard from '@ant-design/pro-card';
 import axios from '../../utils/axiosConfig';
 import { generateAvatar } from '../../utils/avatarUtils';
@@ -59,7 +58,7 @@ const UserListPage = () => {
       </ProCard>
 
       <ProCard>
-        <ProList
+        <List
           dataSource={users}
           rowKey="id"
           pagination={{
@@ -70,7 +69,7 @@ const UserListPage = () => {
               `${range[0]}-${range[1]} из ${total} участников`,
           }}
           renderItem={(user) => (
-            <ProList.Item
+            <List.Item
               actions={[
                 <Space key="actions">
                   <Tag color="green">
@@ -79,7 +78,7 @@ const UserListPage = () => {
                 </Space>
               ]}
             >
-              <ProList.Item.Meta
+              <List.Item.Meta
                 avatar={
                   <Avatar
                     size={64}
@@ -118,7 +117,7 @@ const UserListPage = () => {
                   </Space>
                 }
               />
-            </ProList.Item>
+            </List.Item>
           )}
         />
       </ProCard>
