@@ -10,7 +10,12 @@ import {
   GiftOutlined,
   QuestionCircleOutlined,
   LoginOutlined,
-  LogoutOutlined
+  LogoutOutlined,
+  DashboardOutlined,
+  CalendarOutlined,
+  HeartOutlined,
+  BookOutlined,
+  ExperimentOutlined
 } from '@ant-design/icons';
 import zhCN from 'antd/locale/zh_CN';
 
@@ -19,6 +24,12 @@ import HomePage from './pages/Home';
 import AdminDashboard from './pages/Admin/Dashboard';
 import AdminUsers from './components/AdminUsers';
 import AdminSettings from './components/AdminSystemSettings';
+import AdminEvents from './components/AdminEvents';
+import AdminGiftAssignments from './components/AdminGiftAssignments';
+import AdminTesting from './components/AdminTesting';
+import AdminInterests from './components/AdminInterests';
+import AdminFAQ from './components/AdminFAQ';
+import AdminDocumentation from './components/AdminDocumentation';
 import UserProfile from './pages/Profile';
 import LoginPage from './pages/Auth/Login';
 import RegisterPage from './pages/Auth/Register';
@@ -57,18 +68,47 @@ const AppContent = () => {
       children: [
         {
           key: '/admin/dashboard',
-          label: 'Дашборд',
-        },
-        {
-          key: '/admin/users',
-          label: 'Управление пользователями',
+          icon: <DashboardOutlined />,
+          label: 'Панель управления',
         },
         {
           key: '/admin/events',
+          icon: <CalendarOutlined />,
           label: 'Управление мероприятиями',
         },
         {
+          key: '/admin/gift-assignments',
+          icon: <GiftOutlined />,
+          label: 'Назначения подарков',
+        },
+        {
+          key: '/admin/users',
+          icon: <TeamOutlined />,
+          label: 'Управление пользователями',
+        },
+        {
+          key: '/admin/testing',
+          icon: <ExperimentOutlined />,
+          label: 'Тестирование',
+        },
+        {
+          key: '/admin/interests',
+          icon: <HeartOutlined />,
+          label: 'Интересы',
+        },
+        {
+          key: '/admin/faq',
+          icon: <QuestionCircleOutlined />,
+          label: 'FAQ',
+        },
+        {
+          key: '/admin/documentation',
+          icon: <BookOutlined />,
+          label: 'Документация',
+        },
+        {
           key: '/admin/settings',
+          icon: <SettingOutlined />,
           label: 'Настройки системы',
         },
       ],
@@ -185,7 +225,12 @@ const AppContent = () => {
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/admin/users" element={<AdminUsers />} />
-            <Route path="/admin/events" element={<AdminDashboard />} />
+            <Route path="/admin/events" element={<AdminEvents />} />
+            <Route path="/admin/gift-assignments" element={<AdminGiftAssignments />} />
+            <Route path="/admin/testing" element={<AdminTesting />} />
+            <Route path="/admin/interests" element={<AdminInterests />} />
+            <Route path="/admin/faq" element={<AdminFAQ />} />
+            <Route path="/admin/documentation" element={<AdminDocumentation />} />
             <Route path="/admin/settings" element={<AdminSettings />} />
           </>
         )}
