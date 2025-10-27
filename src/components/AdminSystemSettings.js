@@ -65,7 +65,12 @@ function AdminSystemSettings({ activeTab: initialActiveTab = 'general' }) {
   }, [form]);
 
   useEffect(() => {
-    fetchSettings();
+    // Небольшая задержка для инициализации формы
+    const timer = setTimeout(() => {
+      fetchSettings();
+    }, 100);
+    
+    return () => clearTimeout(timer);
   }, [fetchSettings]);
 
   const handleSave = async (values) => {
