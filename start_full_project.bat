@@ -18,8 +18,8 @@ if exist santa.db del santa.db
 echo База данных удалена
 
 echo [4/5] Запуск backend сервера...
-start "Backend Server" cmd /k "python -m uvicorn main:app --host 127.0.0.1 --port 8004 --reload"
-echo Backend запускается на http://localhost:8004
+start "Backend Server" cmd /k "python -m uvicorn main:app --host 127.0.0.1 --port 8006 --reload"
+echo Backend запускается на http://localhost:8006
 
 echo [5/5] Ожидание запуска backend...
 timeout /t 5 /nobreak >nul

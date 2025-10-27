@@ -7,7 +7,7 @@ import AppContent from './components/AppContent';
 import FaviconUpdater from './components/FaviconUpdater';
 
 // Configure axios base URL
-axios.defaults.baseURL = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8004';
+axios.defaults.baseURL = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8006';
 
 // Добавляем интерцептор для автоматического добавления токена авторизации
 axios.interceptors.request.use(
@@ -43,7 +43,7 @@ axios.interceptors.response.use(
     }
     
     if (error.code === 'ERR_NETWORK' || error.code === 'ECONNREFUSED') {
-      console.warn('Backend недоступен. Убедитесь, что backend запущен на порту 8004');
+      console.warn('Backend недоступен. Убедитесь, что backend запущен на порту 8006');
       console.warn('Запустите: start_backend_radical.bat');
     }
     return Promise.reject(error);
@@ -56,9 +56,9 @@ function App() {
     const checkBackend = async () => {
       try {
         await axios.get('/docs');
-        console.log('✅ Backend подключен на порту 8004');
+        console.log('✅ Backend подключен на порту 8006');
       } catch (error) {
-        console.error('❌ Backend недоступен на порту 8004');
+        console.error('❌ Backend недоступен на порту 8006');
         console.error('Запустите backend: start_backend_radical.bat');
       }
     };

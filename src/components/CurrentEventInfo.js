@@ -110,15 +110,14 @@ function CurrentEventInfo({ user, isAuthenticated, onNavigate }) {
       const response = await axios.get(`/events/${eventId}/user-registration`, {
         headers: { Authorization: `Bearer ${token}` }
       });
+      // Backend теперь возвращает null если пользователь не зарегистрирован
       setUserRegistration(response.data);
     } catch (error) {
-      if (error.response?.status === 404) {
-        // Пользователь не зарегистрирован - это нормально, не логируем
-        setUserRegistration(null);
-      } else if (error.response?.status === 401) {
+      if (error.response?.status === 401) {
         // Пользователь не авторизован - это нормально, не логируем
         setUserRegistration(null);
       } else {
+        // Только логируем реальные ошибки
         console.error('Error fetching user registration:', error);
         setUserRegistration(null);
       }

@@ -19,9 +19,9 @@ if exist santa.db del santa.db
 echo База данных удалена
 
 echo [4/4] Запуск backend сервера...
-echo Backend запускается на http://localhost:8004
+echo Backend запускается на http://localhost:8006
 echo Нажмите Ctrl+C для остановки
 echo.
-python -m uvicorn main:app --host 127.0.0.1 --port 8004 --reload
+python -m uvicorn main:app --host 127.0.0.1 --port 8006 --reload
 
 pause

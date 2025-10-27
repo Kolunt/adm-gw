@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Typography, Button, Space, Tag, Divider, Row, Col, message, Form, Input } from 'antd';
-import { UserOutlined, EditOutlined, SaveOutlined, CloseOutlined } from '@ant-design/icons';
+import { UserOutlined, EditOutlined, SaveOutlined, CloseOutlined, PhoneOutlined, MessageOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import UserAvatar from './UserAvatar';
 import UserGiftAssignments from './UserGiftAssignments';
@@ -26,7 +26,9 @@ function UserProfile() {
         gwars_profile_url: response.data.gwars_profile_url,
         full_name: response.data.full_name,
         address: response.data.address,
-        interests: response.data.interests
+        interests: response.data.interests,
+        phone_number: response.data.phone_number,
+        telegram_username: response.data.telegram_username
       });
     } catch (error) {
       message.error('Ошибка при загрузке профиля');
@@ -41,12 +43,23 @@ function UserProfile() {
   }, [fetchUserProfile]);
 
   const handleEdit = () => {
+    console.log('Переключение в режим редактирования');
     setEditing(true);
   };
 
   const handleCancel = () => {
     setEditing(false);
-    form.resetFields();
+    // Восстанавливаем исходные значения пользователя
+    form.setFieldsValue({
+      name: user.name,
+      email: user.email,
+      gwars_profile_url: user.gwars_profile_url,
+      full_name: user.full_name,
+      address: user.address,
+      interests: user.interests,
+      phone_number: user.phone_number,
+      telegram_username: user.telegram_username
+    });
   };
 
   const handleSave = async (values) => {
@@ -152,12 +165,49 @@ function UserProfile() {
           </div>
         )}
 
+        {/* Дополнительная информация */}
+        {(user.phone_number || user.telegram_username) && (
+          <div style={{ marginBottom: '24px' }}>
+            <Title level={4} style={{ color: '#1890ff', marginBottom: '16px' }}>
+              📞 Контактная информация
+            </Title>
+            <Row gutter={[16, 16]}>
+              {user.phone_number && (
+                <Col xs={24} sm={12}>
+                  <div style={{ padding: '12px', backgroundColor: '#f0f2f5', borderRadius: '6px' }}>
+                    <Text strong>Телефон:</Text>
+                    <br />
+                    <Text>{user.phone_number}</Text>
+                  </div>
+                </Col>
+              )}
+              {user.telegram_username && (
+                <Col xs={24} sm={12}>
+                  <div style={{ padding: '12px', backgroundColor: '#f0f2f5', borderRadius: '6px' }}>
+                    <Text strong>Telegram:</Text>
+                    <br />
+                    <Text>{user.telegram_username}</Text>
+                  </div>
+                </Col>
+              )}
+            </Row>
+          </div>
+        )}
+
         <Form
           form={form}
           layout="vertical"
           onFinish={handleSave}
           disabled={!editing}
         >
+          {/* Отладочная информация */}
+          {process.env.NODE_ENV === 'development' && (
+            <div style={{ padding: '10px', backgroundColor: '#f0f0f0', marginBottom: '20px', borderRadius: '4px' }}>
+              <Text type="secondary">
+                Режим редактирования: {editing ? 'ВКЛЮЧЕН' : 'ВЫКЛЮЧЕН'}
+              </Text>
+            </div>
+          )}
           <Row gutter={[24, 16]}>
             <Col xs={24} sm={12}>
               <Form.Item
@@ -233,38 +283,79 @@ function UserProfile() {
             </Col>
           </Row>
 
-          <Divider />
+          <Row gutter={[24, 16]}>
+            <Col xs={24} sm={12}>
+              <Form.Item
+                name="phone_number"
+                label="Номер телефона"
+                rules={[
+                  { 
+                    pattern: /^(\+7|8)?[\s\-]?\(?[0-9]{3}\)?[\s\-]?[0-9]{3}[\s\-]?[0-9]{2}[\s\-]?[0-9]{2}$/, 
+                    message: 'Введите корректный номер телефона' 
+                  }
+                ]}
+              >
+                <Input 
+                  prefix={<PhoneOutlined />} 
+                  placeholder="+7 (999) 123-45-67"
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={24} sm={12}>
+              <Form.Item
+                name="telegram_username"
+                label="Telegram username"
+                rules={[
+                  { 
+                    pattern: /^@?[a-zA-Z0-9_]{5,32}$/, 
+                    message: 'Введите корректный Telegram username (например: @username)' 
+                  }
+                ]}
+              >
+                <Input 
+                  prefix={<MessageOutlined />} 
+                  placeholder="@username"
+                />
+              </Form.Item>
+            </Col>
+          </Row>
 
-          <div style={{ textAlign: 'center' }}>
-            <Space size="middle">
-              {editing ? (
-                <>
-                  <Button 
-                    type="primary" 
-                    htmlType="submit"
-                    icon={<SaveOutlined />}
-                  >
-                    Сохранить
-                  </Button>
-                  <Button 
-                    onClick={handleCancel}
-                    icon={<CloseOutlined />}
-                  >
-                    Отмена
-                  </Button>
-                </>
-              ) : (
+          <Divider />
+        </Form>
+
+        {/* Кнопки управления - вне формы, чтобы они всегда были активны */}
+        <div style={{ textAlign: 'center', marginTop: '20px' }}>
+          <Space size="middle">
+            {editing ? (
+              <>
                 <Button 
                   type="primary" 
-                  onClick={handleEdit}
-                  icon={<EditOutlined />}
+                  onClick={() => form.submit()}
+                  icon={<SaveOutlined />}
+                  style={{ backgroundColor: '#52c41a', borderColor: '#52c41a' }}
                 >
-                  Редактировать профиль
+                  Сохранить
                 </Button>
-              )}
-            </Space>
-          </div>
-        </Form>
+                <Button 
+                  onClick={handleCancel}
+                  icon={<CloseOutlined />}
+                >
+                  Отмена
+                </Button>
+              </>
+            ) : (
+              <Button 
+                type="primary" 
+                onClick={handleEdit}
+                icon={<EditOutlined />}
+                size="large"
+                style={{ backgroundColor: '#1890ff', borderColor: '#1890ff' }}
+              >
+                Редактировать профиль
+              </Button>
+            )}
+          </Space>
+        </div>
 
         <Divider />
 

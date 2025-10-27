@@ -13,7 +13,7 @@ if exist santa.db del santa.db
 
 echo.
 echo Запуск backend...
-start "Backend" cmd /k "python -m uvicorn main:app --host 127.0.0.1 --port 8004 --reload"
+start "Backend" cmd /k "python -m uvicorn main:app --host 127.0.0.1 --port 8006 --reload"
 
 echo.
 echo Ожидание запуска backend...
@@ -26,7 +26,7 @@ start "Frontend" cmd /k "npm start"
 
 echo.
 echo Проект запущен!
-echo Backend: http://127.0.0.1:8004
+echo Backend: http://127.0.0.1:8006
 echo Frontend: http://localhost:3000
 echo.
 pause

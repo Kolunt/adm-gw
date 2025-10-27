@@ -618,7 +618,7 @@ class GiftAssignmentApproval(BaseModel):
 
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.1.5")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.1.6")
 
 # CORS middleware
 app.add_middleware(
@@ -1086,7 +1086,8 @@ async def get_user_registration(
     ).first()
     
     if not registration:
-        raise HTTPException(status_code=404, detail="Регистрация не найдена")
+        # Пользователь не зарегистрирован - это нормально, возвращаем null
+        return None
     
     return {
         "id": registration.id,
@@ -2864,4 +2865,4 @@ app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+    uvicorn.run(app, host="0.0.0.0", port=8006)
