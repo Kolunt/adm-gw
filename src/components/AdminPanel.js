@@ -11,7 +11,8 @@ import {
   CalendarOutlined,
   HeartOutlined,
   QuestionCircleOutlined,
-  BookOutlined
+  BookOutlined,
+  GiftOutlined
 } from '@ant-design/icons';
 import AdminUserManagement from './AdminUserManagement';
 import AdminSystemSettings from './AdminSystemSettings';
@@ -20,6 +21,7 @@ import AdminInterestsManagement from './AdminInterestsManagement';
 import AdminFAQManagement from './AdminFAQManagement';
 import AdminDocumentation from './AdminDocumentation';
 import AdminDashboard from './AdminDashboard';
+import AdminGiftAssignmentsManager from './AdminGiftAssignmentsManager';
 
 const { Sider, Content } = Layout;
 const { Title } = Typography;
@@ -33,6 +35,7 @@ function AdminPanel({ currentUser, onLogout }) {
     if (path === '/admin' || path === '/admin/dashboard') return 'dashboard';
     if (path === '/admin/users') return 'users';
     if (path === '/admin/events') return 'events';
+    if (path === '/admin/gift-assignments') return 'gift-assignments';
     if (path === '/admin/interests') return 'interests';
     if (path === '/admin/faq') return 'faq';
     if (path === '/admin/documentation') return 'documentation';
@@ -90,6 +93,12 @@ function AdminPanel({ currentUser, onLogout }) {
       path: '/admin/events',
     },
     {
+      key: 'gift-assignments',
+      icon: <GiftOutlined />,
+      label: 'Назначения подарков',
+      path: '/admin/gift-assignments',
+    },
+    {
       key: 'users',
       icon: <TeamOutlined />,
       label: 'Управление пользователями',
@@ -132,6 +141,8 @@ function AdminPanel({ currentUser, onLogout }) {
     switch (selectedMenu) {
       case 'events':
         return <EventManagement />;
+      case 'gift-assignments':
+        return <AdminGiftAssignmentsManager />;
       case 'users':
         return <AdminUserManagement currentUser={currentUser} />;
       case 'interests':

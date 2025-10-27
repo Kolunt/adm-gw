@@ -169,6 +169,18 @@ class SiteIcon(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+class GiftAssignment(Base):
+    __tablename__ = "gift_assignments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    event_id = Column(Integer, ForeignKey("events.id"), nullable=False, index=True)  # Связь с мероприятием
+    giver_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)  # Кто дарит
+    receiver_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)  # Кому дарит
+    is_approved = Column(Boolean, default=False)  # Утверждено ли назначение
+    created_at = Column(DateTime, default=datetime.utcnow)  # Дата создания назначения
+    approved_at = Column(DateTime)  # Дата утверждения
+    approved_by = Column(Integer, ForeignKey("users.id"))  # Кто утвердил
+
 
 # Password and JWT functions
 def verify_password(plain_password, hashed_password):
@@ -528,9 +540,41 @@ class SiteIconResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class GiftAssignmentResponse(BaseModel):
+    id: int
+    event_id: int
+    giver_id: int
+    receiver_id: int
+    is_approved: bool
+    created_at: datetime
+    approved_at: datetime | None = None
+    approved_by: int | None = None
+    # Дополнительная информация о пользователях
+    giver_name: str | None = None
+    giver_email: str | None = None
+    receiver_name: str | None = None
+    receiver_email: str | None = None
+    receiver_address: str | None = None
+
+    class Config:
+        from_attributes = True
+
+class GiftAssignmentCreate(BaseModel):
+    event_id: int
+    giver_id: int
+    receiver_id: int
+
+class GiftAssignmentUpdate(BaseModel):
+    giver_id: int | None = None
+    receiver_id: int | None = None
+    is_approved: bool | None = None
+
+class GiftAssignmentApproval(BaseModel):
+    is_approved: bool
+
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.1.2")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.1.3")
 
 # CORS middleware
 app.add_middleware(
@@ -642,6 +686,85 @@ async def login_user(user: UserLogin, db: Session = Depends(get_db)):
 @app.get("/auth/me", response_model=UserResponse)
 async def get_current_user_info(current_user: User = Depends(get_current_user)):
     return current_user
+
+# Функции для работы с назначениями подарков
+def generate_gift_assignments(event_id: int, db: Session):
+    """Генерирует случайные назначения подарков для мероприятия"""
+    # Получаем всех подтвержденных участников мероприятия
+    participants = db.query(EventRegistration).filter(
+        EventRegistration.event_id == event_id,
+        EventRegistration.is_confirmed == True
+    ).all()
+    
+    if len(participants) < 2:
+        raise HTTPException(status_code=400, detail="Недостаточно участников для назначения подарков")
+    
+    # Получаем ID участников
+    participant_ids = [reg.user_id for reg in participants]
+    
+    # Проверяем, есть ли уже назначения для этого мероприятия
+    existing_assignments = db.query(GiftAssignment).filter(
+        GiftAssignment.event_id == event_id
+    ).all()
+    
+    if existing_assignments:
+        raise HTTPException(status_code=400, detail="Назначения для этого мероприятия уже существуют")
+    
+    # Создаем случайные назначения
+    import random
+    random.shuffle(participant_ids)
+    
+    assignments = []
+    for i in range(len(participant_ids)):
+        giver_id = participant_ids[i]
+        receiver_id = participant_ids[(i + 1) % len(participant_ids)]  # Циклическое назначение
+        
+        assignment = GiftAssignment(
+            event_id=event_id,
+            giver_id=giver_id,
+            receiver_id=receiver_id,
+            is_approved=False
+        )
+        assignments.append(assignment)
+    
+    # Сохраняем в базу данных
+    for assignment in assignments:
+        db.add(assignment)
+    
+    db.commit()
+    return assignments
+
+def get_gift_assignments_with_details(event_id: int, db: Session):
+    """Получает назначения подарков с подробной информацией о пользователях"""
+    assignments = db.query(GiftAssignment).filter(
+        GiftAssignment.event_id == event_id
+    ).all()
+    
+    result = []
+    for assignment in assignments:
+        # Получаем информацию о дарителе
+        giver = db.query(User).filter(User.id == assignment.giver_id).first()
+        # Получаем информацию о получателе
+        receiver = db.query(User).filter(User.id == assignment.receiver_id).first()
+        
+        assignment_data = {
+            "id": assignment.id,
+            "event_id": assignment.event_id,
+            "giver_id": assignment.giver_id,
+            "receiver_id": assignment.receiver_id,
+            "is_approved": assignment.is_approved,
+            "created_at": assignment.created_at,
+            "approved_at": assignment.approved_at,
+            "approved_by": assignment.approved_by,
+            "giver_name": giver.full_name or giver.name if giver else None,
+            "giver_email": giver.email if giver else None,
+            "receiver_name": receiver.full_name or receiver.name if receiver else None,
+            "receiver_email": receiver.email if receiver else None,
+            "receiver_address": receiver.address if receiver else None
+        }
+        result.append(assignment_data)
+    
+    return result
 
 @app.get("/users/", response_model=list[UserResponse])
 async def get_users(db: Session = Depends(get_db)):
@@ -2342,6 +2465,207 @@ async def get_dashboard_stats(current_user: User = Depends(get_current_admin)):
         raise HTTPException(status_code=500, detail=f"Ошибка получения статистики: {str(e)}")
     finally:
         db.close()
+
+# API endpoints для управления назначениями подарков
+@app.post("/admin/events/{event_id}/gift-assignments/generate")
+async def generate_gift_assignments_endpoint(
+    event_id: int,
+    current_user: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Генерирует случайные назначения подарков для мероприятия"""
+    try:
+        assignments = generate_gift_assignments(event_id, db)
+        return {"message": f"Создано {len(assignments)} назначений подарков", "assignments": len(assignments)}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Ошибка при генерации назначений: {str(e)}")
+
+@app.get("/admin/events/{event_id}/gift-assignments", response_model=list[GiftAssignmentResponse])
+async def get_gift_assignments(
+    event_id: int,
+    current_user: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Получает все назначения подарков для мероприятия"""
+    assignments_data = get_gift_assignments_with_details(event_id, db)
+    return assignments_data
+
+@app.put("/admin/gift-assignments/{assignment_id}")
+async def update_gift_assignment(
+    assignment_id: int,
+    assignment_update: GiftAssignmentUpdate,
+    current_user: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Обновляет назначение подарка"""
+    assignment = db.query(GiftAssignment).filter(GiftAssignment.id == assignment_id).first()
+    if not assignment:
+        raise HTTPException(status_code=404, detail="Назначение не найдено")
+    
+    if assignment_update.giver_id is not None:
+        assignment.giver_id = assignment_update.giver_id
+    if assignment_update.receiver_id is not None:
+        assignment.receiver_id = assignment_update.receiver_id
+    if assignment_update.is_approved is not None:
+        assignment.is_approved = assignment_update.is_approved
+        if assignment_update.is_approved:
+            assignment.approved_at = datetime.utcnow()
+            assignment.approved_by = current_user.id
+    
+    db.commit()
+    return {"message": "Назначение обновлено"}
+
+@app.post("/admin/gift-assignments/{assignment_id}/approve")
+async def approve_gift_assignment(
+    assignment_id: int,
+    current_user: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Утверждает назначение подарка"""
+    assignment = db.query(GiftAssignment).filter(GiftAssignment.id == assignment_id).first()
+    if not assignment:
+        raise HTTPException(status_code=404, detail="Назначение не найдено")
+    
+    assignment.is_approved = True
+    assignment.approved_at = datetime.utcnow()
+    assignment.approved_by = current_user.id
+    
+    db.commit()
+    return {"message": "Назначение утверждено"}
+
+@app.post("/admin/events/{event_id}/gift-assignments/approve-all")
+async def approve_all_gift_assignments(
+    event_id: int,
+    current_user: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Утверждает все назначения подарков для мероприятия"""
+    assignments = db.query(GiftAssignment).filter(
+        GiftAssignment.event_id == event_id,
+        GiftAssignment.is_approved == False
+    ).all()
+    
+    if not assignments:
+        raise HTTPException(status_code=404, detail="Нет неутвержденных назначений")
+    
+    for assignment in assignments:
+        assignment.is_approved = True
+        assignment.approved_at = datetime.utcnow()
+        assignment.approved_by = current_user.id
+    
+    db.commit()
+    
+    # Отправляем уведомления пользователям
+    try:
+        telegram_bot = create_telegram_bot(db)
+        if telegram_bot:
+            for assignment in assignments:
+                # Уведомление дарителю
+                giver = db.query(User).filter(User.id == assignment.giver_id).first()
+                receiver = db.query(User).filter(User.id == assignment.receiver_id).first()
+                event = db.query(Event).filter(Event.id == event_id).first()
+                
+                if giver and receiver and event:
+                    message = f"""🎁 Назначение подарка утверждено!
+
+Мероприятие: {event.name}
+Вы дарите подарок: {receiver.full_name or receiver.name}
+Адрес получателя: {receiver.address}
+
+Пожалуйста, отправьте подарок по указанному адресу."""
+                    
+                    telegram_bot.send_notification_to_user(giver.id, message)
+    except Exception as e:
+        print(f"Ошибка при отправке уведомлений: {e}")
+    
+    return {"message": f"Утверждено {len(assignments)} назначений"}
+
+@app.delete("/admin/gift-assignments/{assignment_id}")
+async def delete_gift_assignment(
+    assignment_id: int,
+    current_user: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Удаляет назначение подарка"""
+    assignment = db.query(GiftAssignment).filter(GiftAssignment.id == assignment_id).first()
+    if not assignment:
+        raise HTTPException(status_code=404, detail="Назначение не найдено")
+    
+    db.delete(assignment)
+    db.commit()
+    return {"message": "Назначение удалено"}
+
+@app.get("/user/gift-assignments", response_model=list[GiftAssignmentResponse])
+async def get_user_gift_assignments(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Получает назначения подарков для текущего пользователя"""
+    # Назначения где пользователь дарит
+    giver_assignments = db.query(GiftAssignment).filter(
+        GiftAssignment.giver_id == current_user.id,
+        GiftAssignment.is_approved == True
+    ).all()
+    
+    # Назначения где пользователь получает
+    receiver_assignments = db.query(GiftAssignment).filter(
+        GiftAssignment.receiver_id == current_user.id,
+        GiftAssignment.is_approved == True
+    ).all()
+    
+    result = []
+    
+    # Добавляем назначения где пользователь дарит
+    for assignment in giver_assignments:
+        receiver = db.query(User).filter(User.id == assignment.receiver_id).first()
+        event = db.query(Event).filter(Event.id == assignment.event_id).first()
+        
+        assignment_data = {
+            "id": assignment.id,
+            "event_id": assignment.event_id,
+            "giver_id": assignment.giver_id,
+            "receiver_id": assignment.receiver_id,
+            "is_approved": assignment.is_approved,
+            "created_at": assignment.created_at,
+            "approved_at": assignment.approved_at,
+            "approved_by": assignment.approved_by,
+            "giver_name": current_user.full_name or current_user.name,
+            "giver_email": current_user.email,
+            "receiver_name": receiver.full_name or receiver.name if receiver else None,
+            "receiver_email": receiver.email if receiver else None,
+            "receiver_address": receiver.address if receiver else None,
+            "event_name": event.name if event else None,
+            "assignment_type": "giver"  # Тип назначения
+        }
+        result.append(assignment_data)
+    
+    # Добавляем назначения где пользователь получает
+    for assignment in receiver_assignments:
+        giver = db.query(User).filter(User.id == assignment.giver_id).first()
+        event = db.query(Event).filter(Event.id == assignment.event_id).first()
+        
+        assignment_data = {
+            "id": assignment.id,
+            "event_id": assignment.event_id,
+            "giver_id": assignment.giver_id,
+            "receiver_id": assignment.receiver_id,
+            "is_approved": assignment.is_approved,
+            "created_at": assignment.created_at,
+            "approved_at": assignment.approved_at,
+            "approved_by": assignment.approved_by,
+            "giver_name": giver.full_name or giver.name if giver else None,
+            "giver_email": giver.email if giver else None,
+            "receiver_name": current_user.full_name or current_user.name,
+            "receiver_email": current_user.email,
+            "receiver_address": current_user.address,
+            "event_name": event.name if event else None,
+            "assignment_type": "receiver"  # Тип назначения
+        }
+        result.append(assignment_data)
+    
+    return result
 
 
 # Mount static files for React app

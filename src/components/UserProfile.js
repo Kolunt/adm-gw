@@ -3,6 +3,7 @@ import { Card, Typography, Button, Space, Tag, Divider, Row, Col, message, Form,
 import { UserOutlined, EditOutlined, SaveOutlined, CloseOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import UserAvatar from './UserAvatar';
+import UserGiftAssignments from './UserGiftAssignments';
 
 const { Title, Text } = Typography;
 
@@ -282,6 +283,8 @@ function UserProfile() {
           </Row>
         </div>
       </Card>
+
+      <UserGiftAssignments />
     </div>
   );
 }
