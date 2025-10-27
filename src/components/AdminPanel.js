@@ -11,14 +11,14 @@ import {
   CalendarOutlined,
   HeartOutlined,
   QuestionCircleOutlined,
-  RobotOutlined
+  BookOutlined
 } from '@ant-design/icons';
 import AdminUserManagement from './AdminUserManagement';
 import AdminSystemSettings from './AdminSystemSettings';
 import EventManagement from './EventManagement';
 import AdminInterestsManagement from './AdminInterestsManagement';
 import AdminFAQManagement from './AdminFAQManagement';
-import AdminTelegramManagement from './AdminTelegramManagement';
+import AdminDocumentation from './AdminDocumentation';
 import AdminDashboard from './AdminDashboard';
 
 const { Sider, Content } = Layout;
@@ -36,7 +36,7 @@ function AdminPanel({ currentUser, onLogout }) {
     if (path === '/admin/events') return 'events';
     if (path === '/admin/interests') return 'interests';
     if (path === '/admin/faq') return 'faq';
-    if (path === '/admin/telegram') return 'telegram';
+    if (path === '/admin/documentation') return 'documentation';
     if (path === '/admin/settings' || path.startsWith('/admin/settings/')) return 'settings';
     return 'dashboard'; // по умолчанию
   };
@@ -47,6 +47,7 @@ function AdminPanel({ currentUser, onLogout }) {
     if (path === '/admin/settings/general') return 'general';
     if (path === '/admin/settings/dadata') return 'dadata';
     if (path === '/admin/settings/icon') return 'icon';
+    if (path === '/admin/settings/telegram') return 'telegram';
     return 'general'; // по умолчанию
   };
   
@@ -91,10 +92,10 @@ function AdminPanel({ currentUser, onLogout }) {
       path: '/admin/faq',
     },
     {
-      key: 'telegram',
-      icon: <RobotOutlined />,
-      label: 'Telegram бот',
-      path: '/admin/telegram',
+      key: 'documentation',
+      icon: <BookOutlined />,
+      label: 'Документация',
+      path: '/admin/documentation',
     },
     {
       key: 'settings',
@@ -121,8 +122,8 @@ function AdminPanel({ currentUser, onLogout }) {
         return <AdminInterestsManagement currentUser={currentUser} />;
       case 'faq':
         return <AdminFAQManagement currentUser={currentUser} />;
-      case 'telegram':
-        return <AdminTelegramManagement currentUser={currentUser} />;
+      case 'documentation':
+        return <AdminDocumentation />;
       case 'settings':
         return <AdminSystemSettings activeTab={activeSettingsTab} />;
       case 'dashboard':

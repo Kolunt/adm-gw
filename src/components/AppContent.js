@@ -358,7 +358,7 @@ function AppContent() {
               <AdminPanel currentUser={user} onLogout={handleLogout} />
             </AdminRouteGuard>
           } />
-          <Route path="/admin/telegram" element={
+          <Route path="/admin/documentation" element={
             <AdminRouteGuard user={user}>
               <AdminPanel currentUser={user} onLogout={handleLogout} />
             </AdminRouteGuard>
