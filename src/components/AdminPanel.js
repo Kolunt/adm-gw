@@ -59,6 +59,7 @@ function AdminPanel({ currentUser, onLogout }) {
       if (path === '/admin' || path === '/admin/dashboard') return 'dashboard';
       if (path === '/admin/users') return 'users';
       if (path === '/admin/events') return 'events';
+      if (path === '/admin/gift-assignments') return 'gift-assignments';
       if (path === '/admin/interests') return 'interests';
       if (path === '/admin/faq') return 'faq';
       if (path === '/admin/documentation') return 'documentation';
