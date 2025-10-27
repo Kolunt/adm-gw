@@ -110,11 +110,11 @@ const LoginPage = () => {
           </Text>
         </div>
 
-        <div style={{ textAlign: 'center', marginTop: '16px' }}>
-          <Text type="secondary" style={{ fontSize: '12px' }}>
-            Демо-аккаунт: admin@example.com / admin
-          </Text>
-        </div>
+            <div style={{ textAlign: 'center', marginTop: '16px' }}>
+              <Text type="secondary" style={{ fontSize: '12px' }}>
+                Демо-аккаунт: admin@example.com / admin123
+              </Text>
+            </div>
       </Card>
     </div>
   );

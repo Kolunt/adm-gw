@@ -223,14 +223,14 @@ def create_default_admin():
             admin_user = User(
                 username="admin",
                 email="admin@example.com",
-                hashed_password=get_password_hash("admin"),
+                hashed_password=get_password_hash("admin123"),
                 name="Администратор",
                 wishlist="Управление системой Анонимный Дед Мороз",
                 role="admin"
             )
             db.add(admin_user)
             db.commit()
-            print("Создан дефолтный администратор: admin/admin")
+            print("Создан дефолтный администратор: admin@example.com / admin123")
         else:
             print("Администратор уже существует")
     except Exception as e:
@@ -629,7 +629,7 @@ class GiftAssignmentApproval(BaseModel):
 
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.1.13")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.1.14")
 
 # CORS middleware
 app.add_middleware(
