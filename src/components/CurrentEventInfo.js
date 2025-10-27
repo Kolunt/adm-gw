@@ -108,7 +108,7 @@ function CurrentEventInfo({ user, isAuthenticated, onNavigate }) {
       setUserRegistration(response.data);
     } catch (error) {
       if (error.response?.status === 404) {
-        // Пользователь не зарегистрирован
+        // Пользователь не зарегистрирован - это нормально, не логируем
         setUserRegistration(null);
       } else {
         console.error('Error fetching user registration:', error);
@@ -198,12 +198,11 @@ function CurrentEventInfo({ user, isAuthenticated, onNavigate }) {
       setLoading(false);
       setHasChecked(true);
       
-      // Загружаем участников и регистрацию пользователя
+      // Загружаем участников
       fetchParticipants(response.data.id);
       
       // Загружаем регистрацию пользователя только если он авторизован
-      const token = localStorage.getItem('token');
-      if (isAuthenticated && user && token) {
+      if (isAuthenticated && user) {
         fetchUserRegistration(response.data.id);
       }
     } catch (error) {
