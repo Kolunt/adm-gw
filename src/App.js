@@ -15,7 +15,11 @@ import {
   CalendarOutlined,
   HeartOutlined,
   BookOutlined,
-  ExperimentOutlined
+  ExperimentOutlined,
+  InfoCircleOutlined,
+  FileTextOutlined,
+  ContactsOutlined,
+  ShoppingCartOutlined
 } from '@ant-design/icons';
 import zhCN from 'antd/locale/zh_CN';
 
@@ -35,6 +39,9 @@ import LoginPage from './pages/Auth/Login';
 import RegisterPage from './pages/Auth/Register';
 import EventsPage from './pages/Events';
 import UserListPage from './pages/User/List';
+import FAQPage from './pages/FAQ';
+import AboutPage from './pages/About';
+import ContactsPage from './pages/Contacts';
 
 // Import services
 import { AuthProvider, useAuth } from './services/AuthService';
@@ -53,13 +60,28 @@ const AppContent = () => {
     },
     {
       key: '/events',
-      icon: <GiftOutlined />,
-      label: 'Мероприятия',
+      icon: <CalendarOutlined />,
+      label: 'Все мероприятия',
     },
     {
       key: '/users',
       icon: <TeamOutlined />,
-      label: 'Участники',
+      label: 'Все участники',
+    },
+    {
+      key: '/faq',
+      icon: <QuestionCircleOutlined />,
+      label: 'FAQ',
+    },
+    {
+      key: '/about',
+      icon: <InfoCircleOutlined />,
+      label: 'О системе',
+    },
+    {
+      key: '/contacts',
+      icon: <ContactsOutlined />,
+      label: 'Контакты',
     },
     ...(user?.role === 'admin' ? [{
       key: '/admin',
@@ -205,6 +227,9 @@ const AppContent = () => {
         <Route path="/" element={<HomePage />} />
         <Route path="/events" element={<EventsPage />} />
         <Route path="/users" element={<UserListPage />} />
+        <Route path="/faq" element={<FAQPage />} />
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/contacts" element={<ContactsPage />} />
         <Route path="/profile" element={<UserProfile />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
