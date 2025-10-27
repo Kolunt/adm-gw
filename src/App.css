@@ -1,210 +1,196 @@
-/* Основные стили */
-.App {
-  text-align: center;
-}
+/* Ant Design Pro Custom Styles */
 
-.santa-container {
+/* Global Styles */
+.ant-layout {
   min-height: 100vh;
+}
+
+.ant-pro-layout {
+  background: #f0f2f5;
+}
+
+/* Custom Card Styles */
+.ant-card {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.ant-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* ProCard Custom Styles */
+.ant-pro-card {
+  border-radius: 8px;
+}
+
+.ant-pro-card-header {
+  border-bottom: 1px solid #f0f0f0;
+}
+
+/* Button Styles */
+.ant-btn-primary {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  border-radius: 6px;
 }
 
-.santa-card {
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 15px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+.ant-btn-primary:hover {
+  background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
 }
 
-/* Мобильная адаптация */
+/* Typography Styles */
+.ant-typography h1,
+.ant-typography h2,
+.ant-typography h3,
+.ant-typography h4,
+.ant-typography h5,
+.ant-typography h6 {
+  color: #262626;
+  font-weight: 600;
+}
+
+/* Avatar Styles */
+.ant-avatar {
+  border: 2px solid #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Tag Styles */
+.ant-tag {
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+/* Form Styles */
+.ant-form-item-label > label {
+  font-weight: 500;
+}
+
+.ant-input,
+.ant-input-password {
+  border-radius: 6px;
+}
+
+.ant-input:focus,
+.ant-input-password:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+}
+
+/* Table Styles */
+.ant-table {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.ant-table-thead > tr > th {
+  background: #fafafa;
+  font-weight: 600;
+}
+
+/* ProList Styles */
+.ant-pro-list-item {
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.ant-pro-list-item:hover {
+  background: #fafafa;
+}
+
+/* ProDescriptions Styles */
+.ant-descriptions-item-label {
+  font-weight: 500;
+}
+
+/* Statistics Styles */
+.ant-statistic-title {
+  color: #8c8c8c;
+  font-weight: 500;
+}
+
+.ant-statistic-content {
+  color: #262626;
+}
+
+/* Layout Styles */
+.ant-layout-header {
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.ant-layout-sider {
+  background: #fff;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.06);
+}
+
+/* Responsive Styles */
 @media (max-width: 768px) {
-  .santa-container {
-    padding: 10px;
-  }
-  
-  .santa-card {
-    margin: 5px;
-    border-radius: 10px;
-  }
-  
-  /* Адаптивный заголовок */
-  .ant-layout-header {
-    padding: 0 15px !important;
-  }
-  
-  .ant-typography {
-    font-size: 18px !important;
-  }
-  
-  /* Адаптивная навигация */
-  .ant-space {
-    flex-wrap: wrap;
-  }
-  
-  .ant-btn {
-    margin: 2px;
-    font-size: 12px;
-    padding: 4px 8px;
-  }
-  
-  /* Адаптивный контент */
-  .ant-layout-content {
-    padding: 20px 15px !important;
-  }
-  
-  /* Адаптивные формы */
-  .ant-form-item {
+  .ant-card {
     margin-bottom: 16px;
   }
   
-  .ant-input,
-  .ant-input-password {
-    font-size: 16px; /* Предотвращает зум на iOS */
+  .ant-pro-card {
+    margin-bottom: 16px;
   }
   
-  /* Адаптивные карточки */
-  .ant-card {
-    margin: 10px 0;
-  }
-  
-  .ant-card-head-title {
-    font-size: 16px;
-  }
-  
-  /* Адаптивные таблицы */
-  .ant-table {
-    font-size: 12px;
-  }
-  
-  .ant-table-thead > tr > th {
-    padding: 8px 4px;
-    font-size: 12px;
-  }
-  
-  .ant-table-tbody > tr > td {
-    padding: 8px 4px;
-    font-size: 12px;
-  }
-  
-  /* Адаптивные кнопки в таблицах */
-  .ant-table-tbody .ant-btn {
-    font-size: 10px;
-    padding: 2px 6px;
-    margin: 1px;
-  }
-  
-  /* Адаптивный футер */
-  .ant-layout-footer {
-    padding: 15px !important;
-    font-size: 12px;
+  .ant-statistic {
+    text-align: center;
   }
 }
 
-/* Планшеты */
-@media (min-width: 769px) and (max-width: 1024px) {
-  .santa-container {
-    padding: 20px;
+/* Custom Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
   }
-  
-  .ant-layout-header {
-    padding: 0 30px !important;
-  }
-  
-  .ant-layout-content {
-    padding: 30px 25px !important;
-  }
-  
-  .ant-table {
-    font-size: 14px;
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-/* Очень маленькие экраны */
-@media (max-width: 480px) {
-  .santa-container {
-    padding: 5px;
-  }
-  
-  .ant-layout-header {
-    padding: 0 10px !important;
-  }
-  
-  .ant-typography {
-    font-size: 16px !important;
-  }
-  
-  .ant-btn {
-    font-size: 11px;
-    padding: 3px 6px;
-    height: auto;
-  }
-  
-  .ant-layout-content {
-    padding: 15px 10px !important;
-  }
-  
-  .ant-card {
-    margin: 5px 0;
-  }
-  
-  .ant-table {
-    font-size: 10px;
-  }
-  
-  .ant-table-thead > tr > th,
-  .ant-table-tbody > tr > td {
-    padding: 6px 2px;
-    font-size: 10px;
-  }
-  
-  .ant-table-tbody .ant-btn {
-    font-size: 9px;
-    padding: 1px 4px;
-    margin: 1px;
-  }
+.ant-card,
+.ant-pro-card {
+  animation: fadeIn 0.3s ease-out;
 }
 
-/* Горизонтальная ориентация на мобильных */
-@media (max-width: 768px) and (orientation: landscape) {
-  .ant-layout-header {
-    padding: 0 10px !important;
-  }
-  
-  .ant-layout-content {
-    padding: 10px 15px !important;
-  }
-  
-  .ant-typography {
-    font-size: 16px !important;
-  }
+/* Loading Styles */
+.ant-spin-container {
+  min-height: 200px;
 }
 
-/* Улучшения для touch устройств */
-@media (hover: none) and (pointer: coarse) {
-  .ant-btn {
-    min-height: 44px; /* Минимальный размер для touch */
-    min-width: 44px;
-  }
-  
-  .ant-input,
-  .ant-input-password {
-    min-height: 44px;
-  }
-  
-  .ant-table-tbody .ant-btn {
-    min-height: 36px;
-    min-width: 36px;
-  }
+/* Alert Styles */
+.ant-alert {
+  border-radius: 8px;
 }
 
-/* Темная тема для мобильных */
-@media (prefers-color-scheme: dark) and (max-width: 768px) {
-  .santa-container {
-    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-  }
-  
-  .santa-card {
-    background: rgba(52, 73, 94, 0.95);
-    color: #ecf0f1;
-  }
+/* Divider Styles */
+.ant-divider {
+  margin: 16px 0;
+}
+
+/* Space Styles */
+.ant-space {
+  width: 100%;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
 }
