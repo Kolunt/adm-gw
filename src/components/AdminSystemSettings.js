@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Form, Input, Button, Switch, Divider, Typography, message, Space, Tag, Alert, Tabs } from 'antd';
-import { SettingOutlined, SaveOutlined, ReloadOutlined, KeyOutlined, CheckCircleOutlined, CheckOutlined, GlobalOutlined, DatabaseOutlined, PictureOutlined, RobotOutlined, MailOutlined } from '@ant-design/icons';
+import { SettingOutlined, SaveOutlined, ReloadOutlined, KeyOutlined, CheckCircleOutlined, CheckOutlined, GlobalOutlined, DatabaseOutlined, PictureOutlined, RobotOutlined, MailOutlined, UserOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import SiteIconManagement from './SiteIconManagement';
@@ -386,6 +386,22 @@ function AdminSystemSettings({ activeTab: initialActiveTab = 'general' }) {
             placeholder="Введите подзаголовок приветствия"
             prefix={<SettingOutlined />}
             maxLength={200}
+            showCount
+          />
+        </Form.Item>
+
+        <Form.Item
+          name="welcome_message"
+          label="Приветственное сообщение для пользователей"
+          rules={[
+            { required: true, message: 'Приветственное сообщение обязательно' },
+            { max: 300, message: 'Сообщение не должно превышать 300 символов' }
+          ]}
+        >
+          <Input
+            placeholder="Привет, Тестовый пользователь 1!"
+            prefix={<UserOutlined />}
+            maxLength={300}
             showCount
           />
         </Form.Item>

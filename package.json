@@ -1,6 +1,6 @@
 {
   "name": "anonymous-santa",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "private": true,
   "dependencies": {
     "@dicebear/collection": "^9.2.4",

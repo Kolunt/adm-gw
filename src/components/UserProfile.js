@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Typography, Button, Space, Tag, Divider, Row, Col, message, Form, Input } from 'antd';
-import { UserOutlined, EditOutlined, SaveOutlined, CloseOutlined, PhoneOutlined, MessageOutlined } from '@ant-design/icons';
+import { UserOutlined, EditOutlined, SaveOutlined, CloseOutlined, PhoneOutlined, MessageOutlined, PictureOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import UserAvatar from './UserAvatar';
 import UserGiftAssignments from './UserGiftAssignments';
+import AvatarSelector from './AvatarSelector';
 
 const { Title, Text } = Typography;
 
@@ -11,6 +12,7 @@ function UserProfile() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
+  const [avatarSelectorVisible, setAvatarSelectorVisible] = useState(false);
   const [form] = Form.useForm();
 
   const fetchUserProfile = useCallback(async () => {
@@ -62,6 +64,27 @@ function UserProfile() {
     });
   };
 
+  const handleAvatarSelect = async (avatarSeed) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.put('/auth/profile', 
+        { avatar_seed: avatarSeed },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      // Обновляем локальное состояние пользователя
+      setUser(prevUser => ({ ...prevUser, avatar_seed: avatarSeed }));
+      
+      // Перезагружаем профиль для получения актуальных данных
+      await fetchUserProfile();
+      
+    } catch (error) {
+      message.error('Ошибка при обновлении аватарки');
+      console.error('Error updating avatar:', error);
+      throw error; // Перебрасываем ошибку для обработки в AvatarSelector
+    }
+  };
+
   const handleSave = async (values) => {
     try {
       const token = localStorage.getItem('token');
@@ -106,6 +129,23 @@ function UserProfile() {
             style={{ marginBottom: '16px' }}
             showTooltip={true}
           />
+          
+          {/* Кнопка для выбора аватарки */}
+          <div style={{ marginBottom: '16px' }}>
+            <Button
+              type="dashed"
+              icon={<PictureOutlined />}
+              onClick={() => setAvatarSelectorVisible(true)}
+              style={{ 
+                borderRadius: '20px',
+                borderColor: '#1890ff',
+                color: '#1890ff'
+              }}
+            >
+              Изменить аватарку
+            </Button>
+          </div>
+          
           <Title level={2} style={{ color: '#d63031', marginBottom: '8px' }}>
             {user.name}
           </Title>
@@ -385,6 +425,14 @@ function UserProfile() {
       </Card>
 
       <UserGiftAssignments />
+      
+      {/* Модальное окно выбора аватарки */}
+      <AvatarSelector
+        visible={avatarSelectorVisible}
+        onCancel={() => setAvatarSelectorVisible(false)}
+        onSelect={handleAvatarSelect}
+        currentAvatarSeed={user.avatar_seed}
+      />
     </div>
   );
 }

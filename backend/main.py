@@ -299,6 +299,16 @@ def create_default_settings():
             )
             db.add(welcome_subtitle_setting)
         
+        # Настройка приветственного сообщения для пользователей
+        welcome_message_setting = db.query(SystemSettings).filter(SystemSettings.key == "welcome_message").first()
+        if not welcome_message_setting:
+            welcome_message_setting = SystemSettings(
+                key="welcome_message",
+                value="Привет, Тестовый пользователь 1!",
+                description="Персонализированное приветственное сообщение для пользователей"
+            )
+            db.add(welcome_message_setting)
+        
         # Инициализация настроек кнопок мероприятий
         button_settings = [
             ("button_preregistration", "Хочу!", "Текст кнопки для предварительной регистрации"),
@@ -424,6 +434,7 @@ class ProfileUpdate(BaseModel):
     # Дополнительные поля профиля (необязательные)
     phone_number: str | None = None
     telegram_username: str | None = None
+    avatar_seed: str | None = None
 
 class EventCreate(BaseModel):
     name: str
@@ -618,7 +629,7 @@ class GiftAssignmentApproval(BaseModel):
 
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.1.6")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.1.7")
 
 # CORS middleware
 app.add_middleware(
@@ -1372,6 +1383,8 @@ async def update_user_profile(
         current_user.phone_number = profile_data.phone_number
     if profile_data.telegram_username is not None:
         current_user.telegram_username = profile_data.telegram_username
+    if profile_data.avatar_seed is not None:
+        current_user.avatar_seed = profile_data.avatar_seed
     
     db.commit()
     db.refresh(current_user)
@@ -1780,7 +1793,7 @@ async def get_popular_interests(
 async def get_public_settings(db: Session = Depends(get_db)):
     """Получение публичных настроек системы (доступно всем)"""
     public_keys = [
-        'welcome_title', 'welcome_subtitle', 'site_title', 'site_description',
+        'welcome_title', 'welcome_subtitle', 'welcome_message', 'site_title', 'site_description',
         'button_preregistration', 'button_registration', 'button_confirm_participation',
         'button_soon', 'button_participating'
     ]
