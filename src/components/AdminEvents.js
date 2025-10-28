@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Typography, Space, Button, Modal, Form, Input, DatePicker, message, Table, Tag, Popconfirm } from 'antd';
+import { Typography, Space, Button, Modal, Form, Input, DatePicker, message, Table, Tag, Popconfirm } from 'antd';
 import { CalendarOutlined, PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
 import ProCard from '@ant-design/pro-card';
 import axios from '../utils/axiosConfig';
@@ -114,7 +114,7 @@ const AdminEvents = () => {
     const registrationEnd = new Date(event.registration_end);
 
     if (now < preregistrationStart) {
-      return { status: 'upcoming', text: 'Скоро', color: 'blue' };
+      return { status: 'upcoming', text: 'Скоро', color: 'green' };
     } else if (now >= preregistrationStart && now < registrationStart) {
       return { status: 'preregistration', text: 'Предварительная регистрация', color: 'orange' };
     } else if (now >= registrationStart && now < registrationEnd) {

@@ -83,7 +83,7 @@ const AvatarSelector = ({ visible, onCancel, onSelect, currentAvatarSeed }) => {
                   hoverable
                   onClick={() => setSelectedAvatar(seed)}
                   style={{ 
-                    border: selectedAvatar === seed ? '2px solid #1890ff' : '1px solid #f0f0f0',
+                    border: selectedAvatar === seed ? '2px solid #2d5016' : '1px solid #f0f0f0',
                     position: 'relative',
                     textAlign: 'center',
                     padding: '10px'
@@ -102,7 +102,7 @@ const AvatarSelector = ({ visible, onCancel, onSelect, currentAvatarSeed }) => {
                         position: 'absolute', 
                         top: '8px', 
                         right: '8px', 
-                        color: '#1890ff', 
+                        color: '#2d5016', 
                         fontSize: '20px' 
                       }} 
                     />

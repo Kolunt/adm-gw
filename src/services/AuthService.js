@@ -13,7 +13,9 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [profileStatus, setProfileStatus] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [profileStatusLoading, setProfileStatusLoading] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -23,12 +25,17 @@ export const AuthProvider = ({ children }) => {
     } else {
       setLoading(false);
     }
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchUserProfile = async () => {
     try {
       const response = await axios.get('/auth/me');
       setUser(response.data);
+      
+      // Получаем статус профиля только если пользователь авторизован
+      if (response.data) {
+        await fetchProfileStatus();
+      }
     } catch (error) {
       console.error('Error fetching user profile:', error);
       // Не удаляем токен сразу, возможно это временная ошибка сети
@@ -36,9 +43,28 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem('token');
         delete axios.defaults.headers.common['Authorization'];
         setUser(null);
+        setProfileStatus(null);
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchProfileStatus = async () => {
+    if (profileStatusLoading || !user) return; // Предотвращаем множественные запросы и запросы без пользователя
+    
+    setProfileStatusLoading(true);
+    try {
+      const response = await axios.get('/profile/status');
+      setProfileStatus(response.data);
+    } catch (error) {
+      console.error('Error fetching profile status:', error);
+      // Если ошибка 401, пользователь не авторизован
+      if (error.response?.status === 401) {
+        setProfileStatus(null);
+      }
+    } finally {
+      setProfileStatusLoading(false);
     }
   };
 
@@ -63,14 +89,21 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (email, password, confirmPassword) => {
     try {
-      const response = await axios.post('/auth/register', {
+      await axios.post('/auth/register', {
         email,
         password,
         confirm_password: confirmPassword
       });
       
       // Автоматически входим после регистрации
-      return await login(email, password);
+      const loginResult = await login(email, password);
+      
+      if (loginResult.success) {
+        // После успешного входа перенаправляем на заполнение профиля
+        window.location.href = '/profile-completion';
+      }
+      
+      return loginResult;
     } catch (error) {
       console.error('Registration error:', error);
       return { 
@@ -89,11 +122,13 @@ export const AuthProvider = ({ children }) => {
 
   const value = {
     user,
+    profileStatus,
     loading,
     login,
     register,
     logout,
     fetchUserProfile,
+    fetchProfileStatus,
   };
 
   return (

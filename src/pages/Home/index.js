@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Typography, Button, Space, Spin, Alert } from 'antd';
+import { Row, Col, Typography, Button, Space, Spin, Alert } from 'antd';
 import { GiftOutlined, TeamOutlined, CalendarOutlined } from '@ant-design/icons';
 import ProCard from '@ant-design/pro-card';
 import axios from '../../utils/axiosConfig';
@@ -68,7 +68,7 @@ const HomePage = () => {
       ) : (
         <ProCard style={{ marginBottom: '24px' }}>
           <div style={{ textAlign: 'center', padding: '40px' }}>
-            <CalendarOutlined style={{ fontSize: '48px', color: '#1890ff', marginBottom: '16px' }} />
+            <CalendarOutlined style={{ fontSize: '48px', color: '#2d5016', marginBottom: '16px' }} />
             <Title level={3}>Нет активных мероприятий</Title>
             <Text type="secondary" style={{ fontSize: '16px', marginBottom: '24px', display: 'block' }}>
               В данный момент нет активных мероприятий обмена подарками

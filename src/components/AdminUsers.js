@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Typography, Space, Button, message, Modal, Tag, Avatar, Row, Col } from 'antd';
+import { Card, Typography, Space, Button, message, Modal, Tag, Avatar, Row, Col, Descriptions } from 'antd';
 import { 
   UserOutlined, 
   PlusOutlined, 
   EditOutlined, 
   DeleteOutlined,
   TeamOutlined,
-  ReloadOutlined
+  ReloadOutlined,
+  EyeOutlined
 } from '@ant-design/icons';
 import ProCard from '@ant-design/pro-card';
-import ProTable from '@ant-design/pro-table';
-import ProDescriptions from '@ant-design/pro-descriptions';
+import { Table } from 'antd';
+import { useNavigate } from 'react-router-dom';
 import axios from '../utils/axiosConfig';
 import { getUserAvatar } from '../utils/avatarUtils';
 
@@ -21,6 +22,7 @@ const AdminUsers = () => {
   const [loading, setLoading] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [userModalVisible, setUserModalVisible] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchUsers();
@@ -60,8 +62,7 @@ const AdminUsers = () => {
   };
 
   const handleViewUser = (user) => {
-    setSelectedUser(user);
-    setUserModalVisible(true);
+    navigate(`/users/${user.id}`);
   };
 
   const columns = [
@@ -94,7 +95,7 @@ const AdminUsers = () => {
       dataIndex: 'role',
       key: 'role',
       render: (role) => (
-        <Tag color={role === 'admin' ? 'red' : 'blue'}>
+        <Tag color={role === 'admin' ? 'red' : 'green'}>
           {role === 'admin' ? 'Администратор' : 'Пользователь'}
         </Tag>
       ),
@@ -123,19 +124,17 @@ const AdminUsers = () => {
         <Space>
           <Button 
             type="link" 
-            icon={<EditOutlined />}
+            icon={<EyeOutlined />}
             onClick={() => handleViewUser(record)}
-          >
-            Просмотр
-          </Button>
+            title="Просмотр"
+          />
           <Button 
             type="link" 
             danger
             icon={<DeleteOutlined />}
             onClick={() => handleDeleteUser(record.id)}
-          >
-            Удалить
-          </Button>
+            title="Удалить"
+          />
         </Space>
       ),
     },
@@ -177,7 +176,7 @@ const AdminUsers = () => {
       </ProCard>
 
       <ProCard>
-        <ProTable
+        <Table
           columns={columns}
           dataSource={users}
           loading={loading}
@@ -188,12 +187,6 @@ const AdminUsers = () => {
             showQuickJumper: true,
             showTotal: (total, range) => 
               `${range[0]}-${range[1]} из ${total} пользователей`,
-          }}
-          search={false}
-          options={{
-            reload: fetchUsers,
-            setting: true,
-            density: true,
           }}
         />
       </ProCard>
@@ -211,15 +204,14 @@ const AdminUsers = () => {
         width={800}
       >
         {selectedUser && (
-          <ProDescriptions
+          <Descriptions
             column={2}
             bordered
-            dataSource={selectedUser}
-            columns={[
+            items={[
               {
-                title: 'Аватар',
-                dataIndex: 'avatar',
-                render: () => (
+                key: 'avatar',
+                label: 'Аватар',
+                children: (
                   <Avatar 
                     src={getUserAvatar(selectedUser, 80)} 
                     icon={<UserOutlined />}
@@ -228,57 +220,64 @@ const AdminUsers = () => {
                 ),
               },
               {
-                title: 'Имя пользователя',
-                dataIndex: 'username',
+                key: 'username',
+                label: 'Имя пользователя',
+                children: selectedUser.username,
               },
               {
-                title: 'Email',
-                dataIndex: 'email',
+                key: 'email',
+                label: 'Email',
+                children: selectedUser.email,
               },
               {
-                title: 'Полное имя',
-                dataIndex: 'full_name',
+                key: 'full_name',
+                label: 'Полное имя',
+                children: selectedUser.full_name,
               },
               {
-                title: 'Роль',
-                dataIndex: 'role',
-                render: (role) => (
-                  <Tag color={role === 'admin' ? 'red' : 'blue'}>
-                    {role === 'admin' ? 'Администратор' : 'Пользователь'}
+                key: 'role',
+                label: 'Роль',
+                children: (
+                  <Tag color={selectedUser.role === 'admin' ? 'red' : 'green'}>
+                    {selectedUser.role === 'admin' ? 'Администратор' : 'Пользователь'}
                   </Tag>
                 ),
               },
               {
-                title: 'Статус',
-                dataIndex: 'is_active',
-                render: (isActive) => (
-                  <Tag color={isActive ? 'green' : 'red'}>
-                    {isActive ? 'Активен' : 'Неактивен'}
+                key: 'is_active',
+                label: 'Статус',
+                children: (
+                  <Tag color={selectedUser.is_active ? 'green' : 'red'}>
+                    {selectedUser.is_active ? 'Активен' : 'Неактивен'}
                   </Tag>
                 ),
               },
               {
-                title: 'Телефон',
-                dataIndex: 'phone_number',
+                key: 'phone_number',
+                label: 'Телефон',
+                children: selectedUser.phone_number || 'Не указан',
               },
               {
-                title: 'Telegram',
-                dataIndex: 'telegram_username',
+                key: 'telegram_username',
+                label: 'Telegram',
+                children: selectedUser.telegram_username || 'Не указан',
               },
               {
-                title: 'Адрес',
-                dataIndex: 'address',
+                key: 'address',
+                label: 'Адрес',
+                children: selectedUser.address || 'Не указан',
                 span: 2,
               },
               {
-                title: 'Интересы',
-                dataIndex: 'interests',
+                key: 'interests',
+                label: 'Интересы',
+                children: selectedUser.interests || 'Не указаны',
                 span: 2,
               },
               {
-                title: 'Дата регистрации',
-                dataIndex: 'created_at',
-                render: (date) => new Date(date).toLocaleString('ru-RU'),
+                key: 'created_at',
+                label: 'Дата регистрации',
+                children: new Date(selectedUser.created_at).toLocaleString('ru-RU'),
               },
             ]}
           />

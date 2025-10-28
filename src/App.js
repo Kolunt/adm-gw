@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ConfigProvider } from 'antd';
 import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
-import ProLayout from '@ant-design/pro-layout';
-import { Layout, Menu, Drawer, Button, Switch } from 'antd';
+import { Layout, Menu, Drawer, Button } from 'antd';
 import { 
   HomeOutlined, 
   UserOutlined, 
@@ -18,14 +17,10 @@ import {
   BookOutlined,
   ExperimentOutlined,
   InfoCircleOutlined,
-  FileTextOutlined,
   ContactsOutlined,
-  MenuFoldOutlined,
-  MenuUnfoldOutlined,
-  SunOutlined,
-  MoonOutlined
+  MenuUnfoldOutlined
 } from '@ant-design/icons';
-import zhCN from 'antd/locale/zh_CN';
+import ruRU from 'antd/locale/ru_RU';
 
 // Import pages
 import HomePage from './pages/Home';
@@ -38,13 +33,16 @@ import AdminTesting from './components/AdminTesting';
 import AdminInterests from './components/AdminInterests';
 import AdminFAQ from './components/AdminFAQ';
 import AdminDocumentation from './components/AdminDocumentation';
-import AdminContacts from './components/AdminContacts';
 import AdminAbout from './components/AdminAbout';
 import UserProfile from './pages/Profile';
 import LoginPage from './pages/Auth/Login';
 import RegisterPage from './pages/Auth/Register';
 import EventsPage from './pages/Events';
+import EventDetail from './pages/Events/EventDetail';
 import UserListPage from './pages/User/List';
+import UserProfileDetail from './pages/User/Profile';
+import ProfileCompletion from './components/ProfileCompletion';
+import ProfileCompletionGuard from './components/ProfileCompletionGuard';
 import FAQPage from './pages/FAQ';
 import AboutPage from './pages/About';
 import ContactsPage from './pages/Contacts';
@@ -59,12 +57,18 @@ import { useColorSettings } from './hooks/useColorSettings';
 import './App.css';
 
 const AppContent = () => {
-  const { user, logout } = useAuth();
-  const { theme, toggleTheme, isDark } = useTheme();
-  const { colors } = useColorSettings();
+  const { user, profileStatus, logout, fetchProfileStatus } = useAuth();
+  const { theme, isDark } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Проверяем статус профиля при загрузке
+  useEffect(() => {
+    if (user && user.role !== 'admin') {
+      fetchProfileStatus();
+    }
+  }, [user, fetchProfileStatus]);
 
   const handleMenuClick = ({ key }) => {
     if (key !== location.pathname) {
@@ -73,42 +77,51 @@ const AppContent = () => {
     setMobileMenuOpen(false); // Закрываем мобильное меню после клика
   };
 
+  // Определяем доступные пункты меню в зависимости от статуса профиля
+  const getMenuItems = () => {
+    const baseItems = [
+      {
+        key: '/',
+        icon: <HomeOutlined />,
+        label: 'Главная',
+      },
+      {
+        key: '/events',
+        icon: <CalendarOutlined />,
+        label: 'Все мероприятия',
+      },
+      {
+        key: '/users',
+        icon: <TeamOutlined />,
+        label: 'Все участники',
+      },
+      {
+        key: '/faq',
+        icon: <QuestionCircleOutlined />,
+        label: 'FAQ',
+      },
+      {
+        key: '/about',
+        icon: <InfoCircleOutlined />,
+        label: 'О системе',
+      },
+      {
+        key: '/contacts',
+        icon: <ContactsOutlined />,
+        label: 'Контакты',
+      }
+    ];
+
+    // Если пользователь авторизован, но профиль не заполнен (и это не админ) - скрываем все пункты меню
+    if (user && user.role !== 'admin' && !profileStatus?.profile_completed) {
+      return [];
+    }
+
+    return baseItems;
+  };
+
   const menuItems = [
-    {
-      key: '/',
-      icon: <HomeOutlined />,
-      label: 'Главная',
-    },
-    ...(user ? [{
-      key: '/profile',
-      icon: <UserOutlined />,
-      label: 'Профиль',
-    }] : []),
-    {
-      key: '/events',
-      icon: <CalendarOutlined />,
-      label: 'Все мероприятия',
-    },
-    {
-      key: '/users',
-      icon: <TeamOutlined />,
-      label: 'Все участники',
-    },
-    {
-      key: '/faq',
-      icon: <QuestionCircleOutlined />,
-      label: 'FAQ',
-    },
-    {
-      key: '/about',
-      icon: <InfoCircleOutlined />,
-      label: 'О системе',
-    },
-    {
-      key: '/contacts',
-      icon: <ContactsOutlined />,
-      label: 'Контакты',
-    },
+    ...getMenuItems(),
     ...(user?.role === 'admin' ? [{
       key: '/admin',
       icon: <SettingOutlined />,
@@ -189,7 +202,7 @@ const AppContent = () => {
               style={{ 
                 padding: '8px 16px', 
                 borderRadius: '4px', 
-                background: '#1890ff', 
+                background: '#2d5016', 
                 color: 'white', 
                 border: 'none',
                 cursor: 'pointer'
@@ -223,21 +236,37 @@ const AppContent = () => {
           onClick={() => setMobileMenuOpen(true)}
             className="mobile-menu-button"
         />
-        <span style={{ color: '#1890ff' }}>
-          <UserOutlined /> {user.name || user.email}
-        </span>
-        <button 
-          onClick={logout}
+        <Button 
+          type="text"
+          icon={<UserOutlined />}
+          onClick={() => navigate('/profile')}
           style={{ 
-            padding: '8px 16px', 
-            borderRadius: '4px', 
-            background: '#ff4d4f', 
-            color: 'white', 
-            border: 'none',
-            cursor: 'pointer'
+            color: '#2d5016',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
           }}
         >
-          <LogoutOutlined /> Выйти
+          {user.name || user.email}
+        </Button>
+        <button
+          onClick={logout}
+          style={{
+            padding: '8px',
+            borderRadius: '4px',
+            background: '#ff4d4f',
+            color: 'white',
+            border: 'none',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '32px',
+            height: '32px'
+          }}
+          title="Выйти"
+        >
+          <LogoutOutlined />
         </button>
       </div>
     );
@@ -352,15 +381,54 @@ const AppContent = () => {
           background: isDark ? '#001529' : '#f0f2f5'
         }}>
       <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/events" element={<EventsPage />} />
-        <Route path="/users" element={<UserListPage />} />
-        <Route path="/faq" element={<FAQPage />} />
-        <Route path="/about" element={<AboutPage />} />
-        <Route path="/contacts" element={<ContactsPage />} />
+        <Route path="/" element={
+          <ProfileCompletionGuard>
+            <HomePage />
+          </ProfileCompletionGuard>
+        } />
+        <Route path="/events" element={
+          <ProfileCompletionGuard>
+            <EventsPage />
+          </ProfileCompletionGuard>
+        } />
+        <Route path="/events/:id" element={
+          <ProfileCompletionGuard>
+            <EventDetail />
+          </ProfileCompletionGuard>
+        } />
+        <Route path="/users" element={
+          <ProfileCompletionGuard>
+            <UserListPage />
+          </ProfileCompletionGuard>
+        } />
+        <Route path="/users/:id" element={
+          <ProfileCompletionGuard>
+            <UserProfileDetail />
+          </ProfileCompletionGuard>
+        } />
+        <Route path="/faq" element={
+          <ProfileCompletionGuard>
+            <FAQPage />
+          </ProfileCompletionGuard>
+        } />
+        <Route path="/about" element={
+          <ProfileCompletionGuard>
+            <AboutPage />
+          </ProfileCompletionGuard>
+        } />
+        <Route path="/contacts" element={
+          <ProfileCompletionGuard>
+            <ContactsPage />
+          </ProfileCompletionGuard>
+        } />
         <Route path="/profile" element={
           <ProtectedRoute>
             <UserProfile />
+          </ProtectedRoute>
+        } />
+        <Route path="/profile-completion" element={
+          <ProtectedRoute>
+            <ProfileCompletion />
           </ProtectedRoute>
         } />
         <Route path="/login" element={<LoginPage />} />
@@ -425,6 +493,36 @@ const AppContent = () => {
             <AdminSettings />
           </ProtectedRoute>
         } />
+        <Route path="/admin/settings/general" element={
+          <ProtectedRoute requireAdmin={true}>
+            <AdminSettings />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/settings/colors" element={
+          <ProtectedRoute requireAdmin={true}>
+            <AdminSettings />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/settings/smtp" element={
+          <ProtectedRoute requireAdmin={true}>
+            <AdminSettings />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/settings/security" element={
+          <ProtectedRoute requireAdmin={true}>
+            <AdminSettings />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/settings/notifications" element={
+          <ProtectedRoute requireAdmin={true}>
+            <AdminSettings />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/settings/system" element={
+          <ProtectedRoute requireAdmin={true}>
+            <AdminSettings />
+          </ProtectedRoute>
+        } />
       </Routes>
         </Layout.Content>
       </Layout>
@@ -435,7 +533,7 @@ const AppContent = () => {
 const App = () => {
   return (
     <ThemeProvider>
-      <ConfigProvider locale={zhCN}>
+      <ConfigProvider locale={ruRU}>
         <AuthProvider>
           <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <AppContent />

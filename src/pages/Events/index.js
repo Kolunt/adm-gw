@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Typography, Space, Tag, Button, Row, Col, Spin, Alert, List } from 'antd';
-import { CalendarOutlined, GiftOutlined, TeamOutlined, ClockCircleOutlined } from '@ant-design/icons';
+import { Typography, Space, Tag, Button, Row, Col, Spin, Alert, List } from 'antd';
+import { CalendarOutlined, GiftOutlined, TeamOutlined, ClockCircleOutlined, EyeOutlined } from '@ant-design/icons';
 import ProCard from '@ant-design/pro-card';
+import { useNavigate } from 'react-router-dom';
 import axios from '../../utils/axiosConfig';
 
 const { Title, Text, Paragraph } = Typography;
@@ -10,6 +11,7 @@ const EventsPage = () => {
   const [events, setEvents] = useState([]);
   const [currentEvent, setCurrentEvent] = useState(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchEvents();
@@ -38,7 +40,7 @@ const EventsPage = () => {
     const registrationEnd = new Date(event.registration_end);
 
     if (now < preregistrationStart) {
-      return { status: 'upcoming', text: 'Скоро', color: 'blue' };
+      return { status: 'upcoming', text: 'Скоро', color: 'green' };
     } else if (now >= preregistrationStart && now < registrationStart) {
       return { status: 'preregistration', text: 'Предварительная регистрация', color: 'orange' };
     } else if (now >= registrationStart && now < registrationEnd) {
@@ -46,6 +48,10 @@ const EventsPage = () => {
     } else {
       return { status: 'ended', text: 'Завершено', color: 'red' };
     }
+  };
+
+  const handleViewDetails = (event) => {
+    navigate(`/events/${event.id}`);
   };
 
   if (loading) {
@@ -72,7 +78,7 @@ const EventsPage = () => {
             </Text>
           </Col>
           <Col xs={24} md={8} style={{ textAlign: 'right' }}>
-            <Tag color="blue" style={{ fontSize: '16px', padding: '8px 16px' }}>
+            <Tag color="green" style={{ fontSize: '16px', padding: '8px 16px' }}>
               Всего мероприятий: {events.length}
             </Tag>
           </Col>
@@ -150,7 +156,12 @@ const EventsPage = () => {
                     <Tag color={eventStatus.color}>
                       {eventStatus.text}
                     </Tag>
-                    <Button type="primary" size="small">
+                    <Button 
+                      type="primary" 
+                      size="small"
+                      icon={<EyeOutlined />}
+                      onClick={() => handleViewDetails(event)}
+                    >
                       Подробнее
                     </Button>
                   </Space>

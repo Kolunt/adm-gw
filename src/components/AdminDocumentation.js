@@ -4,7 +4,6 @@ import { BookOutlined, FileTextOutlined, SettingOutlined, TeamOutlined, Calendar
 import ProCard from '@ant-design/pro-card';
 
 const { Title, Text, Paragraph } = Typography;
-const { Panel } = Collapse;
 
 const AdminDocumentation = () => {
   const documentationSections = [
@@ -47,7 +46,7 @@ const AdminDocumentation = () => {
           </ul>
           <Divider />
           <Paragraph>
-            <Tag color="blue">Совет:</Tag> Регулярно проверяйте активность пользователей 
+            <Tag color="green">Совет:</Tag> Регулярно проверяйте активность пользователей 
             и удаляйте неактивные аккаунты.
           </Paragraph>
         </div>
@@ -206,7 +205,7 @@ const AdminDocumentation = () => {
         <Row gutter={[16, 16]}>
           <Col xs={24} md={8}>
             <Card size="small" style={{ textAlign: 'center' }}>
-              <TeamOutlined style={{ fontSize: '24px', color: '#1890ff', marginBottom: '8px' }} />
+              <TeamOutlined style={{ fontSize: '24px', color: '#2d5016', marginBottom: '8px' }} />
               <div>
                 <Text strong>Пользователи</Text>
                 <br />

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Typography, Space, Collapse, Button, Modal, Form, Input, message } from 'antd';
-import { QuestionCircleOutlined, PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { Typography, Space, Button, Modal, Form, Input, message, Table, Tag } from 'antd';
+import { QuestionCircleOutlined, PlusOutlined, EditOutlined, DeleteOutlined, UpOutlined, DownOutlined } from '@ant-design/icons';
 import ProCard from '@ant-design/pro-card';
 
 const { Title, Text, Paragraph } = Typography;
@@ -25,30 +25,37 @@ const AdminFAQ = () => {
         {
           id: 1,
           question: "Как работает система анонимного обмена подарками?",
-          answer: "Система позволяет участникам регистрироваться на мероприятия, указывать свои желания и получать подарки от других участников. Все происходит анонимно - вы не знаете, кто вам дарит подарок."
+          answer: "Система позволяет участникам регистрироваться на мероприятия, указывать свои желания и получать подарки от других участников. Все происходит анонимно - вы не знаете, кто вам дарит подарок.",
+          priority: 1
         },
         {
           id: 2,
           question: "Как зарегистрироваться на мероприятие?",
-          answer: "Перейдите в раздел 'Все мероприятия', выберите интересующее вас мероприятие и нажмите кнопку регистрации. Заполните форму с вашими пожеланиями."
+          answer: "Перейдите в раздел 'Все мероприятия', выберите интересующее вас мероприятие и нажмите кнопку регистрации. Заполните форму с вашими пожеланиями.",
+          priority: 2
         },
         {
           id: 3,
           question: "Могу ли я изменить свои пожелания после регистрации?",
-          answer: "Да, вы можете редактировать свои пожелания в любое время до начала мероприятия. После начала мероприятия изменения будут недоступны."
+          answer: "Да, вы можете редактировать свои пожелания в любое время до начала мероприятия. После начала мероприятия изменения будут недоступны.",
+          priority: 3
         },
         {
           id: 4,
           question: "Как узнать, кому я дарю подарок?",
-          answer: "После регистрации на мероприятие система автоматически назначит вам получателя подарка. Вы увидите его пожелания, но не узнаете личность до самого мероприятия."
+          answer: "После регистрации на мероприятие система автоматически назначит вам получателя подарка. Вы увидите его пожелания, но не узнаете личность до самого мероприятия.",
+          priority: 4
         },
         {
           id: 5,
           question: "Что делать, если я не могу участвовать в мероприятии?",
-          answer: "Если вы не можете участвовать, пожалуйста, отмените регистрацию как можно раньше. Это поможет системе перераспределить подарки между оставшимися участниками."
+          answer: "Если вы не можете участвовать, пожалуйста, отмените регистрацию как можно раньше. Это поможет системе перераспределить подарки между оставшимися участниками.",
+          priority: 5
         }
       ];
-      setFaqData(staticFAQ);
+      // Сортируем по приоритету (чем меньше число, тем выше приоритет)
+      const sortedFAQ = staticFAQ.sort((a, b) => (a.priority || 100) - (b.priority || 100));
+      setFaqData(sortedFAQ);
     } catch (error) {
       console.error('Error fetching FAQ:', error);
       message.error('Ошибка загрузки FAQ');
@@ -97,13 +104,37 @@ const AdminFAQ = () => {
       const newItem = {
         id: Math.max(...faqData.map(item => item.id)) + 1,
         question: values.question,
-        answer: values.answer
+        answer: values.answer,
+        priority: faqData.length + 1
       };
       setFaqData(prev => [...prev, newItem]);
       message.success('Вопрос добавлен');
     }
     setModalVisible(false);
     form.resetFields();
+  };
+
+  const moveItem = (id, direction) => {
+    const currentIndex = faqData.findIndex(item => item.id === id);
+    if (currentIndex === -1) return;
+
+    const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    
+    // Проверяем границы
+    if (newIndex < 0 || newIndex >= faqData.length) return;
+
+    const newData = [...faqData];
+    const [movedItem] = newData.splice(currentIndex, 1);
+    newData.splice(newIndex, 0, movedItem);
+
+    // Обновляем приоритеты
+    const updatedData = newData.map((item, index) => ({
+      ...item,
+      priority: index + 1
+    }));
+
+    setFaqData(updatedData);
+    message.success(`Вопрос перемещен ${direction === 'up' ? 'вверх' : 'вниз'}`);
   };
 
   return (
@@ -132,46 +163,88 @@ const AdminFAQ = () => {
       </ProCard>
 
       <ProCard>
-        <Collapse
-          items={faqData.map((item) => ({
-            key: item.id,
-            label: (
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ color: '#ffffff', fontSize: '16px', fontWeight: 'bold' }}>
-                  {item.question}
-                </span>
+        <Table
+          dataSource={faqData}
+          rowKey="id"
+          pagination={false}
+          columns={[
+            {
+              title: 'Порядок',
+              dataIndex: 'priority',
+              key: 'priority',
+              width: 80,
+              align: 'center',
+              render: (priority) => (
+                <Tag color="green">{priority}</Tag>
+              ),
+            },
+            {
+              title: 'Вопрос',
+              dataIndex: 'question',
+              key: 'question',
+              render: (text) => (
+                <Text strong style={{ color: '#ffffff' }}>
+                  {text}
+                </Text>
+              ),
+            },
+            {
+              title: 'Ответ',
+              dataIndex: 'answer',
+              key: 'answer',
+              render: (text) => (
+                <Text style={{ color: '#d9d9d9' }}>
+                  {text.length > 100 ? `${text.substring(0, 100)}...` : text}
+                </Text>
+              ),
+            },
+            {
+              title: 'Действия',
+              key: 'actions',
+              width: 200,
+              render: (_, record, index) => (
                 <Space>
-                  <Button 
-                    type="text" 
-                    icon={<EditOutlined />} 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleEdit(item);
-                    }}
+                  <Button
+                    type="text"
+                    icon={<UpOutlined />}
+                    onClick={() => moveItem(record.id, 'up')}
+                    disabled={index === 0}
+                    title="Переместить вверх"
                   />
-                  <Button 
-                    type="text" 
-                    danger 
-                    icon={<DeleteOutlined />} 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete(item.id);
-                    }}
+                  <Button
+                    type="text"
+                    icon={<DownOutlined />}
+                    onClick={() => moveItem(record.id, 'down')}
+                    disabled={index === faqData.length - 1}
+                    title="Переместить вниз"
+                  />
+                  <Button
+                    type="text"
+                    icon={<EditOutlined />}
+                    onClick={() => handleEdit(record)}
+                    title="Редактировать"
+                  />
+                  <Button
+                    type="text"
+                    danger
+                    icon={<DeleteOutlined />}
+                    onClick={() => handleDelete(record.id)}
+                    title="Удалить"
                   />
                 </Space>
+              ),
+            },
+          ]}
+          expandable={{
+            expandedRowRender: (record) => (
+              <div style={{ padding: '16px', backgroundColor: '#1f1f1f', borderRadius: '6px' }}>
+                <Text style={{ color: '#d9d9d9', fontSize: '15px', lineHeight: '1.6' }}>
+                  {record.answer}
+                </Text>
               </div>
             ),
-            children: (
-              <Paragraph style={{ 
-                color: '#d9d9d9',
-                fontSize: '15px',
-                lineHeight: '1.6',
-                marginBottom: 0
-              }}>
-                {item.answer}
-              </Paragraph>
-            ),
-          }))}
+            rowExpandable: (record) => true,
+          }}
         />
       </ProCard>
 

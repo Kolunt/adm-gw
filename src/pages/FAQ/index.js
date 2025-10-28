@@ -5,7 +5,6 @@ import ProCard from '@ant-design/pro-card';
 import axios from '../../utils/axiosConfig';
 
 const { Title, Text, Paragraph } = Typography;
-const { Panel } = Collapse;
 
 const FAQPage = () => {
   const [faqData, setFaqData] = useState([]);

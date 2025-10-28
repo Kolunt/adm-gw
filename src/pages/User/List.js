@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Avatar, Tag, Space, Typography, Card, Row, Col, Spin, List } from 'antd';
-import { UserOutlined, GiftOutlined, TeamOutlined } from '@ant-design/icons';
+import { Avatar, Tag, Space, Typography, Card, Row, Col, Spin, List, Button } from 'antd';
+import { UserOutlined, GiftOutlined, TeamOutlined, EyeOutlined } from '@ant-design/icons';
 import ProCard from '@ant-design/pro-card';
+import { useNavigate } from 'react-router-dom';
 import axios from '../../utils/axiosConfig';
 import { generateAvatar } from '../../utils/avatarUtils';
 
@@ -10,6 +11,7 @@ const { Title, Text } = Typography;
 const UserListPage = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchUsers();
@@ -24,6 +26,10 @@ const UserListPage = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleViewProfile = (userId) => {
+    navigate(`/users/${userId}`);
   };
 
   if (loading) {
@@ -50,7 +56,7 @@ const UserListPage = () => {
             </Text>
           </Col>
           <Col xs={24} md={8} style={{ textAlign: 'right' }}>
-            <Tag color="blue" style={{ fontSize: '16px', padding: '8px 16px' }}>
+            <Tag color="green" style={{ fontSize: '16px', padding: '8px 16px' }}>
               Всего участников: {users.length}
             </Tag>
           </Col>
@@ -75,6 +81,14 @@ const UserListPage = () => {
                   <Tag color="green">
                     <GiftOutlined /> Участник
                   </Tag>
+                  <Button 
+                    type="primary" 
+                    size="small"
+                    icon={<EyeOutlined />}
+                    onClick={() => handleViewProfile(user.id)}
+                  >
+                    Подробнее
+                  </Button>
                 </Space>
               ]}
             >
@@ -110,7 +124,7 @@ const UserListPage = () => {
                       </Text>
                     )}
                     {user.gwars_nickname && (
-                      <Tag color="blue">
+                      <Tag color="green">
                         GWars: {user.gwars_nickname}
                       </Tag>
                     )}

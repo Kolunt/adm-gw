@@ -25,7 +25,7 @@ const ContactsPage = () => {
           <ProCard title="Техническая поддержка" style={{ height: '100%' }}>
             <Space direction="vertical" size="large" style={{ width: '100%' }}>
               <div>
-                <MailOutlined style={{ marginRight: '8px', color: '#1890ff' }} />
+                <MailOutlined style={{ marginRight: '8px', color: '#2d5016' }} />
                 <Text strong>Email поддержки</Text>
                 <br />
                 <Text type="secondary">support@gwars.io</Text>

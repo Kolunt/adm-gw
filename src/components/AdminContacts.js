@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Typography, Space, Row, Col, Button, Divider, Modal, Form, Input, message } from 'antd';
+import { Typography, Space, Row, Col, Button, Divider, Modal, Form, Input, message } from 'antd';
 import { ContactsOutlined, MailOutlined, PhoneOutlined, MessageOutlined, GithubOutlined, EditOutlined, SaveOutlined } from '@ant-design/icons';
 import ProCard from '@ant-design/pro-card';
 
@@ -96,7 +96,7 @@ const AdminContacts = () => {
                 field="supportEmail"
                 label="Email поддержки"
                 icon={<MailOutlined />}
-                color="#1890ff"
+                color="#2d5016"
                 value={contactsData.supportEmail}
               />
               
@@ -156,7 +156,7 @@ const AdminContacts = () => {
               field="officialSite"
               label="Официальный сайт"
               icon={<ContactsOutlined />}
-              color="#1890ff"
+              color="#2d5016"
               value={contactsData.officialSite}
             />
           </Col>

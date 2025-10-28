@@ -115,7 +115,7 @@ const UserList = () => {
                       target="_blank" 
                       rel="noopener noreferrer"
                       style={{ 
-                        color: '#1890ff', 
+                        color: '#2d5016', 
                         textDecoration: 'none',
                         fontSize: '14px'
                       }}

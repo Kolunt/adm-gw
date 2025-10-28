@@ -39,7 +39,7 @@ const AboutPage = () => {
           <ProCard title="Как это работает?" style={{ height: '100%' }}>
             <Space direction="vertical" size="large" style={{ width: '100%' }}>
               <div>
-                <CalendarOutlined style={{ marginRight: '8px', color: '#1890ff' }} />
+                <CalendarOutlined style={{ marginRight: '8px', color: '#2d5016' }} />
                 <Text strong>1. Регистрация на мероприятие</Text>
                 <br />
                 <Text type="secondary">Выбираете мероприятие и регистрируетесь</Text>

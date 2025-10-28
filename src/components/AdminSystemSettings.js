@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Form, Input, Button, Typography, Space, Alert, Tabs, Switch, Row, Col, ColorPicker } from 'antd';
+import { Form, Input, Button, Typography, Space, Alert, Tabs, Switch, Row, Col, ColorPicker, InputNumber, Select } from 'antd';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   SettingOutlined, 
   SaveOutlined, 
@@ -7,7 +8,12 @@ import {
   GlobalOutlined, 
   UserOutlined,
   MailOutlined,
-  BgColorsOutlined
+  BgColorsOutlined,
+  SecurityScanOutlined,
+  DatabaseOutlined,
+  NotificationOutlined,
+  ClockCircleOutlined,
+  TeamOutlined
 } from '@ant-design/icons';
 import ProCard from '@ant-design/pro-card';
 import axios from '../utils/axiosConfig';
@@ -20,11 +26,33 @@ const AdminSystemSettings = () => {
   const [smtpForm] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [settings, setSettings] = useState([]);
-  const [activeTab, setActiveTab] = useState('general');
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Получаем активный таб из URL или используем дефолтный
+  const getActiveTabFromUrl = () => {
+    const pathParts = location.pathname.split('/');
+    const tab = pathParts[pathParts.length - 1];
+    const validTabs = ['general', 'colors', 'smtp', 'security', 'notifications', 'system'];
+    return validTabs.includes(tab) ? tab : 'general';
+  };
+  
+  const [activeTab, setActiveTab] = useState(getActiveTabFromUrl());
 
   useEffect(() => {
     fetchSettings();
   }, []);
+
+  // Обновляем активный таб при изменении URL
+  useEffect(() => {
+    const newActiveTab = getActiveTabFromUrl();
+    setActiveTab(newActiveTab);
+  }, [location.pathname]);
+
+  const handleTabChange = (key) => {
+    setActiveTab(key);
+    navigate(`/admin/settings/${key}`);
+  };
 
   const fetchSettings = async () => {
     try {
@@ -37,7 +65,6 @@ const AdminSystemSettings = () => {
         formData[setting.key] = setting.value;
       });
       form.setFieldsValue(formData);
-      // Убираем вызов colorsForm.setFieldsValue, так как форма не подключена
       smtpForm.setFieldsValue(formData);
     } catch (error) {
       console.error('Error fetching settings:', error);
@@ -318,7 +345,7 @@ const AdminSystemSettings = () => {
                   <ColorPicker
                     showText
                     format="hex"
-                    placeholder="#1890ff"
+                    placeholder="#2d5016"
                     style={{ width: '100%' }}
                   />
                 </Form.Item>
@@ -335,7 +362,7 @@ const AdminSystemSettings = () => {
               <ColorPicker
                 showText
                 format="hex"
-                placeholder="#40a9ff"
+                placeholder="#3d6b1a"
                 style={{ width: '100%' }}
               />
                 </Form.Item>
@@ -407,10 +434,200 @@ const AdminSystemSettings = () => {
               <ColorPicker
                 showText
                 format="hex"
-                placeholder="#1890ff"
+                placeholder="#2d5016"
                 style={{ width: '100%' }}
               />
                 </Form.Item>
+          </Col>
+        </Row>
+      </ProCard>
+
+      <ProCard size="small" title="Настройки кнопок" style={{ marginTop: 16 }}>
+        <Alert
+          message="Цвета различных типов кнопок"
+          description="Настройте цвета для всех типов кнопок в интерфейсе."
+          type="info"
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
+        
+        <Row gutter={[16, 16]}>
+          <Col xs={24} md={12}>
+            <Form.Item
+              name="button_primary_color"
+              label="Основные кнопки (Primary)"
+              rules={[
+                { required: true, message: 'Цвет основных кнопок обязателен' }
+              ]}
+            >
+              <ColorPicker
+                showText
+                format="hex"
+                placeholder="#2d5016"
+                style={{ width: '100%' }}
+              />
+            </Form.Item>
+          </Col>
+          
+          <Col xs={24} md={12}>
+            <Form.Item
+              name="button_primary_hover_color"
+              label="Основные кнопки при наведении"
+              rules={[
+                { required: true, message: 'Цвет при наведении обязателен' }
+              ]}
+            >
+              <ColorPicker
+                showText
+                format="hex"
+                placeholder="#3d6b1a"
+                style={{ width: '100%' }}
+              />
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <Row gutter={[16, 16]}>
+          <Col xs={24} md={12}>
+            <Form.Item
+              name="button_default_color"
+              label="Обычные кнопки (Default)"
+              rules={[
+                { required: true, message: 'Цвет обычных кнопок обязателен' }
+              ]}
+            >
+              <ColorPicker
+                showText
+                format="hex"
+                placeholder="#434343"
+                style={{ width: '100%' }}
+              />
+            </Form.Item>
+          </Col>
+          
+          <Col xs={24} md={12}>
+            <Form.Item
+              name="button_default_hover_color"
+              label="Обычные кнопки при наведении"
+              rules={[
+                { required: true, message: 'Цвет при наведении обязателен' }
+              ]}
+            >
+              <ColorPicker
+                showText
+                format="hex"
+                placeholder="#595959"
+                style={{ width: '100%' }}
+              />
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <Row gutter={[16, 16]}>
+          <Col xs={24} md={12}>
+            <Form.Item
+              name="button_dashed_color"
+              label="Пунктирные кнопки (Dashed)"
+              rules={[
+                { required: true, message: 'Цвет пунктирных кнопок обязателен' }
+              ]}
+            >
+              <ColorPicker
+                showText
+                format="hex"
+                placeholder="#434343"
+                style={{ width: '100%' }}
+              />
+            </Form.Item>
+          </Col>
+          
+          <Col xs={24} md={12}>
+            <Form.Item
+              name="button_dashed_hover_color"
+              label="Пунктирные кнопки при наведении"
+              rules={[
+                { required: true, message: 'Цвет при наведении обязателен' }
+              ]}
+            >
+              <ColorPicker
+                showText
+                format="hex"
+                placeholder="#595959"
+                style={{ width: '100%' }}
+              />
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <Row gutter={[16, 16]}>
+          <Col xs={24} md={12}>
+            <Form.Item
+              name="button_text_color"
+              label="Текстовые кнопки (Text)"
+              rules={[
+                { required: true, message: 'Цвет текстовых кнопок обязателен' }
+              ]}
+            >
+              <ColorPicker
+                showText
+                format="hex"
+                placeholder="#2d5016"
+                style={{ width: '100%' }}
+              />
+            </Form.Item>
+          </Col>
+          
+          <Col xs={24} md={12}>
+            <Form.Item
+              name="button_text_hover_color"
+              label="Текстовые кнопки при наведении"
+              rules={[
+                { required: true, message: 'Цвет при наведении обязателен' }
+              ]}
+            >
+              <ColorPicker
+                showText
+                format="hex"
+                placeholder="#3d6b1a"
+                style={{ width: '100%' }}
+              />
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <Row gutter={[16, 16]}>
+          <Col xs={24} md={12}>
+            <Form.Item
+              name="button_link_color"
+              label="Кнопки-ссылки (Link)"
+              rules={[
+                { required: true, message: 'Цвет кнопок-ссылок обязателен' }
+              ]}
+            >
+              <ColorPicker
+                showText
+                format="hex"
+                placeholder="#2d5016"
+                style={{ width: '100%' }}
+              />
+            </Form.Item>
+          </Col>
+          
+          <Col xs={24} md={12}>
+            <Form.Item
+              name="button_link_hover_color"
+              label="Кнопки-ссылки при наведении"
+              rules={[
+                { required: true, message: 'Цвет при наведении обязателен' }
+              ]}
+            >
+              <ColorPicker
+                showText
+                format="hex"
+                placeholder="#3d6b1a"
+                style={{ width: '100%' }}
+              />
+            </Form.Item>
           </Col>
         </Row>
       </ProCard>
@@ -431,15 +648,91 @@ const AdminSystemSettings = () => {
                 type="primary" 
                 style={{ 
                   marginBottom: '8px',
-                  backgroundColor: '#1890ff',
-                  borderColor: '#1890ff'
+                  backgroundColor: '#2d5016',
+                  borderColor: '#2d5016'
                 }}
               >
                 Основная кнопка
               </Button>
               <br />
               <Text type="secondary" style={{ fontSize: '12px' }}>
-                Основной цвет
+                Primary
+              </Text>
+            </div>
+          </Col>
+          
+          <Col xs={24} md={6}>
+            <div style={{ textAlign: 'center' }}>
+              <Button 
+                style={{ 
+                  marginBottom: '8px',
+                  backgroundColor: '#434343',
+                  borderColor: '#434343',
+                  color: 'white'
+                }}
+              >
+                Обычная кнопка
+              </Button>
+              <br />
+              <Text type="secondary" style={{ fontSize: '12px' }}>
+                Default
+              </Text>
+            </div>
+          </Col>
+          
+          <Col xs={24} md={6}>
+            <div style={{ textAlign: 'center' }}>
+              <Button 
+                type="dashed"
+                style={{ 
+                  marginBottom: '8px',
+                  borderColor: '#434343',
+                  color: '#434343'
+                }}
+              >
+                Пунктирная кнопка
+              </Button>
+              <br />
+              <Text type="secondary" style={{ fontSize: '12px' }}>
+                Dashed
+              </Text>
+            </div>
+          </Col>
+          
+          <Col xs={24} md={6}>
+            <div style={{ textAlign: 'center' }}>
+              <Button 
+                type="text"
+                style={{ 
+                  marginBottom: '8px',
+                  color: '#2d5016'
+                }}
+              >
+                Текстовая кнопка
+              </Button>
+              <br />
+              <Text type="secondary" style={{ fontSize: '12px' }}>
+                Text
+              </Text>
+            </div>
+          </Col>
+        </Row>
+
+        <Row gutter={[16, 16]} style={{ marginTop: '16px' }}>
+          <Col xs={24} md={6}>
+            <div style={{ textAlign: 'center' }}>
+              <Button 
+                type="link"
+                style={{ 
+                  marginBottom: '8px',
+                  color: '#2d5016'
+                }}
+              >
+                Кнопка-ссылка
+              </Button>
+              <br />
+              <Text type="secondary" style={{ fontSize: '12px' }}>
+                Link
               </Text>
             </div>
           </Col>
@@ -458,7 +751,7 @@ const AdminSystemSettings = () => {
               </Button>
               <br />
               <Text type="secondary" style={{ fontSize: '12px' }}>
-                Цвет успеха
+                Success
               </Text>
             </div>
           </Col>
@@ -477,7 +770,7 @@ const AdminSystemSettings = () => {
               </Button>
               <br />
               <Text type="secondary" style={{ fontSize: '12px' }}>
-                Цвет предупреждения
+                Warning
               </Text>
             </div>
           </Col>
@@ -485,6 +778,7 @@ const AdminSystemSettings = () => {
           <Col xs={24} md={6}>
             <div style={{ textAlign: 'center' }}>
               <Button 
+                danger
                 style={{ 
                   marginBottom: '8px',
                   backgroundColor: '#ff4d4f',
@@ -496,7 +790,7 @@ const AdminSystemSettings = () => {
               </Button>
               <br />
               <Text type="secondary" style={{ fontSize: '12px' }}>
-                Цвет ошибки
+                Danger
               </Text>
             </div>
           </Col>
@@ -627,6 +921,406 @@ const AdminSystemSettings = () => {
     </Form>
   );
 
+  const renderSecurityTab = () => (
+    <Form
+      form={form}
+      layout="vertical"
+      onFinish={handleSave}
+    >
+      <ProCard size="small" title="Настройки безопасности">
+        <Alert
+          message="Параметры безопасности системы"
+          description="Настройте параметры безопасности для защиты системы и пользователей."
+          type="warning"
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
+        
+        <Form.Item
+          name="session_timeout"
+          label="Время жизни сессии (минуты)"
+          rules={[
+            { required: true, message: 'Время жизни сессии обязательно' },
+            { type: 'number', min: 5, max: 1440, message: 'Время должно быть от 5 до 1440 минут' }
+          ]}
+        >
+          <InputNumber
+            placeholder="480"
+            prefix={<ClockCircleOutlined />}
+            style={{ width: '100%' }}
+            min={5}
+            max={1440}
+          />
+        </Form.Item>
+
+        <Form.Item
+          name="max_login_attempts"
+          label="Максимальное количество попыток входа"
+          rules={[
+            { required: true, message: 'Количество попыток обязательно' },
+            { type: 'number', min: 3, max: 10, message: 'Количество должно быть от 3 до 10' }
+          ]}
+        >
+          <InputNumber
+            placeholder="5"
+            prefix={<SecurityScanOutlined />}
+            style={{ width: '100%' }}
+            min={3}
+            max={10}
+          />
+        </Form.Item>
+
+        <Form.Item
+          name="password_min_length"
+          label="Минимальная длина пароля"
+          rules={[
+            { required: true, message: 'Минимальная длина пароля обязательна' },
+            { type: 'number', min: 6, max: 20, message: 'Длина должна быть от 6 до 20 символов' }
+          ]}
+        >
+          <InputNumber
+            placeholder="8"
+            prefix={<SecurityScanOutlined />}
+            style={{ width: '100%' }}
+            min={6}
+            max={20}
+          />
+        </Form.Item>
+
+        <Form.Item
+          name="require_password_complexity"
+          label="Требовать сложный пароль"
+          valuePropName="checked"
+        >
+          <Switch />
+        </Form.Item>
+
+        <Form.Item
+          name="enable_two_factor"
+          label="Включить двухфакторную аутентификацию"
+          valuePropName="checked"
+        >
+          <Switch />
+        </Form.Item>
+
+        <Form.Item
+          name="ip_whitelist_enabled"
+          label="Включить белый список IP адресов"
+          valuePropName="checked"
+        >
+          <Switch />
+        </Form.Item>
+
+        <Form.Item
+          name="allowed_ips"
+          label="Разрешенные IP адреса (через запятую)"
+        >
+          <TextArea
+            placeholder="192.168.1.0/24, 10.0.0.0/8"
+            rows={3}
+            prefix={<SecurityScanOutlined />}
+          />
+        </Form.Item>
+      </ProCard>
+
+      <div style={{ textAlign: 'center', marginTop: '24px' }}>
+        <Space size="middle">
+          <Button 
+            type="primary" 
+            htmlType="submit"
+            loading={loading}
+            icon={<SaveOutlined />}
+            size="large"
+          >
+            Сохранить настройки безопасности
+          </Button>
+        </Space>
+      </div>
+    </Form>
+  );
+
+  const renderNotificationsTab = () => (
+    <Form
+      form={form}
+      layout="vertical"
+      onFinish={handleSave}
+    >
+      <ProCard size="small" title="Настройки уведомлений">
+        <Alert
+          message="Параметры уведомлений"
+          description="Настройте, какие уведомления отправлять пользователям и как."
+          type="info"
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
+        
+        <Form.Item
+          name="email_notifications_enabled"
+          label="Включить email уведомления"
+          valuePropName="checked"
+        >
+          <Switch />
+        </Form.Item>
+
+        <Form.Item
+          name="notify_event_created"
+          label="Уведомлять о создании новых мероприятий"
+          valuePropName="checked"
+        >
+          <Switch />
+        </Form.Item>
+
+        <Form.Item
+          name="notify_registration_start"
+          label="Уведомлять о начале регистрации"
+          valuePropName="checked"
+        >
+          <Switch />
+        </Form.Item>
+
+        <Form.Item
+          name="notify_registration_end"
+          label="Уведомлять о скором окончании регистрации"
+          valuePropName="checked"
+        >
+          <Switch />
+        </Form.Item>
+
+        <Form.Item
+          name="notify_gift_assigned"
+          label="Уведомлять о назначении подарка"
+          valuePropName="checked"
+        >
+          <Switch />
+        </Form.Item>
+
+        <Form.Item
+          name="notification_days_before"
+          label="За сколько дней уведомлять о начале регистрации"
+          rules={[
+            { required: true, message: 'Количество дней обязательно' },
+            { type: 'number', min: 1, max: 30, message: 'Количество должно быть от 1 до 30 дней' }
+          ]}
+        >
+          <InputNumber
+            placeholder="3"
+            prefix={<NotificationOutlined />}
+            style={{ width: '100%' }}
+            min={1}
+            max={30}
+          />
+        </Form.Item>
+      </ProCard>
+
+      <ProCard size="small" title="Настройки Telegram" style={{ marginTop: 16 }}>
+        <Alert
+          message="Интеграция с Telegram"
+          description="Настройте отправку уведомлений через Telegram бота."
+          type="info"
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
+        
+        <Form.Item
+          name="telegram_enabled"
+          label="Включить Telegram уведомления"
+          valuePropName="checked"
+        >
+          <Switch />
+        </Form.Item>
+
+        <Form.Item
+          name="telegram_bot_token"
+          label="Токен Telegram бота"
+        >
+          <Input.Password
+            placeholder="123456789:ABCdefGHIjklMNOpqrsTUVwxyz"
+            prefix={<NotificationOutlined />}
+          />
+        </Form.Item>
+
+        <Form.Item
+          name="telegram_chat_id"
+          label="ID чата для уведомлений"
+        >
+          <Input
+            placeholder="-1001234567890"
+            prefix={<NotificationOutlined />}
+          />
+        </Form.Item>
+      </ProCard>
+
+      <div style={{ textAlign: 'center', marginTop: '24px' }}>
+        <Space size="middle">
+          <Button 
+            type="primary" 
+            htmlType="submit"
+            loading={loading}
+            icon={<SaveOutlined />}
+            size="large"
+          >
+            Сохранить настройки уведомлений
+          </Button>
+        </Space>
+      </div>
+    </Form>
+  );
+
+  const renderSystemTab = () => (
+    <Form
+      form={form}
+      layout="vertical"
+      onFinish={handleSave}
+    >
+      <ProCard size="small" title="Системные параметры">
+        <Alert
+          message="Основные параметры системы"
+          description="Настройте основные параметры работы системы."
+          type="info"
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
+        
+        <Form.Item
+          name="max_users_per_event"
+          label="Максимальное количество участников на мероприятие"
+          rules={[
+            { required: true, message: 'Максимальное количество участников обязательно' },
+            { type: 'number', min: 2, max: 1000, message: 'Количество должно быть от 2 до 1000' }
+          ]}
+        >
+          <InputNumber
+            placeholder="100"
+            prefix={<TeamOutlined />}
+            style={{ width: '100%' }}
+            min={2}
+            max={1000}
+          />
+        </Form.Item>
+
+        <Form.Item
+          name="auto_assign_gifts"
+          label="Автоматически назначать подарки"
+          valuePropName="checked"
+        >
+          <Switch />
+        </Form.Item>
+
+        <Form.Item
+          name="allow_self_gift"
+          label="Разрешить дарить подарок самому себе"
+          valuePropName="checked"
+        >
+          <Switch />
+        </Form.Item>
+
+        <Form.Item
+          name="registration_deadline_hours"
+          label="За сколько часов до мероприятия закрывать регистрацию"
+          rules={[
+            { required: true, message: 'Количество часов обязательно' },
+            { type: 'number', min: 1, max: 168, message: 'Количество должно быть от 1 до 168 часов' }
+          ]}
+        >
+          <InputNumber
+            placeholder="24"
+            prefix={<ClockCircleOutlined />}
+            style={{ width: '100%' }}
+            min={1}
+            max={168}
+          />
+        </Form.Item>
+
+        <Form.Item
+          name="default_event_duration_days"
+          label="Продолжительность мероприятия по умолчанию (дни)"
+          rules={[
+            { required: true, message: 'Продолжительность мероприятия обязательна' },
+            { type: 'number', min: 1, max: 365, message: 'Продолжительность должна быть от 1 до 365 дней' }
+          ]}
+        >
+          <InputNumber
+            placeholder="7"
+            prefix={<ClockCircleOutlined />}
+            style={{ width: '100%' }}
+            min={1}
+            max={365}
+          />
+        </Form.Item>
+      </ProCard>
+
+      <ProCard size="small" title="Настройки базы данных" style={{ marginTop: 16 }}>
+        <Alert
+          message="Параметры базы данных"
+          description="Настройки для работы с базой данных."
+          type="info"
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
+        
+        <Form.Item
+          name="db_backup_enabled"
+          label="Включить автоматическое резервное копирование"
+          valuePropName="checked"
+        >
+          <Switch />
+        </Form.Item>
+
+        <Form.Item
+          name="db_backup_frequency"
+          label="Частота резервного копирования"
+        >
+          <Select
+            placeholder="Выберите частоту"
+            options={[
+              { value: 'daily', label: 'Ежедневно' },
+              { value: 'weekly', label: 'Еженедельно' },
+              { value: 'monthly', label: 'Ежемесячно' }
+            ]}
+          />
+        </Form.Item>
+
+        <Form.Item
+          name="db_cleanup_enabled"
+          label="Включить автоматическую очистку старых данных"
+          valuePropName="checked"
+        >
+          <Switch />
+        </Form.Item>
+
+        <Form.Item
+          name="db_cleanup_days"
+          label="Удалять данные старше (дней)"
+          rules={[
+            { type: 'number', min: 30, max: 3650, message: 'Количество должно быть от 30 до 3650 дней' }
+          ]}
+        >
+          <InputNumber
+            placeholder="365"
+            prefix={<DatabaseOutlined />}
+            style={{ width: '100%' }}
+            min={30}
+            max={3650}
+          />
+        </Form.Item>
+      </ProCard>
+
+      <div style={{ textAlign: 'center', marginTop: '24px' }}>
+        <Space size="middle">
+          <Button 
+            type="primary" 
+            htmlType="submit"
+            loading={loading}
+            icon={<SaveOutlined />}
+            size="large"
+          >
+            Сохранить системные настройки
+          </Button>
+        </Space>
+      </div>
+    </Form>
+  );
+
   return (
     <div style={{ padding: '24px' }}>
       <ProCard style={{ marginBottom: '24px' }}>
@@ -648,7 +1342,7 @@ const AdminSystemSettings = () => {
       <ProCard>
         <Tabs
           activeKey={activeTab}
-          onChange={setActiveTab}
+          onChange={handleTabChange}
           items={[
             {
               key: 'general',
@@ -679,6 +1373,36 @@ const AdminSystemSettings = () => {
                 </span>
               ),
               children: renderSmtpTab(),
+            },
+            {
+              key: 'security',
+              label: (
+                <span>
+                  <SecurityScanOutlined />
+                  Безопасность
+                </span>
+              ),
+              children: renderSecurityTab(),
+            },
+            {
+              key: 'notifications',
+              label: (
+                <span>
+                  <NotificationOutlined />
+                  Уведомления
+                </span>
+              ),
+              children: renderNotificationsTab(),
+            },
+            {
+              key: 'system',
+              label: (
+                <span>
+                  <DatabaseOutlined />
+                  Система
+                </span>
+              ),
+              children: renderSystemTab(),
             },
           ]}
         />

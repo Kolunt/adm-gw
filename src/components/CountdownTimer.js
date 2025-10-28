@@ -115,7 +115,7 @@ const CountdownTimer = ({ event }) => {
                 border: 'none',
                 color: 'white'
               }}
-              bodyStyle={{ padding: '16px' }}
+              styles={{ body: { padding: '16px' } }}
             >
               <Statistic
                 title={<span style={{ color: 'rgba(255,255,255,0.8)' }}>Дней</span>}
@@ -137,7 +137,7 @@ const CountdownTimer = ({ event }) => {
                 border: 'none',
                 color: 'white'
               }}
-              bodyStyle={{ padding: '16px' }}
+              styles={{ body: { padding: '16px' } }}
             >
               <Statistic
                 title={<span style={{ color: 'rgba(255,255,255,0.8)' }}>Часов</span>}
@@ -159,7 +159,7 @@ const CountdownTimer = ({ event }) => {
                 border: 'none',
                 color: 'white'
               }}
-              bodyStyle={{ padding: '16px' }}
+              styles={{ body: { padding: '16px' } }}
             >
               <Statistic
                 title={<span style={{ color: 'rgba(255,255,255,0.8)' }}>Минут</span>}
@@ -181,7 +181,7 @@ const CountdownTimer = ({ event }) => {
                 border: 'none',
                 color: 'white'
               }}
-              bodyStyle={{ padding: '16px' }}
+              styles={{ body: { padding: '16px' } }}
             >
               <Statistic
                 title={<span style={{ color: 'rgba(255,255,255,0.8)' }}>Секунд</span>}
@@ -200,7 +200,7 @@ const CountdownTimer = ({ event }) => {
       
       <div style={{ marginTop: '16px', textAlign: 'center' }}>
         <Text type="secondary">
-          Мероприятие: <Text strong style={{ color: '#1890ff' }}>{event.name}</Text>
+          Мероприятие: <Text strong style={{ color: '#2d5016' }}>{event.name}</Text>
         </Text>
       </div>
     </ProCard>

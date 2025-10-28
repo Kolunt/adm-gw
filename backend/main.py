@@ -14,6 +14,8 @@ from passlib.context import CryptContext
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from telegram_bot import TelegramBot, create_telegram_bot
+import requests
+import re
 
 # Database setup
 SQLALCHEMY_DATABASE_URL = "sqlite:///./santa.db"
@@ -58,17 +60,16 @@ class User(Base):
     # Профиль пользователя
     gwars_profile_url = Column(String)  # Ссылка на профиль в gwars.io
     gwars_nickname = Column(String)  # Никнейм из GWars профиля
+    gwars_verification_token = Column(String)  # Токен для верификации GWars
+    gwars_verified = Column(Boolean, default=False)  # Верифицирован ли GWars профиль
     full_name = Column(String)  # ФИО
     address = Column(String)  # Адрес для отправки подарков
     interests = Column(String)  # Интересы пользователя
     profile_completed = Column(Boolean, default=False)  # Заполнен ли профиль
     
-    # Верификация GWars.io
-    gwars_verification_token = Column(String)  # Токен для верификации
-    gwars_verified = Column(Boolean, default=False)  # Верифицирован ли профиль
-    
     # Аватарка пользователя
     avatar_seed = Column(String)  # Seed для генерации аватарки DiceBear
+    avatar_type = Column(String, default='avataaars')  # Тип аватарки из библиотеки
     
     # Дополнительные поля профиля (необязательные)
     phone_number = Column(String)  # Номер телефона
@@ -118,6 +119,7 @@ class Interest(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, index=True)
     is_active = Column(Boolean, default=True)
+    is_blocked = Column(Boolean, default=False)  # Заблокирован ли интерес администратором
     created_by_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # Кто создал интерес
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -411,14 +413,12 @@ class UserResponse(BaseModel):
     # Профиль пользователя
     gwars_profile_url: str | None = None
     gwars_nickname: str | None = None
+    gwars_verification_token: str | None = None
+    gwars_verified: bool = False
     full_name: str | None = None
     address: str | None = None
     interests: str | None = None
     profile_completed: bool = False
-    
-    # Верификация GWars.io
-    gwars_verification_token: str | None = None
-    gwars_verified: bool = False
     
     # Аватарка пользователя
     avatar_seed: str | None = None
@@ -463,6 +463,7 @@ class ProfileUpdate(BaseModel):
     phone_number: str | None = None
     telegram_username: str | None = None
     avatar_seed: str | None = None
+    avatar_type: str | None = None
 
 class EventCreate(BaseModel):
     name: str
@@ -524,11 +525,13 @@ class InterestCreate(BaseModel):
 class InterestUpdate(BaseModel):
     name: str | None = None
     is_active: bool | None = None
+    is_blocked: bool | None = None
 
 class InterestResponse(BaseModel):
     id: int
     name: str
     is_active: bool
+    is_blocked: bool
     created_by_user_id: int | None = None
     created_at: datetime
     updated_at: datetime
@@ -657,7 +660,7 @@ class GiftAssignmentApproval(BaseModel):
 
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.1.16")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.1.17")
 
 # CORS middleware
 app.add_middleware(
@@ -769,6 +772,239 @@ async def login_user(user: UserLogin, db: Session = Depends(get_db)):
 @app.get("/auth/me", response_model=UserResponse)
 async def get_current_user_info(current_user: User = Depends(get_current_user)):
     return current_user
+
+@app.get("/profile/status")
+async def get_profile_status(current_user: User = Depends(get_current_user)):
+    """Возвращает статус заполнения профиля"""
+    is_completed = check_profile_completion(current_user)
+    
+    # Обновляем статус в базе данных
+    current_user.profile_completed = is_completed
+    db = next(get_db())
+    db.commit()
+    
+    return {
+        "profile_completed": is_completed,
+        "steps": {
+            "gwars_verified": current_user.gwars_verified,
+            "personal_info": bool(current_user.full_name and current_user.address),
+            "interests": bool(current_user.interests)
+        },
+        "missing_fields": {
+            "gwars_profile_url": current_user.gwars_profile_url is None,
+            "gwars_nickname": current_user.gwars_nickname is None,
+            "gwars_verified": not current_user.gwars_verified,
+            "full_name": current_user.full_name is None,
+            "address": current_user.address is None,
+            "interests": current_user.interests is None
+        },
+        "gwars_verification_token": current_user.gwars_verification_token
+    }
+
+def validate_gwars_url(url: str) -> bool:
+    """Проверяет, что URL ведет на gwars.io и имеет правильный формат"""
+    import re
+    pattern = r'^https?://(www\.)?gwars\.io/info\.php\?id=\d+$'
+    return bool(re.match(pattern, url))
+
+def parse_gwars_profile(profile_url: str) -> dict:
+    """Парсит GWars профиль и извлекает информацию о персонаже"""
+    try:
+        # Получаем страницу профиля
+        response = requests.get(profile_url, timeout=10)
+        response.raise_for_status()
+        
+        content = response.text
+        
+        # Извлекаем никнейм персонажа из реальной структуры GWars
+        import re
+        
+        # Специальный парсер для GWars профилей
+        # Ищем никнейм в строке с аватаром и уровнем
+        avatar_line_pattern = r'<img[^>]*alt="Male"[^>]*>\s*\*\*([^*]+)\*\*\[1064 / 1064\]'
+        avatar_match = re.search(avatar_line_pattern, content, re.IGNORECASE)
+        if avatar_match:
+            nickname = avatar_match.group(1).strip()
+        else:
+            # Альтернативный паттерн для поиска никнейма
+            nickname_patterns = [
+                # Паттерн для поиска никнейма в заголовке таблицы с аватаром (основной)
+                r'\*\*([^*]+)\*\*\[1064 / 1064\]',  # **никнейм**[1064 / 1064]
+                # Паттерн для поиска никнейма в тегах <b> с уровнем
+                r'<b>([^<]+)</b>\[1064 / 1064\]',  # <b>никнейм</b>[1064 / 1064]
+                # Паттерн для поиска никнейма в тегах <b>
+                r'<b>([^<]+)</b>',
+                # Паттерн для поиска в тегах <strong>
+                r'<strong>([^<]+)</strong>',
+                # Паттерн для поиска в title страницы
+                r'<title[^>]*>([^<]+)</title>',
+            ]
+            
+            nickname = None
+            for pattern in nickname_patterns:
+                matches = re.findall(pattern, content, re.IGNORECASE)
+                if matches:
+                    for match in matches:
+                        match = match.strip()
+                        # Проверяем, что это не служебный текст
+                        if (len(match) > 2 and 
+                            not any(word in match.lower() for word in ['gwars', 'profile', 'info', 'character', 'level', 'money', 'experience', '1064', 'syndicate', 'ваша', 'недвижимость', 'информация', 'персонаж', 'уровень', 'деньги', 'опыт', 'синдикат', 'найти', 'игрока', 'поиск', 'игрок', 'банк', 'ganja', 'islands', 'выход', 'игры', 'вооружение', 'вход', 'регистрация']) and
+                            not match.isdigit() and
+                            not match.startswith('$') and
+                            not match.startswith('%') and
+                            not match.startswith('[') and
+                            not match.endswith(']') and
+                            not match.startswith('©') and
+                            not match.startswith('|')):
+                            nickname = match
+                            break
+                    if nickname:
+                        break
+            
+            # Если не нашли через паттерны, попробуем найти в title
+            if not nickname:
+                title_match = re.search(r'<title[^>]*>([^<]+)</title>', content, re.IGNORECASE)
+                if title_match:
+                    title = title_match.group(1)
+                    # Извлекаем никнейм из title (обычно первый элемент до разделителя)
+                    nickname_match = re.search(r'^([^|]+)', title)
+                    if nickname_match:
+                        nickname = nickname_match.group(1).strip()
+        
+        if not nickname:
+            return {
+                "success": False,
+                "error": "Не удалось найти никнейм персонажа на странице профиля",
+                "profile_exists": True
+            }
+        
+        return {
+            "success": True,
+            "nickname": nickname,
+            "profile_exists": True
+        }
+        
+    except requests.exceptions.RequestException as e:
+        return {
+            "success": False,
+            "error": f"Не удалось загрузить профиль: {str(e)}",
+            "profile_exists": False
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Ошибка парсинга профиля: {str(e)}",
+            "profile_exists": False
+        }
+
+@app.post("/profile/parse-gwars")
+async def parse_gwars_profile_endpoint(
+    gwars_data: dict,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Парсит GWars профиль и извлекает информацию о персонаже"""
+    profile_url = gwars_data.get("profile_url")
+    
+    if not profile_url:
+        raise HTTPException(status_code=400, detail="Необходимо указать ссылку на профиль")
+    
+    # Проверяем URL
+    if not validate_gwars_url(profile_url):
+        raise HTTPException(status_code=400, detail="Ссылка должна вести на gwars.io")
+    
+    # Парсим профиль
+    result = parse_gwars_profile(profile_url)
+    
+    if result["success"]:
+        # Сохраняем информацию о профиле
+        current_user.gwars_profile_url = profile_url
+        current_user.gwars_nickname = result["nickname"]
+        db.commit()
+        
+        return {
+            "success": True,
+            "nickname": result["nickname"],
+            "message": f"Профиль найден! Никнейм: {result['nickname']}"
+        }
+    else:
+        return {
+            "success": False,
+            "error": result["error"]
+        }
+
+@app.post("/profile/verify-gwars")
+async def verify_gwars_profile(
+    gwars_data: dict,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Проверяет GWars профиль и токен"""
+    profile_url = gwars_data.get("profile_url")
+    nickname = gwars_data.get("nickname")
+    
+    if not profile_url:
+        raise HTTPException(status_code=400, detail="Необходимо указать ссылку на профиль")
+    
+    # Проверяем URL
+    if not validate_gwars_url(profile_url):
+        raise HTTPException(status_code=400, detail="Ссылка должна вести на gwars.io")
+    
+    # Генерируем токен, если его нет
+    if not current_user.gwars_verification_token:
+        import secrets
+        import string
+        alphabet = string.ascii_lowercase
+        current_user.gwars_verification_token = ''.join(secrets.choice(alphabet) for _ in range(20))
+    
+    # Проверяем токен на странице
+    is_verified = verify_gwars_token(profile_url, current_user.gwars_verification_token)
+    
+    if is_verified:
+        current_user.gwars_profile_url = profile_url
+        if nickname:
+            current_user.gwars_nickname = nickname
+        current_user.gwars_verified = True
+        db.commit()
+        
+        return {
+            "verified": True,
+            "message": "GWars профиль успешно верифицирован!"
+        }
+    else:
+        return {
+            "verified": False,
+            "message": "Токен не найден в информации персонажа. Убедитесь, что вы разместили: 'Я Анонимный Дед Мороз: " + current_user.gwars_verification_token + "'",
+            "token": current_user.gwars_verification_token
+        }
+
+def check_profile_completion(user: User) -> bool:
+    """Проверяет, заполнен ли профиль пользователя"""
+    return (
+        user.gwars_profile_url is not None and
+        user.gwars_nickname is not None and
+        user.gwars_verified is True and
+        user.full_name is not None and
+        user.address is not None and
+        user.interests is not None
+    )
+
+def verify_gwars_token(profile_url: str, token: str) -> bool:
+    """Проверяет наличие токена в информации персонажа GWars"""
+    try:
+        # Получаем страницу профиля
+        response = requests.get(profile_url, timeout=10)
+        response.raise_for_status()
+        
+        # Ищем токен в тексте страницы
+        content = response.text.lower()
+        search_pattern = f"я анонимный дед мороз: {token.lower()}"
+        
+        return search_pattern in content
+        
+    except Exception as e:
+        print(f"Error verifying GWars token: {e}")
+        return False
 
 # Функции для работы с назначениями подарков
 def generate_gift_assignments(event_id: int, db: Session):
@@ -933,21 +1169,6 @@ async def update_profile_step3(
     current_user.profile_completed = True
     db.commit()
     return {"message": "Профиль полностью заполнен", "step": 3, "completed": True}
-
-@app.get("/profile/status")
-async def get_profile_status(current_user: User = Depends(get_current_user)):
-    """Получение статуса заполнения профиля"""
-    return {
-        "profile_completed": current_user.profile_completed,
-        "step1_completed": bool(current_user.gwars_profile_url),
-        "step2_completed": bool(current_user.full_name and current_user.address),
-        "step2_5_completed": bool(current_user.phone_number or current_user.telegram_username),
-        "step3_completed": bool(current_user.interests),
-        "next_step": 1 if not current_user.gwars_profile_url else 
-                    (2 if not (current_user.full_name and current_user.address) else 
-                    (2.5 if not (current_user.phone_number or current_user.telegram_username) else 
-                    (3 if not current_user.interests else None)))
-    }
 
 # Функция для генерации уникального ID мероприятия
 def get_next_unique_event_id(db: Session) -> int:
@@ -1413,64 +1634,12 @@ async def update_user_profile(
         current_user.telegram_username = profile_data.telegram_username
     if profile_data.avatar_seed is not None:
         current_user.avatar_seed = profile_data.avatar_seed
+    if profile_data.avatar_type is not None:
+        current_user.avatar_type = profile_data.avatar_type
     
     db.commit()
     db.refresh(current_user)
     return current_user
-
-
-@app.post("/auth/parse-gwars-profile")
-async def parse_gwars_profile(
-    profile_data: dict,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """Парсинг GWars.io профиля для получения информации"""
-    import requests
-    import re
-    
-    profile_url = profile_data.get("profile_url")
-    if not profile_url:
-        raise HTTPException(status_code=400, detail="URL профиля не указан")
-    
-    try:
-        # Получаем страницу профиля
-        response = requests.get(profile_url, timeout=10)
-        response.raise_for_status()
-        
-        # Парсим никнейм и уровень
-        nickname_match = re.search(r'<title>([^<]+)</title>', response.text)
-        level_match = re.search(r'Уровень:\s*(\d+)', response.text)
-        
-        if not nickname_match:
-            return {"success": False, "error": "Не удалось найти никнейм в профиле"}
-        
-        # Извлекаем только никнейм из title, убирая " :: Информация ::  GWars.io"
-        full_title = nickname_match.group(1).strip()
-        # Разделяем по " :: " и берем первую часть (никнейм)
-        nickname_parts = full_title.split(' :: ')
-        nickname = nickname_parts[0].strip() if nickname_parts else full_title
-        
-        level = level_match.group(1) if level_match else "Неизвестно"
-        
-        # Обновляем URL профиля и никнейм в базе данных
-        current_user.gwars_profile_url = profile_url
-        current_user.gwars_nickname = nickname
-        db.commit()
-        
-        return {
-            "success": True,
-            "profile": {
-                "nickname": nickname,
-                "level": level,
-                "url": profile_url
-            }
-        }
-        
-    except requests.RequestException as e:
-        return {"success": False, "error": f"Ошибка при загрузке профиля: {str(e)}"}
-    except Exception as e:
-        return {"success": False, "error": f"Ошибка при парсинге: {str(e)}"}
 
 
 @app.post("/auth/generate-verification-token")
@@ -1705,15 +1874,19 @@ async def create_interest(
     db: Session = Depends(get_db)
 ):
     """Создание нового интереса (только для администраторов)"""
+    # Приводим название к нижнему регистру
+    interest_name = interest_data.name.lower().strip()
+    
     # Проверяем, не существует ли уже такой интерес
-    existing_interest = db.query(Interest).filter(Interest.name == interest_data.name).first()
+    existing_interest = db.query(Interest).filter(Interest.name == interest_name).first()
     if existing_interest:
         raise HTTPException(status_code=400, detail="Интерес с таким названием уже существует")
     
     interest = Interest(
-        name=interest_data.name,
+        name=interest_name,
         is_active=True,
-        created_by_user_id=interest_data.created_by_user_id
+        is_blocked=False,
+        created_by_user_id=current_admin.id
     )
     db.add(interest)
     db.commit()
@@ -1732,16 +1905,23 @@ async def update_interest(
     if not interest:
         raise HTTPException(status_code=404, detail="Интерес не найден")
     
-    # Проверяем уникальность названия, если оно изменяется
-    if interest_data.name and interest_data.name != interest.name:
-        existing_interest = db.query(Interest).filter(Interest.name == interest_data.name).first()
+    # Если обновляется название, приводим к нижнему регистру
+    if interest_data.name is not None:
+        interest_name = interest_data.name.lower().strip()
+        # Проверяем, не существует ли уже такой интерес (кроме текущего)
+        existing_interest = db.query(Interest).filter(
+            Interest.name == interest_name,
+            Interest.id != interest_id
+        ).first()
         if existing_interest:
             raise HTTPException(status_code=400, detail="Интерес с таким названием уже существует")
+        interest.name = interest_name
     
-    # Обновляем поля
-    update_data = interest_data.dict(exclude_unset=True)
-    for field, value in update_data.items():
-        setattr(interest, field, value)
+    if interest_data.is_blocked is not None:
+        interest.is_blocked = interest_data.is_blocked
+        # Если интерес разблокируется, он автоматически становится активным
+        if not interest_data.is_blocked:
+            interest.is_active = True
     
     interest.updated_at = datetime.utcnow()
     db.commit()
@@ -1787,16 +1967,28 @@ async def create_user_interest(
     db: Session = Depends(get_db)
 ):
     """Создание нового интереса пользователем"""
+    # Приводим название к нижнему регистру
+    interest_name = interest_data.name.lower().strip()
+    
+    # Проверяем, не заблокирован ли такой интерес
+    blocked_interest = db.query(Interest).filter(
+        Interest.name == interest_name,
+        Interest.is_blocked == True
+    ).first()
+    if blocked_interest:
+        raise HTTPException(status_code=403, detail="Этот интерес заблокирован администратором")
+    
     # Проверяем, не существует ли уже такой интерес
-    existing_interest = db.query(Interest).filter(Interest.name == interest_data.name).first()
+    existing_interest = db.query(Interest).filter(Interest.name == interest_name).first()
     if existing_interest:
         # Если интерес существует, возвращаем его
         return existing_interest
     
     # Создаем новый интерес
     interest = Interest(
-        name=interest_data.name,
+        name=interest_name,
         is_active=True,
+        is_blocked=False,
         created_by_user_id=current_user.id
     )
     db.add(interest)
@@ -2885,6 +3077,9 @@ async def get_test_users(current_user: User = Depends(get_current_admin_user)):
                     "email": user.email,
                     "name": user.name,
                     "username": user.username,
+                    "gwars_nickname": user.gwars_nickname,
+                    "is_active": user.is_active,
+                    "is_test": user.is_test,
                     "created_at": user.created_at.isoformat() if user.created_at else None
                 }
                 for user in test_users

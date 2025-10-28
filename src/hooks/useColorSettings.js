@@ -3,12 +3,23 @@ import axios from '../utils/axiosConfig';
 
 export const useColorSettings = () => {
   const [colors, setColors] = useState({
-    primary_color: '#1890ff',
-    primary_hover_color: '#40a9ff',
+    primary_color: '#2d5016',
+    primary_hover_color: '#3d6b1a',
     success_color: '#52c41a',
     warning_color: '#faad14',
     error_color: '#ff4d4f',
-    link_color: '#1890ff'
+    link_color: '#2d5016',
+    // Настройки кнопок
+    button_primary_color: '#2d5016',
+    button_primary_hover_color: '#3d6b1a',
+    button_default_color: '#434343',
+    button_default_hover_color: '#595959',
+    button_dashed_color: '#434343',
+    button_dashed_hover_color: '#595959',
+    button_text_color: '#2d5016',
+    button_text_hover_color: '#3d6b1a',
+    button_link_color: '#2d5016',
+    button_link_hover_color: '#3d6b1a'
   });
 
   useEffect(() => {
@@ -21,12 +32,23 @@ export const useColorSettings = () => {
       const settings = response.data;
       
       const colorSettings = {
-        primary_color: settings.primary_color || '#1890ff',
-        primary_hover_color: settings.primary_hover_color || '#40a9ff',
+        primary_color: settings.primary_color || '#2d5016',
+        primary_hover_color: settings.primary_hover_color || '#3d6b1a',
         success_color: settings.success_color || '#52c41a',
         warning_color: settings.warning_color || '#faad14',
         error_color: settings.error_color || '#ff4d4f',
-        link_color: settings.link_color || '#1890ff'
+        link_color: settings.link_color || '#2d5016',
+        // Настройки кнопок
+        button_primary_color: settings.button_primary_color || '#2d5016',
+        button_primary_hover_color: settings.button_primary_hover_color || '#3d6b1a',
+        button_default_color: settings.button_default_color || '#434343',
+        button_default_hover_color: settings.button_default_hover_color || '#595959',
+        button_dashed_color: settings.button_dashed_color || '#434343',
+        button_dashed_hover_color: settings.button_dashed_hover_color || '#595959',
+        button_text_color: settings.button_text_color || '#2d5016',
+        button_text_hover_color: settings.button_text_hover_color || '#3d6b1a',
+        button_link_color: settings.button_link_color || '#2d5016',
+        button_link_hover_color: settings.button_link_hover_color || '#3d6b1a'
       };
       
       setColors(colorSettings);
@@ -48,6 +70,18 @@ export const useColorSettings = () => {
     root.style.setProperty('--warning-color', colorSettings.warning_color);
     root.style.setProperty('--error-color', colorSettings.error_color);
     root.style.setProperty('--link-color', colorSettings.link_color);
+    
+    // Настройки кнопок
+    root.style.setProperty('--button-primary-color', colorSettings.button_primary_color);
+    root.style.setProperty('--button-primary-hover-color', colorSettings.button_primary_hover_color);
+    root.style.setProperty('--button-default-color', colorSettings.button_default_color);
+    root.style.setProperty('--button-default-hover-color', colorSettings.button_default_hover_color);
+    root.style.setProperty('--button-dashed-color', colorSettings.button_dashed_color);
+    root.style.setProperty('--button-dashed-hover-color', colorSettings.button_dashed_hover_color);
+    root.style.setProperty('--button-text-color', colorSettings.button_text_color);
+    root.style.setProperty('--button-text-hover-color', colorSettings.button_text_hover_color);
+    root.style.setProperty('--button-link-color', colorSettings.button_link_color);
+    root.style.setProperty('--button-link-hover-color', colorSettings.button_link_hover_color);
     
     // Обновляем переменные для темной темы
     root.style.setProperty('--dark-primary-color', colorSettings.primary_color);

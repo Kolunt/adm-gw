@@ -67,7 +67,7 @@ const AdminDashboard = () => {
               title="Всего пользователей"
               value={stats.total_users || 0}
               prefix={<UserOutlined />}
-              valueStyle={{ color: '#1890ff' }}
+              valueStyle={{ color: '#2d5016' }}
             />
           </ProCard>
         </Col>
