@@ -9,7 +9,6 @@ import {
   MailOutlined,
   BgColorsOutlined
 } from '@ant-design/icons';
-import ProForm from '@ant-design/pro-form';
 import ProCard from '@ant-design/pro-card';
 import axios from '../utils/axiosConfig';
 
@@ -18,7 +17,6 @@ const { TextArea } = Input;
 
 const AdminSystemSettings = () => {
   const [form] = Form.useForm();
-  const [colorsForm] = Form.useForm();
   const [smtpForm] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [settings, setSettings] = useState([]);
@@ -39,7 +37,7 @@ const AdminSystemSettings = () => {
         formData[setting.key] = setting.value;
       });
       form.setFieldsValue(formData);
-      colorsForm.setFieldsValue(formData);
+      // Убираем вызов colorsForm.setFieldsValue, так как форма не подключена
       smtpForm.setFieldsValue(formData);
     } catch (error) {
       console.error('Error fetching settings:', error);
@@ -75,7 +73,7 @@ const AdminSystemSettings = () => {
   };
 
   const renderGeneralTab = () => (
-    <ProForm
+    <Form
       form={form}
       layout="vertical"
       onFinish={handleSave}
@@ -89,7 +87,7 @@ const AdminSystemSettings = () => {
           style={{ marginBottom: 16 }}
         />
         
-        <ProForm.Item
+        <Form.Item
           name="site_title"
           label="Название сайта"
           rules={[
@@ -103,9 +101,9 @@ const AdminSystemSettings = () => {
             maxLength={100}
             showCount
           />
-        </ProForm.Item>
+                </Form.Item>
 
-        <ProForm.Item
+        <Form.Item
           name="site_description"
           label="Описание сайта"
           rules={[
@@ -119,7 +117,7 @@ const AdminSystemSettings = () => {
             maxLength={500}
             showCount
           />
-        </ProForm.Item>
+                </Form.Item>
       </ProCard>
 
       <ProCard size="small" title="Приветственное сообщение" style={{ marginTop: 16 }}>
@@ -131,7 +129,7 @@ const AdminSystemSettings = () => {
           style={{ marginBottom: 16 }}
         />
         
-        <ProForm.Item
+        <Form.Item
           name="welcome_title"
           label="Заголовок приветствия"
           rules={[
@@ -145,9 +143,9 @@ const AdminSystemSettings = () => {
             maxLength={100}
             showCount
           />
-        </ProForm.Item>
+                </Form.Item>
 
-        <ProForm.Item
+        <Form.Item
           name="welcome_subtitle"
           label="Подзаголовок приветствия"
           rules={[
@@ -161,9 +159,9 @@ const AdminSystemSettings = () => {
             maxLength={200}
             showCount
           />
-        </ProForm.Item>
+                </Form.Item>
 
-        <ProForm.Item
+        <Form.Item
           name="welcome_message"
           label="Приветственное сообщение для пользователей"
           rules={[
@@ -177,7 +175,7 @@ const AdminSystemSettings = () => {
             maxLength={300}
             showCount
           />
-        </ProForm.Item>
+                </Form.Item>
       </ProCard>
 
       <ProCard size="small" title="Настройки кнопок мероприятий" style={{ marginTop: 16 }}>
@@ -189,7 +187,7 @@ const AdminSystemSettings = () => {
           style={{ marginBottom: 16 }}
         />
         
-        <ProForm.Item
+        <Form.Item
           name="button_preregistration"
           label="Кнопка предварительной регистрации"
           rules={[
@@ -203,9 +201,9 @@ const AdminSystemSettings = () => {
             maxLength={50}
             showCount
           />
-        </ProForm.Item>
+                </Form.Item>
 
-        <ProForm.Item
+        <Form.Item
           name="button_registration"
           label="Кнопка основной регистрации"
           rules={[
@@ -219,9 +217,9 @@ const AdminSystemSettings = () => {
             maxLength={50}
             showCount
           />
-        </ProForm.Item>
+                </Form.Item>
 
-        <ProForm.Item
+        <Form.Item
           name="button_confirm_participation"
           label="Кнопка подтверждения участия"
           rules={[
@@ -235,9 +233,9 @@ const AdminSystemSettings = () => {
             maxLength={50}
             showCount
           />
-        </ProForm.Item>
+                </Form.Item>
 
-        <ProForm.Item
+        <Form.Item
           name="button_soon"
           label="Кнопка для предварительно зарегистрированных"
           rules={[
@@ -251,9 +249,9 @@ const AdminSystemSettings = () => {
             maxLength={50}
             showCount
           />
-        </ProForm.Item>
+                </Form.Item>
 
-        <ProForm.Item
+        <Form.Item
           name="button_participating"
           label="Кнопка для подтвержденных участников"
           rules={[
@@ -267,7 +265,7 @@ const AdminSystemSettings = () => {
             maxLength={50}
             showCount
           />
-        </ProForm.Item>
+                </Form.Item>
       </ProCard>
 
       <div style={{ textAlign: 'center', marginTop: '24px' }}>
@@ -290,12 +288,12 @@ const AdminSystemSettings = () => {
           </Button>
         </Space>
       </div>
-    </ProForm>
+    </Form>
   );
 
   const renderColorsTab = () => (
-    <ProForm
-      form={colorsForm}
+    <Form
+      form={form}
       layout="vertical"
       onFinish={handleSave}
     >
@@ -310,24 +308,24 @@ const AdminSystemSettings = () => {
         
         <Row gutter={[16, 16]}>
           <Col xs={24} md={12}>
-            <ProForm.Item
-              name="primary_color"
-              label="Основной цвет кнопок"
-              rules={[
-                { required: true, message: 'Основной цвет обязателен' }
-              ]}
-            >
-              <ColorPicker
-                showText
-                format="hex"
-                placeholder="#1890ff"
-                style={{ width: '100%' }}
-              />
-            </ProForm.Item>
+                <Form.Item
+                  name="primary_color"
+                  label="Основной цвет кнопок"
+                  rules={[
+                    { required: true, message: 'Основной цвет обязателен' }
+                  ]}
+                >
+                  <ColorPicker
+                    showText
+                    format="hex"
+                    placeholder="#1890ff"
+                    style={{ width: '100%' }}
+                  />
+                </Form.Item>
           </Col>
           
           <Col xs={24} md={12}>
-            <ProForm.Item
+            <Form.Item
               name="primary_hover_color"
               label="Цвет кнопок при наведении"
               rules={[
@@ -340,13 +338,13 @@ const AdminSystemSettings = () => {
                 placeholder="#40a9ff"
                 style={{ width: '100%' }}
               />
-            </ProForm.Item>
+                </Form.Item>
           </Col>
         </Row>
 
         <Row gutter={[16, 16]}>
           <Col xs={24} md={12}>
-            <ProForm.Item
+            <Form.Item
               name="success_color"
               label="Цвет успеха"
               rules={[
@@ -359,11 +357,11 @@ const AdminSystemSettings = () => {
                 placeholder="#52c41a"
                 style={{ width: '100%' }}
               />
-            </ProForm.Item>
+                </Form.Item>
           </Col>
           
           <Col xs={24} md={12}>
-            <ProForm.Item
+            <Form.Item
               name="warning_color"
               label="Цвет предупреждения"
               rules={[
@@ -376,13 +374,13 @@ const AdminSystemSettings = () => {
                 placeholder="#faad14"
                 style={{ width: '100%' }}
               />
-            </ProForm.Item>
+                </Form.Item>
           </Col>
         </Row>
 
         <Row gutter={[16, 16]}>
           <Col xs={24} md={12}>
-            <ProForm.Item
+            <Form.Item
               name="error_color"
               label="Цвет ошибки"
               rules={[
@@ -395,11 +393,11 @@ const AdminSystemSettings = () => {
                 placeholder="#ff4d4f"
                 style={{ width: '100%' }}
               />
-            </ProForm.Item>
+                </Form.Item>
           </Col>
           
           <Col xs={24} md={12}>
-            <ProForm.Item
+            <Form.Item
               name="link_color"
               label="Цвет ссылок"
               rules={[
@@ -412,7 +410,7 @@ const AdminSystemSettings = () => {
                 placeholder="#1890ff"
                 style={{ width: '100%' }}
               />
-            </ProForm.Item>
+                </Form.Item>
           </Col>
         </Row>
       </ProCard>
@@ -433,8 +431,8 @@ const AdminSystemSettings = () => {
                 type="primary" 
                 style={{ 
                   marginBottom: '8px',
-                  backgroundColor: colorsForm.getFieldValue('primary_color') || '#1890ff',
-                  borderColor: colorsForm.getFieldValue('primary_color') || '#1890ff'
+                  backgroundColor: '#1890ff',
+                  borderColor: '#1890ff'
                 }}
               >
                 Основная кнопка
@@ -451,8 +449,8 @@ const AdminSystemSettings = () => {
               <Button 
                 style={{ 
                   marginBottom: '8px',
-                  backgroundColor: colorsForm.getFieldValue('success_color') || '#52c41a',
-                  borderColor: colorsForm.getFieldValue('success_color') || '#52c41a',
+                  backgroundColor: '#52c41a',
+                  borderColor: '#52c41a',
                   color: 'white'
                 }}
               >
@@ -470,8 +468,8 @@ const AdminSystemSettings = () => {
               <Button 
                 style={{ 
                   marginBottom: '8px',
-                  backgroundColor: colorsForm.getFieldValue('warning_color') || '#faad14',
-                  borderColor: colorsForm.getFieldValue('warning_color') || '#faad14',
+                  backgroundColor: '#faad14',
+                  borderColor: '#faad14',
                   color: 'white'
                 }}
               >
@@ -489,8 +487,8 @@ const AdminSystemSettings = () => {
               <Button 
                 style={{ 
                   marginBottom: '8px',
-                  backgroundColor: colorsForm.getFieldValue('error_color') || '#ff4d4f',
-                  borderColor: colorsForm.getFieldValue('error_color') || '#ff4d4f',
+                  backgroundColor: '#ff4d4f',
+                  borderColor: '#ff4d4f',
                   color: 'white'
                 }}
               >
@@ -518,11 +516,11 @@ const AdminSystemSettings = () => {
           </Button>
         </Space>
       </div>
-    </ProForm>
+    </Form>
   );
 
   const renderSmtpTab = () => (
-    <ProForm
+    <Form
       form={smtpForm}
       layout="vertical"
       onFinish={handleSave}
@@ -536,15 +534,15 @@ const AdminSystemSettings = () => {
           style={{ marginBottom: 16 }}
         />
         
-        <ProForm.Item
+        <Form.Item
           name="smtp_enabled"
           label="Включить SMTP"
           valuePropName="checked"
         >
           <Switch />
-        </ProForm.Item>
+                </Form.Item>
 
-        <ProForm.Item
+        <Form.Item
           name="smtp_host"
           label="Адрес SMTP сервера"
         >
@@ -552,9 +550,9 @@ const AdminSystemSettings = () => {
             placeholder="smtp.gmail.com"
             prefix={<MailOutlined />}
           />
-        </ProForm.Item>
+                </Form.Item>
 
-        <ProForm.Item
+        <Form.Item
           name="smtp_port"
           label="Порт SMTP сервера"
         >
@@ -562,9 +560,9 @@ const AdminSystemSettings = () => {
             placeholder="587"
             prefix={<SettingOutlined />}
           />
-        </ProForm.Item>
+                </Form.Item>
 
-        <ProForm.Item
+        <Form.Item
           name="smtp_username"
           label="Имя пользователя SMTP"
         >
@@ -572,9 +570,9 @@ const AdminSystemSettings = () => {
             placeholder="your-email@gmail.com"
             prefix={<UserOutlined />}
           />
-        </ProForm.Item>
+                </Form.Item>
 
-        <ProForm.Item
+        <Form.Item
           name="smtp_password"
           label="Пароль SMTP"
         >
@@ -582,9 +580,9 @@ const AdminSystemSettings = () => {
             placeholder="Введите пароль"
             prefix={<SettingOutlined />}
           />
-        </ProForm.Item>
+                </Form.Item>
 
-        <ProForm.Item
+        <Form.Item
           name="smtp_from_email"
           label="Email отправителя"
         >
@@ -592,9 +590,9 @@ const AdminSystemSettings = () => {
             placeholder="noreply@example.com"
             prefix={<MailOutlined />}
           />
-        </ProForm.Item>
+                </Form.Item>
 
-        <ProForm.Item
+        <Form.Item
           name="smtp_from_name"
           label="Имя отправителя"
         >
@@ -602,15 +600,15 @@ const AdminSystemSettings = () => {
             placeholder="Анонимный Дед Мороз"
             prefix={<UserOutlined />}
           />
-        </ProForm.Item>
+                </Form.Item>
 
-        <ProForm.Item
+        <Form.Item
           name="smtp_use_tls"
           label="Использовать TLS"
           valuePropName="checked"
         >
           <Switch />
-        </ProForm.Item>
+                </Form.Item>
       </ProCard>
 
       <div style={{ textAlign: 'center', marginTop: '24px' }}>
@@ -626,7 +624,7 @@ const AdminSystemSettings = () => {
           </Button>
         </Space>
       </div>
-    </ProForm>
+    </Form>
   );
 
   return (

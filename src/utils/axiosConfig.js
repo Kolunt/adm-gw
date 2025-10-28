@@ -27,8 +27,10 @@ axios.interceptors.response.use(
       // Токен истек или недействителен
       localStorage.removeItem('token');
       delete axios.defaults.headers.common['Authorization'];
-      // Перенаправляем на страницу входа
-      if (window.location.pathname !== '/login') {
+      // Перенаправляем на страницу входа только если мы не на странице логина
+      // и это не запрос к /auth/me (чтобы избежать бесконечных редиректов)
+      if (window.location.pathname !== '/login' && 
+          !error.config?.url?.includes('/auth/me')) {
         window.location.href = '/login';
       }
     }

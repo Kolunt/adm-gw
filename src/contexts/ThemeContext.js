@@ -11,44 +11,27 @@ export const useTheme = () => {
 };
 
 export const ThemeProvider = ({ children }) => {
-  const [theme, setTheme] = useState(() => {
-    // Получаем тему из localStorage или используем системную
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme) {
-      return savedTheme;
-    }
-    
-    // Проверяем системную тему
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      return 'dark';
-    }
-    
-    return 'light';
-  });
+  const [theme, setTheme] = useState('dark'); // Всегда темная тема
 
   useEffect(() => {
     // Сохраняем тему в localStorage
-    localStorage.setItem('theme', theme);
+    localStorage.setItem('theme', 'dark');
     
     // Применяем тему к body
-    document.body.className = theme === 'dark' ? 'dark-theme' : 'light-theme';
+    document.body.className = 'dark-theme';
     
     // Обновляем meta тег для браузера
     const metaThemeColor = document.querySelector('meta[name="theme-color"]');
     if (metaThemeColor) {
-      metaThemeColor.content = theme === 'dark' ? '#001529' : '#1890ff';
+      metaThemeColor.content = '#001529';
     }
-  }, [theme]);
-
-  const toggleTheme = () => {
-    setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
-  };
+  }, []);
 
   const value = {
-    theme,
-    toggleTheme,
-    isDark: theme === 'dark',
-    isLight: theme === 'light'
+    theme: 'dark',
+    toggleTheme: () => {}, // Пустая функция, переключение отключено
+    isDark: true,
+    isLight: false
   };
 
   return (

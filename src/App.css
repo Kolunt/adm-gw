@@ -1,12 +1,31 @@
 /* Ant Design Pro Custom Styles */
 
 /* Global Styles */
-.ant-layout {
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #001529;
+}
+
+body {
+  background: #001529 !important;
+}
+
+#root {
+  background: #001529;
   min-height: 100vh;
 }
 
 .ant-pro-layout {
-  background: #f0f2f5;
+  background: #001529 !important;
+}
+
+.dark-theme .ant-pro-layout {
+  background: var(--bg-color) !important;
 }
 
 /* Custom Card Styles */
@@ -26,6 +45,35 @@
 
 .ant-pro-card-header {
   border-bottom: 1px solid #f0f0f0;
+}
+
+/* Countdown Timer Styles */
+.countdown-timer .ant-card {
+  background: linear-gradient(135deg, #2d5016 0%, #3d6b1a 100%);
+  border: none;
+  color: white;
+}
+
+.countdown-timer .ant-card .ant-statistic-title {
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
+}
+
+.countdown-timer .ant-card .ant-statistic-content {
+  color: white;
+}
+
+.countdown-timer .ant-pro-card-header {
+  background: linear-gradient(135deg, #2d5016 0%, #3d6b1a 100%);
+  color: white;
+}
+
+.countdown-timer .ant-pro-card-header .ant-pro-card-title {
+  color: white;
+}
+
+.countdown-timer .ant-pro-card-header .ant-typography {
+  color: rgba(255, 255, 255, 0.8);
 }
 
 /* Button Styles */
@@ -386,16 +434,24 @@
   --shadow-color: rgba(0, 0, 0, 0.3);
   --input-bg: #262626;
   --input-border: #434343;
-  --button-bg: var(--primary-color, #1890ff);
-  --button-hover: var(--primary-hover-color, #40a9ff);
-  --link-color: var(--link-color, #1890ff);
+  --button-bg: var(--primary-color, #2d5016);
+  --button-hover: var(--primary-hover-color, #3d6b1a);
+  --link-color: var(--link-color, #2d5016);
   --success-color: var(--success-color, #52c41a);
   --warning-color: var(--warning-color, #faad14);
   --error-color: var(--error-color, #ff4d4f);
 }
 
 .dark-theme .ant-layout {
-  background: var(--bg-color);
+  background: var(--bg-color) !important;
+}
+
+.dark-theme body {
+  background: var(--bg-color) !important;
+}
+
+.dark-theme #root {
+  background: var(--bg-color) !important;
 }
 
 .dark-theme .ant-layout-header {
@@ -552,7 +608,7 @@
 }
 
 .dark-theme .ant-menu-item-selected {
-  background: #1890ff;
+  background: #2d5016;
 }
 
 .dark-theme .ant-menu-item-selected .ant-menu-item-icon {
@@ -588,7 +644,7 @@
 }
 
 .dark-theme .ant-menu-submenu .ant-menu-item-selected {
-  background: #1890ff;
+  background: #2d5016;
 }
 
 .dark-theme .ant-menu-submenu .ant-menu-item-selected .ant-menu-item-icon {
@@ -728,7 +784,7 @@
 }
 
 .dark-theme .ant-tag-blue {
-  background: #1890ff;
+  background: #2d5016;
   color: var(--text-color);
 }
 
@@ -859,9 +915,9 @@
   --shadow-color: rgba(0, 0, 0, 0.1);
   --input-bg: #ffffff;
   --input-border: #d9d9d9;
-  --button-bg: var(--primary-color, #1890ff);
-  --button-hover: var(--primary-hover-color, #40a9ff);
-  --link-color: var(--link-color, #1890ff);
+  --button-bg: var(--primary-color, #2d5016);
+  --button-hover: var(--primary-hover-color, #3d6b1a);
+  --link-color: var(--link-color, #2d5016);
   --success-color: var(--success-color, #52c41a);
   --warning-color: var(--warning-color, #faad14);
   --error-color: var(--error-color, #ff4d4f);
@@ -1201,7 +1257,7 @@
 }
 
 .light-theme .ant-tag-blue {
-  background: #1890ff;
+  background: #2d5016;
   color: var(--text-color);
 }
 

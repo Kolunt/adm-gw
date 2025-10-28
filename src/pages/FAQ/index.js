@@ -81,12 +81,20 @@ const FAQPage = () => {
           items={faqData.map((item) => ({
             key: item.id,
             label: (
-              <Text strong style={{ fontSize: '16px' }}>
+              <Text strong style={{ 
+                fontSize: '16px',
+                color: '#ffffff'
+              }}>
                 {item.question}
               </Text>
             ),
             children: (
-              <Paragraph style={{ fontSize: '15px', marginBottom: 0 }}>
+              <Paragraph style={{ 
+                fontSize: '15px', 
+                marginBottom: 0,
+                color: '#d9d9d9',
+                lineHeight: '1.6'
+              }}>
                 {item.answer}
               </Paragraph>
             ),

@@ -38,6 +38,8 @@ import AdminTesting from './components/AdminTesting';
 import AdminInterests from './components/AdminInterests';
 import AdminFAQ from './components/AdminFAQ';
 import AdminDocumentation from './components/AdminDocumentation';
+import AdminContacts from './components/AdminContacts';
+import AdminAbout from './components/AdminAbout';
 import UserProfile from './pages/Profile';
 import LoginPage from './pages/Auth/Login';
 import RegisterPage from './pages/Auth/Register';
@@ -153,6 +155,16 @@ const AppContent = () => {
           label: 'Документация',
         },
         {
+          key: '/admin/contacts',
+          icon: <ContactsOutlined />,
+          label: 'Контакты',
+        },
+        {
+          key: '/admin/about',
+          icon: <InfoCircleOutlined />,
+          label: 'О системе',
+        },
+        {
           key: '/admin/settings',
           icon: <SettingOutlined />,
           label: 'Настройки системы',
@@ -170,13 +182,6 @@ const AppContent = () => {
             icon={<MenuUnfoldOutlined />}
             onClick={() => setMobileMenuOpen(true)}
             className="mobile-menu-button"
-          />
-          <Switch
-            checkedChildren={<MoonOutlined />}
-            unCheckedChildren={<SunOutlined />}
-            checked={isDark}
-            onChange={toggleTheme}
-            style={{ marginRight: '8px' }}
           />
           <div style={{ display: 'flex', gap: '8px' }}>
             <button 
@@ -217,13 +222,6 @@ const AppContent = () => {
           icon={<MenuUnfoldOutlined />}
           onClick={() => setMobileMenuOpen(true)}
             className="mobile-menu-button"
-        />
-        <Switch
-          checkedChildren={<MoonOutlined />}
-          unCheckedChildren={<SunOutlined />}
-          checked={isDark}
-          onChange={toggleTheme}
-          style={{ marginRight: '8px' }}
         />
         <span style={{ color: '#1890ff' }}>
           <UserOutlined /> {user.name || user.email}
@@ -410,6 +408,16 @@ const AppContent = () => {
         <Route path="/admin/documentation" element={
           <ProtectedRoute requireAdmin={true}>
             <AdminDocumentation />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/contacts" element={
+          <ProtectedRoute requireAdmin={true}>
+            <ContactsPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/about" element={
+          <ProtectedRoute requireAdmin={true}>
+            <AdminAbout />
           </ProtectedRoute>
         } />
         <Route path="/admin/settings" element={

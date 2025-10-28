@@ -63,8 +63,21 @@ const HomePage = () => {
       </ProCard>
 
       {/* Countdown Timer */}
-      {currentEvent && (
+      {currentEvent ? (
         <CountdownTimer event={currentEvent} />
+      ) : (
+        <ProCard style={{ marginBottom: '24px' }}>
+          <div style={{ textAlign: 'center', padding: '40px' }}>
+            <CalendarOutlined style={{ fontSize: '48px', color: '#1890ff', marginBottom: '16px' }} />
+            <Title level={3}>Нет активных мероприятий</Title>
+            <Text type="secondary" style={{ fontSize: '16px', marginBottom: '24px', display: 'block' }}>
+              В данный момент нет активных мероприятий обмена подарками
+            </Text>
+            <Button type="primary" href="/events">
+              Посмотреть все мероприятия
+            </Button>
+          </div>
+        </ProCard>
       )}
 
       {/* Current Event Section */}

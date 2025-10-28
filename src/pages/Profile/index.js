@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Avatar, Typography, Space, Tag, Button, Divider, Row, Col, Spin, Descriptions } from 'antd';
-import { UserOutlined, EditOutlined, GiftOutlined, CalendarOutlined } from '@ant-design/icons';
+import { Card, Avatar, Typography, Space, Tag, Button, Divider, Row, Col, Spin, Descriptions, Modal, Form, Input, message } from 'antd';
+import { UserOutlined, EditOutlined, GiftOutlined, CalendarOutlined, SaveOutlined, CloseOutlined } from '@ant-design/icons';
 import ProCard from '@ant-design/pro-card';
 import { useAuth } from '../../services/AuthService';
 import { getUserAvatar } from '../../utils/avatarUtils';
@@ -12,6 +12,8 @@ const UserProfile = () => {
   const { user } = useAuth();
   const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editForm] = Form.useForm();
 
   useEffect(() => {
     if (user) {
@@ -28,6 +30,35 @@ const UserProfile = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleEditProfile = () => {
+    editForm.setFieldsValue({
+      name: profileData.name,
+      full_name: profileData.full_name,
+      phone_number: profileData.phone_number,
+      telegram_username: profileData.telegram_username,
+      address: profileData.address,
+      interests: profileData.interests
+    });
+    setEditModalVisible(true);
+  };
+
+  const handleSaveProfile = async (values) => {
+    try {
+      await axios.put('/auth/profile', values);
+      message.success('Профиль успешно обновлен!');
+      setEditModalVisible(false);
+      fetchProfileData(); // Обновляем данные профиля
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      message.error('Ошибка при обновлении профиля');
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditModalVisible(false);
+    editForm.resetFields();
   };
 
   if (loading) {
@@ -58,7 +89,7 @@ const UserProfile = () => {
           <Col xs={24} md={6} style={{ textAlign: 'center' }}>
             <Avatar
               size={120}
-              src={getUserAvatar(profileData)}
+              src={getUserAvatar(profileData.avatar_seed)}
               icon={<UserOutlined />}
             />
             <div style={{ marginTop: '16px' }}>
@@ -68,6 +99,15 @@ const UserProfile = () => {
                   Администратор
                 </Tag>
               )}
+              <Divider />
+              <Button 
+                type="primary" 
+                icon={<EditOutlined />} 
+                style={{ width: '100%' }}
+                onClick={handleEditProfile}
+              >
+                Редактировать профиль
+              </Button>
             </div>
           </Col>
           <Col xs={24} md={18}>
@@ -92,6 +132,16 @@ const UserProfile = () => {
                       key: 'full_name',
                       label: 'Полное имя',
                       children: profileData.full_name,
+                    },
+                    {
+                      key: 'phone_number',
+                      label: 'Телефон',
+                      children: profileData.phone_number || 'Не указан',
+                    },
+                    {
+                      key: 'telegram_username',
+                      label: 'Telegram',
+                      children: profileData.telegram_username || 'Не указан',
                     },
                     {
                       key: 'created_at',
@@ -179,6 +229,99 @@ const UserProfile = () => {
           </ProCard>
         </Col>
       </Row>
+
+      {/* Модальное окно редактирования профиля */}
+      <Modal
+        title={
+          <Space>
+            <EditOutlined />
+            Редактирование профиля
+          </Space>
+        }
+        open={editModalVisible}
+        onCancel={handleCancelEdit}
+        footer={null}
+        width={600}
+        destroyOnHidden
+      >
+        <Form
+          form={editForm}
+          layout="vertical"
+          onFinish={handleSaveProfile}
+        >
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="name"
+                label="Имя пользователя"
+                rules={[
+                  { required: true, message: 'Введите имя пользователя' }
+                ]}
+              >
+                <Input placeholder="Введите имя пользователя" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="full_name"
+                label="Полное имя"
+              >
+                <Input placeholder="Введите полное имя" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="phone_number"
+                label="Номер телефона"
+              >
+                <Input placeholder="+7 (999) 123-45-67" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="telegram_username"
+                label="Telegram"
+              >
+                <Input placeholder="@username" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Form.Item
+            name="address"
+            label="Адрес"
+          >
+            <Input.TextArea 
+              rows={3} 
+              placeholder="Введите ваш адрес" 
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="interests"
+            label="Интересы"
+          >
+            <Input.TextArea 
+              rows={3} 
+              placeholder="Опишите ваши интересы" 
+            />
+          </Form.Item>
+
+          <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>
+            <Space>
+              <Button onClick={handleCancelEdit}>
+                <CloseOutlined /> Отмена
+              </Button>
+              <Button type="primary" htmlType="submit">
+                <SaveOutlined /> Сохранить
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 };

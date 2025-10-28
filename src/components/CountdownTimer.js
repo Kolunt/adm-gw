@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Typography, Space, Statistic, Row, Col } from 'antd';
-import { ClockCircleOutlined } from '@ant-design/icons';
+import { Card, Typography, Space, Statistic, Row, Col, Badge } from 'antd';
+import { ClockCircleOutlined, CalendarOutlined, FireOutlined } from '@ant-design/icons';
 import ProCard from '@ant-design/pro-card';
 
 const { Title, Text } = Typography;
@@ -77,15 +77,22 @@ const CountdownTimer = ({ event }) => {
     <ProCard
       title={
         <Space>
-          <ClockCircleOutlined />
+          <ClockCircleOutlined style={{ color: '#2d5016' }} />
           Таймер обратного отсчета
         </Space>
       }
       style={{ marginBottom: '24px' }}
       extra={
-        <Text type="secondary" style={{ fontSize: '14px' }}>
-          {phase}
-        </Text>
+        <Space>
+          <Badge 
+            status={isExpired ? 'error' : 'processing'} 
+            text={
+              <Text type="secondary" style={{ fontSize: '14px' }}>
+                {phase}
+              </Text>
+            }
+          />
+        </Space>
       }
       className="countdown-timer"
     >
@@ -101,54 +108,90 @@ const CountdownTimer = ({ event }) => {
       ) : (
         <Row gutter={[16, 16]}>
           <Col xs={6} sm={6} md={6}>
-            <Card style={{ textAlign: 'center' }}>
+            <Card 
+              style={{ 
+                textAlign: 'center',
+                background: 'linear-gradient(135deg, #2d5016 0%, #3d6b1a 100%)',
+                border: 'none',
+                color: 'white'
+              }}
+              bodyStyle={{ padding: '16px' }}
+            >
               <Statistic
-                title="Дней"
+                title={<span style={{ color: 'rgba(255,255,255,0.8)' }}>Дней</span>}
                 value={timeLeft.days}
                 valueStyle={{ 
-                  color: timeLeft.days > 0 ? '#1890ff' : '#ff4d4f',
-                  fontSize: '24px',
+                  color: 'white',
+                  fontSize: '28px',
                   fontWeight: 'bold'
                 }}
+                prefix={<CalendarOutlined />}
               />
             </Card>
           </Col>
           <Col xs={6} sm={6} md={6}>
-            <Card style={{ textAlign: 'center' }}>
+            <Card 
+              style={{ 
+                textAlign: 'center',
+                background: 'linear-gradient(135deg, #52c41a 0%, #73d13d 100%)',
+                border: 'none',
+                color: 'white'
+              }}
+              bodyStyle={{ padding: '16px' }}
+            >
               <Statistic
-                title="Часов"
+                title={<span style={{ color: 'rgba(255,255,255,0.8)' }}>Часов</span>}
                 value={timeLeft.hours}
                 valueStyle={{ 
-                  color: timeLeft.hours > 0 ? '#1890ff' : '#ff4d4f',
-                  fontSize: '24px',
+                  color: 'white',
+                  fontSize: '28px',
                   fontWeight: 'bold'
                 }}
+                prefix={<ClockCircleOutlined />}
               />
             </Card>
           </Col>
           <Col xs={6} sm={6} md={6}>
-            <Card style={{ textAlign: 'center' }}>
+            <Card 
+              style={{ 
+                textAlign: 'center',
+                background: 'linear-gradient(135deg, #faad14 0%, #ffc53d 100%)',
+                border: 'none',
+                color: 'white'
+              }}
+              bodyStyle={{ padding: '16px' }}
+            >
               <Statistic
-                title="Минут"
+                title={<span style={{ color: 'rgba(255,255,255,0.8)' }}>Минут</span>}
                 value={timeLeft.minutes}
                 valueStyle={{ 
-                  color: timeLeft.minutes > 0 ? '#1890ff' : '#ff4d4f',
-                  fontSize: '24px',
+                  color: 'white',
+                  fontSize: '28px',
                   fontWeight: 'bold'
                 }}
+                prefix={<FireOutlined />}
               />
             </Card>
           </Col>
           <Col xs={6} sm={6} md={6}>
-            <Card style={{ textAlign: 'center' }}>
+            <Card 
+              style={{ 
+                textAlign: 'center',
+                background: 'linear-gradient(135deg, #ff4d4f 0%, #ff7875 100%)',
+                border: 'none',
+                color: 'white'
+              }}
+              bodyStyle={{ padding: '16px' }}
+            >
               <Statistic
-                title="Секунд"
+                title={<span style={{ color: 'rgba(255,255,255,0.8)' }}>Секунд</span>}
                 value={timeLeft.seconds}
                 valueStyle={{ 
-                  color: timeLeft.seconds > 0 ? '#1890ff' : '#ff4d4f',
-                  fontSize: '24px',
+                  color: 'white',
+                  fontSize: '28px',
                   fontWeight: 'bold'
                 }}
+                prefix={<ClockCircleOutlined />}
               />
             </Card>
           </Col>
@@ -157,7 +200,7 @@ const CountdownTimer = ({ event }) => {
       
       <div style={{ marginTop: '16px', textAlign: 'center' }}>
         <Text type="secondary">
-          Мероприятие: <Text strong>{event.name}</Text>
+          Мероприятие: <Text strong style={{ color: '#1890ff' }}>{event.name}</Text>
         </Text>
       </div>
     </ProCard>
