@@ -931,8 +931,8 @@ const AdminSystemSettings = () => {
           name="smtp_password"
           label="Пароль SMTP"
         >
-          <Input
-            style={inputStyle}.Password
+          <Input.Password
+            style={inputStyle}
             placeholder="Введите пароль"
             prefix={<SettingOutlined />}
           />
