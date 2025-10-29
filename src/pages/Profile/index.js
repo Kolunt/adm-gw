@@ -90,8 +90,8 @@ const UserProfile = () => {
   const canViewPersonalData = () => {
     if (!profileData) return false;
     // Личные данные видны только владельцу профиля или администратору
-    // Если пользователь не авторизован (гость), личные данные скрыты
-    if (!user) return false;
+    // Гости и обычные пользователи видят одинаковые данные (только публичные)
+    if (!user) return false; // Гости не видят личные данные
     return isViewingOwnProfile || user.role === 'admin';
   };
 
