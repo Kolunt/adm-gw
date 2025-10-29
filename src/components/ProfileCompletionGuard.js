@@ -3,14 +3,11 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../services/AuthService';
 
 const ProfileCompletionGuard = ({ children }) => {
-  const { user, profileStatus, loading } = useAuth();
+  const { user, profileStatus } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Если загружается, показываем загрузку
-  if (loading) {
-    return <div>Загрузка...</div>;
-  }
+  console.log('ProfileCompletionGuard: user=', user, 'profileStatus=', profileStatus);
 
   // Если пользователь не авторизован, показываем контент
   if (!user) {
@@ -22,9 +19,9 @@ const ProfileCompletionGuard = ({ children }) => {
     return children;
   }
 
-  // Если нет данных о статусе профиля, показываем загрузку
+  // Если нет данных о статусе профиля, показываем контент (не блокируем)
   if (!profileStatus) {
-    return <div>Загрузка...</div>;
+    return children;
   }
 
   // Если профиль заполнен, показываем контент

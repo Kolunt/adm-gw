@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends, UploadFile, File
+from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.security import OAuth2PasswordBearer
@@ -77,6 +77,9 @@ class User(Base):
     
     # Тестовые пользователи
     is_test = Column(Boolean, default=False)  # Флаг тестового пользователя
+    
+    # Блокировка пользователя
+    block_reason = Column(String)  # Причина блокировки пользователя
 
 class Event(Base):
     __tablename__ = "events"
@@ -422,13 +425,20 @@ class UserResponse(BaseModel):
     
     # Аватарка пользователя
     avatar_seed: str | None = None
+    avatar_type: str | None = None
     
     # Дополнительные поля профиля (необязательные)
     phone_number: str | None = None
     telegram_username: str | None = None
     
+    # Блокировка пользователя
+    block_reason: str | None = None
+    
     class Config:
         from_attributes = True
+
+class BlockUserRequest(BaseModel):
+    reason: str  # Причина блокировки
 
 class Token(BaseModel):
     access_token: str
@@ -942,6 +952,7 @@ async def verify_gwars_profile(
     """Проверяет GWars профиль и токен"""
     profile_url = gwars_data.get("profile_url")
     nickname = gwars_data.get("nickname")
+    skip_verification = gwars_data.get("skip_verification", False)  # Параметр для пропуска проверки (только генерация токена)
     
     if not profile_url:
         raise HTTPException(status_code=400, detail="Необходимо указать ссылку на профиль")
@@ -950,6 +961,11 @@ async def verify_gwars_profile(
     if not validate_gwars_url(profile_url):
         raise HTTPException(status_code=400, detail="Ссылка должна вести на gwars.io")
     
+    # Сохраняем URL профиля
+    current_user.gwars_profile_url = profile_url
+    if nickname:
+        current_user.gwars_nickname = nickname
+    
     # Генерируем токен, если его нет
     if not current_user.gwars_verification_token:
         import secrets
@@ -957,8 +973,18 @@ async def verify_gwars_profile(
         alphabet = string.ascii_lowercase
         current_user.gwars_verification_token = ''.join(secrets.choice(alphabet) for _ in range(20))
     
+    # Если нужно только сгенерировать токен (без проверки)
+    if skip_verification:
+        # Сохраняем изменения в базе данных (URL, никнейм и токен)
+        db.commit()
+        return {
+            "verified": False,
+            "message": "Токен сгенерирован",
+            "token": current_user.gwars_verification_token
+        }
+    
     # Проверяем токен на странице
-    is_verified = verify_gwars_token(profile_url, current_user.gwars_verification_token)
+    is_verified, error_message = verify_gwars_token(profile_url, current_user.gwars_verification_token)
     
     if is_verified:
         current_user.gwars_profile_url = profile_url
@@ -974,7 +1000,7 @@ async def verify_gwars_profile(
     else:
         return {
             "verified": False,
-            "message": "Токен не найден в информации персонажа. Убедитесь, что вы разместили: 'Я Анонимный Дед Мороз: " + current_user.gwars_verification_token + "'",
+            "message": error_message or f"Токен не найден в информации персонажа. Убедитесь, что вы разместили: 'Я Анонимный Дед Мороз: {current_user.gwars_verification_token}'",
             "token": current_user.gwars_verification_token
         }
 
@@ -989,22 +1015,114 @@ def check_profile_completion(user: User) -> bool:
         user.interests is not None
     )
 
-def verify_gwars_token(profile_url: str, token: str) -> bool:
-    """Проверяет наличие токена в информации персонажа GWars"""
+def verify_gwars_token(profile_url: str, token: str) -> tuple[bool, str]:
+    """
+    Проверяет наличие токена в информации персонажа GWars
+    Возвращает: (is_verified: bool, error_message: str)
+    """
     try:
         # Получаем страницу профиля
         response = requests.get(profile_url, timeout=10)
         response.raise_for_status()
         
-        # Ищем токен в тексте страницы
-        content = response.text.lower()
-        search_pattern = f"я анонимный дед мороз: {token.lower()}"
+        # Получаем оригинальный текст страницы (с регистром) и в нижнем регистре для поиска
+        content_original = response.text
+        content_lower = content_original.lower()
         
-        return search_pattern in content
+        # Точная проверка: ищем точное совпадение текста "Я Анонимный Дед Мороз: {token}"
+        # Проверяем в оригинальном тексте (с учетом регистра)
+        expected_text_exact = f"Я Анонимный Дед Мороз: {token}"
         
+        # Сначала проверяем точное совпадение (с учетом регистра)
+        if expected_text_exact in content_original:
+            return True, ""
+        
+        # Используем регулярное выражение для поиска точного совпадения токена
+        # Проверяем точное совпадение токена после "Я Анонимный Дед Мороз:"
+        import re
+        # Паттерн для поиска: "Я/я Анонимный/анонимный Дед/дед Мороз/мороз: ТОЧНО_ТОКЕН" (регистр не важен для текста, но токен должен точно совпадать)
+        # Экранируем токен для использования в регулярном выражении
+        escaped_token = re.escape(token)
+        # Проверяем точное совпадение токена с учетом регистра
+        pattern_exact = re.compile(
+            r'я\s+анонимный\s+дед\s+мороз\s*:\s*' + escaped_token,
+            re.IGNORECASE | re.MULTILINE
+        )
+        
+        # Ищем точное совпадение токена
+        match_exact = pattern_exact.search(content_original)
+        if match_exact:
+            # Проверяем, что найденный токен точно совпадает (с учетом регистра)
+            found_text = match_exact.group(0)
+            # Извлекаем токен из найденного текста
+            token_match = re.search(r':\s*([^\s]+)', found_text)
+            if token_match:
+                found_token = token_match.group(1)
+                # Точное сравнение токена (с учетом регистра)
+                if found_token == token:
+                    return True, ""
+                else:
+                    # Токен найден, но регистр не совпадает
+                    return False, f"Токен найден, но регистр не совпадает. Найден: '{found_token}', ожидался: '{token}'. Убедитесь, что вы разместили точно: 'Я Анонимный Дед Мороз: {token}'"
+        
+        # Проверяем в нижнем регистре для случая, если пользователь написал в другом регистре текста
+        pattern_lower = re.compile(
+            r'я\s+анонимный\s+дед\s+мороз\s*:\s*' + re.escape(token.lower()),
+            re.IGNORECASE | re.MULTILINE
+        )
+        
+        match_lower = pattern_lower.search(content_original)
+        if match_lower:
+            # Токен найден в нижнем регистре, проверяем точное совпадение
+            found_text = match_lower.group(0)
+            token_match = re.search(r':\s*([^\s]+)', found_text)
+            if token_match:
+                found_token = token_match.group(1)
+                if found_token.lower() == token.lower():
+                    return True, ""
+        
+        # Если точное совпадение не найдено, начинаем диагностику
+        # Проверяем точное совпадение токена отдельно (без текста)
+        # Это нужно для проверки, что токен точно соответствует ожидаемому
+        exact_token_match = re.search(r'\b' + re.escape(token) + r'\b', content_original, re.IGNORECASE)
+        exact_token_match_lower = re.search(r'\b' + re.escape(token.lower()) + r'\b', content_lower)
+        
+        # Проверяем, есть ли упоминание "анонимный дед мороз"
+        has_mention = "анонимный дед мороз" in content_lower
+        
+        if has_mention:
+            # Пытаемся найти токен рядом с упоминанием
+            # Ищем паттерн "анонимный дед мороз:" или "анонимный дед мороз " с токеном после
+            # Токен должен быть точно 20 символов в нижнем регистре (a-z)
+            pattern = re.compile(r'анонимный\s+дед\s+мороз\s*[:\s]+([a-z]{20})\b', re.IGNORECASE)
+            match = pattern.search(content_original)
+            if match:
+                found_token = match.group(1)
+                # Проверяем точное совпадение токена (без учета регистра, так как токен всегда в нижнем регистре)
+                if found_token.lower() == token.lower():
+                    # Токен совпадает точно, но формат текста может быть неправильным
+                    return False, f"Токен найден, но текст не соответствует требуемому формату. Убедитесь, что вы разместили точно: 'Я Анонимный Дед Мороз: {token}' (с большой буквы 'Я', без лишних пробелов)"
+                else:
+                    return False, f"Найден другой токен в профиле: '{found_token}'. Ожидаемый токен: '{token}'. Убедитесь, что вы разместили правильный токен: 'Я Анонимный Дед Мороз: {token}'"
+            else:
+                # Проверяем, есть ли точный токен в тексте рядом с упоминанием
+                if exact_token_match_lower:
+                    return False, f"Токен найден в тексте, но не рядом с упоминанием 'Анонимный Дед Мороз'. Убедитесь, что вы разместили точно: 'Я Анонимный Дед Мороз: {token}' (без лишних пробелов и символов)"
+                else:
+                    return False, f"Токен не найден рядом с упоминанием 'Анонимный Дед Мороз'. Убедитесь, что вы разместили точно: 'Я Анонимный Дед Мороз: {token}' (без лишних пробелов и символов)"
+        
+        if exact_token_match or exact_token_match_lower:
+            return False, f"Токен найден в тексте, но не в требуемом формате. Убедитесь, что вы разместили точно: 'Я Анонимный Дед Мороз: {token}' (с большой буквы 'Я', без лишних пробелов)"
+        
+        return False, f"Токен не найден в информации персонажа. Убедитесь, что вы разместили точно: 'Я Анонимный Дед Мороз: {token}' в информации вашего персонажа на GWars.io"
+        
+    except requests.exceptions.Timeout:
+        return False, "Превышено время ожидания при проверке профиля. Попробуйте позже."
+    except requests.exceptions.RequestException as e:
+        return False, f"Не удалось получить страницу профиля. Проверьте ссылку: {str(e)}"
     except Exception as e:
         print(f"Error verifying GWars token: {e}")
-        return False
+        return False, f"Произошла ошибка при проверке токена: {str(e)}"
 
 # Функции для работы с назначениями подарков
 def generate_gift_assignments(event_id: int, db: Session):
@@ -1086,8 +1204,31 @@ def get_gift_assignments_with_details(event_id: int, db: Session):
     return result
 
 @app.get("/users/", response_model=list[UserResponse])
-async def get_users(db: Session = Depends(get_db)):
-    users = db.query(User).filter(User.is_active == True).all()
+async def get_users(
+    authorization: str | None = Header(None, alias="Authorization"),
+    db: Session = Depends(get_db)
+):
+    """Получение списка пользователей (доступно всем, включая неавторизованных)"""
+    current_user = None
+    
+    # Пытаемся получить текущего пользователя, если токен передан
+    if authorization and authorization.startswith("Bearer "):
+        try:
+            token = authorization.replace("Bearer ", "").strip()
+            if token:
+                payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+                email: str = payload.get("sub")
+                if email:
+                    current_user = db.query(User).filter(User.email == email).first()
+        except (JWTError, Exception):
+            # Игнорируем ошибки авторизации - неавторизованные пользователи тоже могут видеть список
+            pass
+    
+    # Администраторы видят всех пользователей, остальные - только активных
+    if current_user and current_user.role == "admin":
+        users = db.query(User).all()
+    else:
+        users = db.query(User).filter(User.is_active == True).all()
     return users
 
 @app.get("/users/{user_id}", response_model=UserResponse)
@@ -1115,7 +1256,6 @@ async def update_user(
     for field, value in update_data.items():
         setattr(user, field, value)
     
-    user.updated_at = datetime.utcnow()
     db.commit()
     db.refresh(user)
     return user
@@ -1603,9 +1743,67 @@ async def promote_user_to_admin(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
+    if user.id == current_admin.id:
+        raise HTTPException(status_code=400, detail="Нельзя изменить свою собственную роль")
+    
     user.role = "admin"
     db.commit()
     return {"message": "User promoted to admin successfully"}
+
+@app.post("/admin/demote/{user_id}")
+async def demote_admin_to_user(
+    user_id: int, 
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    if user.id == current_admin.id:
+        raise HTTPException(status_code=400, detail="Нельзя изменить свою собственную роль")
+    
+    user.role = "user"
+    db.commit()
+    return {"message": "Admin demoted to user successfully"}
+
+@app.post("/admin/users/{user_id}/block")
+async def block_user(
+    user_id: int,
+    block_request: BlockUserRequest,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """Блокировка пользователя администратором"""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    if user.id == current_admin.id:
+        raise HTTPException(status_code=400, detail="Нельзя заблокировать самого себя")
+    
+    user.is_active = False
+    user.block_reason = block_request.reason
+    db.commit()
+    db.refresh(user)
+    return {"message": "User blocked successfully", "user": user}
+
+@app.post("/admin/users/{user_id}/unblock")
+async def unblock_user(
+    user_id: int,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """Разблокировка пользователя администратором"""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    user.is_active = True
+    user.block_reason = None  # Очищаем причину блокировки
+    db.commit()
+    db.refresh(user)
+    return {"message": "User unblocked successfully", "user": user}
 
 
 @app.put("/auth/profile")
@@ -1632,13 +1830,22 @@ async def update_user_profile(
         current_user.phone_number = profile_data.phone_number
     if profile_data.telegram_username is not None:
         current_user.telegram_username = profile_data.telegram_username
-    if profile_data.avatar_seed is not None:
-        current_user.avatar_seed = profile_data.avatar_seed
     if profile_data.avatar_type is not None:
+        print(f"Updating avatar_type: {current_user.avatar_type} -> {profile_data.avatar_type}")
         current_user.avatar_type = profile_data.avatar_type
+    if profile_data.avatar_seed is not None:
+        # Если avatar_seed передан явно, используем его
+        print(f"Updating avatar_seed: {current_user.avatar_seed} -> {profile_data.avatar_seed}")
+        current_user.avatar_seed = profile_data.avatar_seed
+    elif profile_data.avatar_type is not None and not current_user.avatar_seed:
+        # Если avatar_type установлен, но avatar_seed не был передан, используем email или id как seed
+        fallback_seed = current_user.email or str(current_user.id)
+        print(f"Using fallback seed: {fallback_seed}")
+        current_user.avatar_seed = fallback_seed
     
     db.commit()
     db.refresh(current_user)
+    print(f"Final user data: avatar_type={current_user.avatar_type}, avatar_seed={current_user.avatar_seed}")
     return current_user
 
 

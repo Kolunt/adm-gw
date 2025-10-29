@@ -25,7 +25,7 @@ def create_current_event():
     # Сначала получим токен
     login_data = {
         "email": "admin@example.com",
-        "password": "admin"
+        "password": "admin123"
     }
     
     print("Получение токена...")

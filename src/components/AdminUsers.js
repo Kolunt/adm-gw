@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Typography, Space, Button, message, Modal, Tag, Avatar, Row, Col, Descriptions } from 'antd';
+import { Card, Typography, Space, Button, Modal, Tag, Avatar, Row, Col, Descriptions, App } from 'antd';
 import { 
   UserOutlined, 
   PlusOutlined, 
@@ -7,17 +7,25 @@ import {
   DeleteOutlined,
   TeamOutlined,
   ReloadOutlined,
-  EyeOutlined
+  EyeOutlined,
+  CrownOutlined,
+  UserDeleteOutlined,
+  LockOutlined,
+  UnlockOutlined
 } from '@ant-design/icons';
 import ProCard from '@ant-design/pro-card';
 import { Table } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import axios from '../utils/axiosConfig';
 import { getUserAvatar } from '../utils/avatarUtils';
+import { useAuth } from '../services/AuthService';
 
 const { Title, Text } = Typography;
+const { useApp } = App;
 
 const AdminUsers = () => {
+  const { message } = useApp();
+  const { user: currentUser } = useAuth();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -62,7 +70,126 @@ const AdminUsers = () => {
   };
 
   const handleViewUser = (user) => {
-    navigate(`/users/${user.id}`);
+    navigate(`/profile/${user.id}`);
+  };
+
+  const handlePromoteToAdmin = async (user) => {
+    Modal.confirm({
+      title: 'Назначить администратором',
+      content: `Вы уверены, что хотите назначить пользователя "${user.name || user.email}" администратором?`,
+      okText: 'Назначить',
+      okType: 'danger',
+      cancelText: 'Отмена',
+      onOk: async () => {
+        try {
+          await axios.post(`/admin/promote/${user.id}`);
+          message.success('Пользователь назначен администратором');
+          fetchUsers();
+        } catch (error) {
+          message.error(error.response?.data?.detail || 'Ошибка при назначении администратора');
+          console.error('Error promoting user:', error);
+        }
+      },
+    });
+  };
+
+  const handleDemoteFromAdmin = async (user) => {
+    Modal.confirm({
+      title: 'Снять статус администратора',
+      content: `Вы уверены, что хотите снять статус администратора у пользователя "${user.name || user.email}"?`,
+      okText: 'Снять',
+      okType: 'danger',
+      cancelText: 'Отмена',
+      onOk: async () => {
+        try {
+          await axios.post(`/admin/demote/${user.id}`);
+          message.success('Статус администратора снят');
+          fetchUsers();
+        } catch (error) {
+          message.error(error.response?.data?.detail || 'Ошибка при снятии статуса администратора');
+          console.error('Error demoting user:', error);
+        }
+      },
+    });
+  };
+
+  const handleBlockUser = async (user) => {
+    let blockReason = '';
+    
+    Modal.confirm({
+      title: <span style={{ color: '#ffffff' }}>Заблокировать пользователя</span>,
+      content: (
+        <div style={{ color: '#ffffff' }}>
+          <p>Вы уверены, что хотите заблокировать пользователя "{user.name || user.email}"?</p>
+          <p>Заблокированные пользователи не смогут войти в систему.</p>
+          <div style={{ marginTop: '16px' }}>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+              Причина блокировки:
+            </label>
+            <textarea
+              placeholder="Укажите причину блокировки пользователя..."
+              style={{
+                width: '100%',
+                minHeight: '80px',
+                padding: '8px',
+                border: '1px solid #d9d9d9',
+                borderRadius: '4px',
+                backgroundColor: '#ffffff',
+                color: '#000000',
+                resize: 'vertical'
+              }}
+              onChange={(e) => {
+                blockReason = e.target.value;
+              }}
+            />
+          </div>
+        </div>
+      ),
+      okText: 'Заблокировать',
+      okType: 'danger',
+      cancelText: 'Отмена',
+      onOk: async () => {
+        if (!blockReason.trim()) {
+          message.error('Пожалуйста, укажите причину блокировки');
+          return Promise.reject();
+        }
+        
+        try {
+          await axios.post(`/admin/users/${user.id}/block`, {
+            reason: blockReason.trim()
+          });
+          message.success('Пользователь заблокирован');
+          fetchUsers();
+        } catch (error) {
+          message.error(error.response?.data?.detail || 'Ошибка при блокировке пользователя');
+          console.error('Error blocking user:', error);
+        }
+      },
+    });
+  };
+
+  const handleUnblockUser = async (user) => {
+    Modal.confirm({
+      title: <span style={{ color: '#ffffff' }}>Разблокировать пользователя</span>,
+      content: (
+        <div style={{ color: '#ffffff' }}>
+          Вы уверены, что хотите разблокировать пользователя "{user.name || user.email}"?
+        </div>
+      ),
+      okText: 'Разблокировать',
+      okType: 'primary',
+      cancelText: 'Отмена',
+      onOk: async () => {
+        try {
+          await axios.post(`/admin/users/${user.id}/unblock`);
+          message.success('Пользователь разблокирован');
+          fetchUsers();
+        } catch (error) {
+          message.error(error.response?.data?.detail || 'Ошибка при разблокировке пользователя');
+          console.error('Error unblocking user:', error);
+        }
+      },
+    });
   };
 
   const columns = [
@@ -111,6 +238,16 @@ const AdminUsers = () => {
       ),
     },
     {
+      title: 'GWars верификация',
+      dataIndex: 'gwars_verified',
+      key: 'gwars_verified',
+      render: (verified) => (
+        <Tag color={verified ? 'green' : 'orange'}>
+          {verified ? 'Верифицирован' : 'Не верифицирован'}
+        </Tag>
+      ),
+    },
+    {
       title: 'Дата регистрации',
       dataIndex: 'created_at',
       key: 'created_at',
@@ -119,7 +256,7 @@ const AdminUsers = () => {
     {
       title: 'Действия',
       key: 'actions',
-      width: 150,
+      width: 200,
       render: (_, record) => (
         <Space>
           <Button 
@@ -128,6 +265,43 @@ const AdminUsers = () => {
             onClick={() => handleViewUser(record)}
             title="Просмотр"
           />
+          {record.role === 'admin' ? (
+            <Button 
+              type="link" 
+              danger
+              icon={<UserDeleteOutlined />}
+              onClick={() => handleDemoteFromAdmin(record)}
+              title="Снять статус администратора"
+              disabled={currentUser?.id === record.id}
+            />
+          ) : (
+            <Button 
+              type="link" 
+              icon={<CrownOutlined />}
+              onClick={() => handlePromoteToAdmin(record)}
+              title="Назначить администратором"
+              style={{ color: '#ff4d4f' }}
+              disabled={currentUser?.id === record.id}
+            />
+          )}
+          {record.is_active ? (
+            <Button 
+              type="link" 
+              danger
+              icon={<LockOutlined />}
+              onClick={() => handleBlockUser(record)}
+              title="Заблокировать пользователя"
+              disabled={currentUser?.id === record.id}
+            />
+          ) : (
+            <Button 
+              type="link" 
+              icon={<UnlockOutlined />}
+              onClick={() => handleUnblockUser(record)}
+              title="Разблокировать пользователя"
+              style={{ color: '#52c41a' }}
+            />
+          )}
           <Button 
             type="link" 
             danger

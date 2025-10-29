@@ -4,15 +4,25 @@ import { CalendarOutlined, GiftOutlined, TeamOutlined, ClockCircleOutlined, Arro
 import ProCard from '@ant-design/pro-card';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from '../../utils/axiosConfig';
+import { useAuth } from '../../services/AuthService';
 
 const { Title, Text, Paragraph } = Typography;
 
 const EventDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Простая проверка авторизации
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+  }, [user, navigate]);
 
   useEffect(() => {
     if (id) {

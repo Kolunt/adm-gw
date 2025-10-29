@@ -14,55 +14,57 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [profileStatus, setProfileStatus] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Начинаем с false
   const [profileStatusLoading, setProfileStatusLoading] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      // Загружаем данные в фоне, не блокируя интерфейс
       fetchUserProfile();
-    } else {
-      setLoading(false);
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchUserProfile = async () => {
     try {
+      console.log('AuthService: Fetching user profile');
       const response = await axios.get('/auth/me');
+      console.log('AuthService: User profile loaded:', response.data);
       setUser(response.data);
       
       // Получаем статус профиля только если пользователь авторизован
       if (response.data) {
-        await fetchProfileStatus();
+        fetchProfileStatus();
+      } else {
+        setProfileStatus(null);
       }
     } catch (error) {
-      console.error('Error fetching user profile:', error);
-      // Не удаляем токен сразу, возможно это временная ошибка сети
+      console.error('AuthService: Error fetching user profile:', error);
       if (error.response?.status === 401) {
         localStorage.removeItem('token');
         delete axios.defaults.headers.common['Authorization'];
         setUser(null);
         setProfileStatus(null);
+      } else {
+        setUser(null);
+        setProfileStatus(null);
       }
-    } finally {
-      setLoading(false);
     }
   };
 
   const fetchProfileStatus = async () => {
-    if (profileStatusLoading || !user) return; // Предотвращаем множественные запросы и запросы без пользователя
+    if (profileStatusLoading || !user) return;
     
     setProfileStatusLoading(true);
     try {
+      console.log('AuthService: Fetching profile status');
       const response = await axios.get('/profile/status');
+      console.log('AuthService: Profile status loaded:', response.data);
       setProfileStatus(response.data);
     } catch (error) {
-      console.error('Error fetching profile status:', error);
-      // Если ошибка 401, пользователь не авторизован
-      if (error.response?.status === 401) {
-        setProfileStatus(null);
-      }
+      console.error('AuthService: Error fetching profile status:', error);
+      setProfileStatus(null);
     } finally {
       setProfileStatusLoading(false);
     }

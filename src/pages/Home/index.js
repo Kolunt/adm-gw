@@ -10,7 +10,7 @@ const { Title, Paragraph, Text } = Typography;
 const HomePage = () => {
   const [settings, setSettings] = useState({});
   const [currentEvent, setCurrentEvent] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -18,17 +18,32 @@ const HomePage = () => {
 
   const fetchData = async () => {
     try {
-      const [settingsResponse, eventResponse] = await Promise.all([
-        axios.get('/api/settings/public'),
-        axios.get('/events/current').catch(() => null)
-      ]);
+      setLoading(true);
+      console.log('HomePage: Fetching data');
       
-      setSettings(settingsResponse.data);
-      setCurrentEvent(eventResponse?.data || null);
+      // Простые запросы без Promise.all
+      try {
+        const settingsResponse = await axios.get('/api/settings/public');
+        setSettings(settingsResponse.data || {});
+      } catch (err) {
+        console.error('HomePage: Error fetching settings:', err);
+        setSettings({});
+      }
+      
+      try {
+        const eventResponse = await axios.get('/events/current');
+        setCurrentEvent(eventResponse.data || null);
+      } catch (err) {
+        console.error('HomePage: Error fetching current event:', err);
+        setCurrentEvent(null);
+      }
+      
+      console.log('HomePage: Data loaded');
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error('HomePage: Error fetching data:', error);
     } finally {
       setLoading(false);
+      console.log('HomePage: Loading finished');
     }
   };
 
@@ -36,6 +51,7 @@ const HomePage = () => {
     return (
       <div style={{ textAlign: 'center', padding: '50px' }}>
         <Spin size="large" />
+        <div style={{ marginTop: '16px' }}>Загрузка данных...</div>
       </div>
     );
   }

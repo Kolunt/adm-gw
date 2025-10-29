@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ConfigProvider } from 'antd';
+import { ConfigProvider, App as AntdApp } from 'antd';
 import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { Layout, Menu, Drawer, Button } from 'antd';
 import { 
@@ -40,7 +40,6 @@ import RegisterPage from './pages/Auth/Register';
 import EventsPage from './pages/Events';
 import EventDetail from './pages/Events/EventDetail';
 import UserListPage from './pages/User/List';
-import UserProfileDetail from './pages/User/Profile';
 import ProfileCompletion from './components/ProfileCompletion';
 import ProfileCompletionGuard from './components/ProfileCompletionGuard';
 import FAQPage from './pages/FAQ';
@@ -247,7 +246,7 @@ const AppContent = () => {
             gap: '8px'
           }}
         >
-          {user.name || user.email}
+          {user.gwars_nickname || 'Враг неизвестен'}
         </Button>
         <button
           onClick={logout}
@@ -381,56 +380,15 @@ const AppContent = () => {
           background: isDark ? '#001529' : '#f0f2f5'
         }}>
       <Routes>
-        <Route path="/" element={
-          <ProfileCompletionGuard>
-            <HomePage />
-          </ProfileCompletionGuard>
-        } />
-        <Route path="/events" element={
-          <ProfileCompletionGuard>
-            <EventsPage />
-          </ProfileCompletionGuard>
-        } />
-        <Route path="/events/:id" element={
-          <ProfileCompletionGuard>
-            <EventDetail />
-          </ProfileCompletionGuard>
-        } />
-        <Route path="/users" element={
-          <ProfileCompletionGuard>
-            <UserListPage />
-          </ProfileCompletionGuard>
-        } />
-        <Route path="/users/:id" element={
-          <ProfileCompletionGuard>
-            <UserProfileDetail />
-          </ProfileCompletionGuard>
-        } />
-        <Route path="/faq" element={
-          <ProfileCompletionGuard>
-            <FAQPage />
-          </ProfileCompletionGuard>
-        } />
-        <Route path="/about" element={
-          <ProfileCompletionGuard>
-            <AboutPage />
-          </ProfileCompletionGuard>
-        } />
-        <Route path="/contacts" element={
-          <ProfileCompletionGuard>
-            <ContactsPage />
-          </ProfileCompletionGuard>
-        } />
-        <Route path="/profile" element={
-          <ProtectedRoute>
-            <UserProfile />
-          </ProtectedRoute>
-        } />
-        <Route path="/profile-completion" element={
-          <ProtectedRoute>
-            <ProfileCompletion />
-          </ProtectedRoute>
-        } />
+        <Route path="/" element={<HomePage />} />
+        <Route path="/events" element={<EventsPage />} />
+        <Route path="/events/:id" element={<EventDetail />} />
+        <Route path="/users" element={<UserListPage />} />
+        <Route path="/profile/:id?" element={<UserProfile />} />
+        <Route path="/faq" element={<FAQPage />} />
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/contacts" element={<ContactsPage />} />
+        <Route path="/profile-completion" element={<ProfileCompletion />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/admin" element={
@@ -534,11 +492,13 @@ const App = () => {
   return (
     <ThemeProvider>
       <ConfigProvider locale={ruRU}>
-        <AuthProvider>
-          <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-            <AppContent />
-          </Router>
-        </AuthProvider>
+        <AntdApp>
+          <AuthProvider>
+            <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+              <AppContent />
+            </Router>
+          </AuthProvider>
+        </AntdApp>
       </ConfigProvider>
     </ThemeProvider>
   );

@@ -15,7 +15,10 @@ import {
   UserOutlined, 
   HomeOutlined, 
   HeartOutlined,
-  CheckCircleOutlined
+  CheckCircleOutlined,
+  CopyOutlined,
+  CheckOutlined,
+  CloseOutlined
 } from '@ant-design/icons';
 import axios from '../utils/axiosConfig';
 
@@ -29,13 +32,38 @@ const ProfileCompletion = ({ onComplete }) => {
   const [loading, setLoading] = useState(false);
   const [parsedNickname, setParsedNickname] = useState(null);
   const [profileUrl, setProfileUrl] = useState('');
+  const [verificationToken, setVerificationToken] = useState(null);
+  const [verificationError, setVerificationError] = useState(null);
+  const [nicknameConfirmed, setNicknameConfirmed] = useState(false);
 
   useEffect(() => {
     // Получаем статус профиля только один раз при загрузке
     const getProfileStatus = async () => {
       try {
         const response = await axios.get('/profile/status');
-        setProfileStatus(response.data);
+        console.log('Profile status response:', response.data);
+        setProfileStatus(response.data || { steps: {} });
+        
+        // Загружаем данные профиля если они есть
+        if (response.data) {
+          // Загружаем токен, если он есть в статусе
+          if (response.data.gwars_verification_token) {
+            setVerificationToken(response.data.gwars_verification_token);
+            // Если токен есть, значит никнейм был подтвержден ранее
+            setNicknameConfirmed(true);
+          }
+          
+          // Если есть URL профиля
+          if (response.data.gwars_profile_url) {
+            setProfileUrl(response.data.gwars_profile_url);
+            // Если есть никнейм в статусе
+            if (response.data.gwars_nickname) {
+              setParsedNickname(response.data.gwars_nickname);
+              // Если уже есть токен, значит никнейм был подтвержден ранее
+              // Если токена нет, пользователь должен будет подтвердить никнейм заново
+            }
+          }
+        }
         
         // Устанавливаем текущий шаг на основе заполненности
         if (response.data && response.data.steps) {
@@ -51,10 +79,12 @@ const ProfileCompletion = ({ onComplete }) => {
         } else {
           // Если структура данных неожиданная, начинаем с первого шага
           setCurrentStep(0);
+          setProfileStatus({ steps: {} }); // Устанавливаем дефолтное значение
         }
       } catch (error) {
         console.error('Error fetching profile status:', error);
-        // В случае ошибки начинаем с первого шага
+        // В случае ошибки устанавливаем дефолтные значения
+        setProfileStatus({ steps: {} });
         setCurrentStep(0);
       }
     };
@@ -93,8 +123,32 @@ const ProfileCompletion = ({ onComplete }) => {
     }
   };
 
+  const copyToClipboard = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      message.success('Токен скопирован в буфер обмена!');
+    } catch (err) {
+      // Fallback для старых браузеров
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-999999px';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        message.success('Токен скопирован в буфер обмена!');
+      } catch (err) {
+        message.error('Не удалось скопировать токен');
+      }
+      document.body.removeChild(textArea);
+    }
+  };
+
   const handleParseProfile = async (values) => {
     setLoading(true);
+    setVerificationError(null); // Очищаем предыдущие ошибки
     try {
       const response = await axios.post('/profile/parse-gwars', {
         profile_url: values.gwars_profile_url
@@ -103,6 +157,8 @@ const ProfileCompletion = ({ onComplete }) => {
       if (response.data.success) {
         setParsedNickname(response.data.nickname);
         setProfileUrl(values.gwars_profile_url);
+        setNicknameConfirmed(false); // Сбрасываем подтверждение
+        setVerificationToken(null); // Очищаем токен до подтверждения
         message.success(response.data.message);
       } else {
         message.error(response.data.error);
@@ -114,25 +170,100 @@ const ProfileCompletion = ({ onComplete }) => {
     }
   };
 
-  const handleGwarsVerification = async () => {
+  const handleConfirmNickname = async () => {
     setLoading(true);
     try {
-      const response = await axios.post('/profile/verify-gwars', {
-        profile_url: profileUrl
+      // После подтверждения никнейма получаем/генерируем токен
+      // Вызываем verify-gwars с параметром skip_verification для генерации токена без проверки
+      const verifyResponse = await axios.post('/profile/verify-gwars', {
+        profile_url: profileUrl,
+        nickname: parsedNickname,
+        skip_verification: true
       });
       
-      if (response.data.verified) {
-        message.success(response.data.message);
-        setCurrentStep(1); // Переходим к следующему шагу
+      // Получаем токен из ответа
+      if (verifyResponse.data.token) {
+        setVerificationToken(verifyResponse.data.token);
+        setNicknameConfirmed(true);
+        message.success('Никнейм подтвержден! Теперь разместите токен в вашем профиле.');
       } else {
-        message.error(response.data.message);
-        // Показываем токен пользователю
-        if (response.data.token) {
-          message.info(`Ваш токен: ${response.data.token}`);
+        // Если токен не пришел в ответе, получаем из статуса профиля
+        const statusResponse = await axios.get('/profile/status');
+        if (statusResponse.data && statusResponse.data.gwars_verification_token) {
+          setVerificationToken(statusResponse.data.gwars_verification_token);
+          setNicknameConfirmed(true);
+          message.success('Никнейм подтвержден! Теперь разместите токен в вашем профиле.');
+        } else {
+          message.error('Не удалось получить токен');
         }
       }
     } catch (error) {
-      message.error(error.response?.data?.detail || 'Ошибка верификации GWars профиля');
+      message.error(error.response?.data?.detail || 'Ошибка при получении токена');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRejectNickname = () => {
+    setParsedNickname(null);
+    setProfileUrl('');
+    setNicknameConfirmed(false);
+    setVerificationToken(null);
+    setVerificationError(null);
+    form.resetFields(['gwars_profile_url']);
+    message.info('Введите правильную ссылку на ваш профиль GWars');
+  };
+
+  const handleGwarsVerification = async () => {
+    setLoading(true);
+    setVerificationError(null); // Очищаем предыдущую ошибку
+    try {
+      console.log('Проверка верификации токена для профиля:', profileUrl);
+      const response = await axios.post('/profile/verify-gwars', {
+        profile_url: profileUrl,
+        skip_verification: false // Явно указываем, что нужна проверка
+      });
+      
+      console.log('Ответ от API верификации:', response.data);
+      
+      if (response.data.verified) {
+        message.success(response.data.message);
+        setVerificationError(null);
+        // Обновляем статус профиля
+        const statusResponse = await axios.get('/profile/status');
+        setProfileStatus(statusResponse.data);
+        setCurrentStep(1); // Переходим к следующему шагу
+      } else {
+        // Показываем детальное сообщение об ошибке
+        const errorMessage = response.data.message || 'Профиль не подтвержден. Убедитесь, что токен размещен в вашем профиле GWars.';
+        setVerificationError(errorMessage);
+        
+        // Показываем ошибку с детальным описанием
+        message.error({
+          content: errorMessage,
+          duration: 8, // Показываем дольше, чтобы пользователь успел прочитать
+          style: {
+            marginTop: '20vh',
+          },
+        });
+        
+        // Показываем токен пользователю, если он еще не видел его
+        if (response.data.token) {
+          setVerificationToken(response.data.token);
+        }
+      }
+    } catch (error) {
+      console.error('Ошибка при проверке верификации:', error);
+      // Обрабатываем ошибки сети и другие ошибки
+      const errorMessage = error.response?.data?.detail || error.response?.data?.message || 'Ошибка верификации GWars профиля: возможно, вы неполностью вставили сообщение в профиль. Рекомендуем воспользоваться кнопкой "Копировать"';
+      setVerificationError(errorMessage);
+      message.error({
+        content: errorMessage,
+        duration: 8,
+        style: {
+          marginTop: '20vh',
+        },
+      });
     } finally {
       setLoading(false);
     }
@@ -198,6 +329,16 @@ const ProfileCompletion = ({ onComplete }) => {
   ];
 
   const renderStepContent = () => {
+    if (profileStatus === null) {
+      return (
+        <Card>
+          <div style={{ textAlign: 'center', padding: '40px' }}>
+            <Text type="secondary">Загрузка данных профиля...</Text>
+          </div>
+        </Card>
+      );
+    }
+
     switch (currentStep) {
       case 0:
         return (
@@ -237,27 +378,177 @@ const ProfileCompletion = ({ onComplete }) => {
               </Button>
             ) : (
               <div style={{ marginTop: '16px' }}>
-                <Alert
-                  message="Профиль найден!"
-                  description={`Никнейм: ${parsedNickname}. Это ваш персонаж?`}
-                  type="success"
-                  style={{ marginBottom: '16px' }}
-                />
-                
-                <Alert
-                  message="Токен для верификации"
-                  description={`Разместите этот токен в информации вашего профиля GWars: "Я Анонимный Дед Мороз: ${profileStatus?.gwars_verification_token || 'Токен будет сгенерирован при проверке'}"`}
-                  type="warning"
-                  style={{ marginBottom: '16px' }}
-                />
-                
-                <Button 
-                  type="primary" 
-                  onClick={handleGwarsVerification}
-                  loading={loading}
-                >
-                  Подтвердить и продолжить
-                </Button>
+                {!nicknameConfirmed ? (
+                  <>
+                    <Alert
+                      message="Профиль найден!"
+                      description={`Никнейм: ${parsedNickname}. Это ваш персонаж?`}
+                      type="success"
+                      style={{ marginBottom: '16px' }}
+                    />
+                    
+                    <Space style={{ marginBottom: '16px' }}>
+                      <Button 
+                        type="primary" 
+                        icon={<CheckOutlined />}
+                        onClick={handleConfirmNickname}
+                        loading={loading}
+                        size="large"
+                      >
+                        Да, это я
+                      </Button>
+                      <Button 
+                        icon={<CloseOutlined />}
+                        onClick={handleRejectNickname}
+                        size="large"
+                      >
+                        Нет, это не я
+                      </Button>
+                    </Space>
+                  </>
+                ) : (
+                  <>
+                    <Alert
+                      message="Профиль подтвержден!"
+                      description={`Никнейм: ${parsedNickname}`}
+                      type="success"
+                      style={{ marginBottom: '16px' }}
+                    />
+                    
+                    {verificationToken && (
+                      <Alert
+                        message="Токен для верификации"
+                        description={
+                          <div>
+                            <div style={{ marginBottom: '8px' }}>
+                              Разместите этот токен в информации вашего профиля GWars:
+                            </div>
+                            <Space 
+                              direction="vertical" 
+                              style={{ width: '100%' }}
+                              size="small"
+                            >
+                              <div style={{ 
+                                padding: '12px', 
+                                background: '#1f1f1f', 
+                                borderRadius: '4px',
+                                fontFamily: 'monospace',
+                                fontSize: '14px',
+                                wordBreak: 'break-all',
+                                color: '#ffffff',
+                                border: '1px solid #434343',
+                                position: 'relative',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                gap: '12px'
+                              }}>
+                                <span>Я Анонимный Дед Мороз: {verificationToken}</span>
+                                <Button
+                                  type="text"
+                                  icon={<CopyOutlined />}
+                                  onClick={() => copyToClipboard(`Я Анонимный Дед Мороз: ${verificationToken}`)}
+                                  style={{
+                                    color: '#ffffff',
+                                    flexShrink: 0
+                                  }}
+                                  title="Скопировать"
+                                >
+                                  Копировать
+                                </Button>
+                              </div>
+                            </Space>
+                          </div>
+                        }
+                        type="warning"
+                        style={{ marginBottom: '16px' }}
+                      />
+                    )}
+                  
+                  {!verificationToken && nicknameConfirmed && (
+                    <Alert
+                      message="Генерация токена"
+                      description="Получение токена для верификации..."
+                      type="info"
+                      style={{ marginBottom: '16px' }}
+                    />
+                  )}
+                  
+                  {verificationError && (
+                    <Alert
+                      message={<span style={{ color: '#ff4d4f', fontWeight: 'bold' }}>Ошибка верификации</span>}
+                      description={<span style={{ color: '#ff4d4f', fontWeight: 'bold' }}>{verificationError}</span>}
+                      type="error"
+                      closable
+                      onClose={() => setVerificationError(null)}
+                      style={{ marginBottom: '16px' }}
+                    />
+                  )}
+                  
+                  {nicknameConfirmed && verificationToken && (
+                    <>
+                      <Alert
+                        message="Инструкция по верификации"
+                        description={
+                          <div>
+                            <p style={{ marginBottom: '8px' }}>
+                              Для завершения верификации выполните следующие шаги:
+                            </p>
+                            <ol style={{ marginLeft: '20px', marginTop: '8px' }}>
+                              <li style={{ marginBottom: '8px' }}>
+                                Скопируйте токен выше (кнопка "Копировать")
+                              </li>
+                              <li style={{ marginBottom: '8px' }}>
+                                Откройте ваш профиль на GWars.io и перейдите в раздел "Информация"
+                              </li>
+                              <li style={{ marginBottom: '8px' }}>
+                                Разместите в информации вашего персонажа <strong>точно</strong> следующий текст:
+                                <div style={{ 
+                                  padding: '8px', 
+                                  background: '#f0f0f0', 
+                                  borderRadius: '4px',
+                                  fontFamily: 'monospace',
+                                  fontSize: '12px',
+                                  marginTop: '4px',
+                                  marginLeft: '0px'
+                                }}>
+                                  Я Анонимный Дед Мороз: {verificationToken}
+                                </div>
+                              </li>
+                              <li style={{ marginBottom: '8px' }}>
+                                Сохраните изменения в профиле GWars
+                              </li>
+                              <li>
+                                Вернитесь сюда и нажмите кнопку <strong>"Проверить верификацию"</strong> ниже
+                              </li>
+                            </ol>
+                          </div>
+                        }
+                        type="info"
+                        style={{ marginBottom: '16px' }}
+                      />
+                      <Space direction="vertical" style={{ width: '100%' }} size="middle">
+                        <Button 
+                          type="primary" 
+                          size="large"
+                          onClick={handleGwarsVerification}
+                          loading={loading}
+                          block
+                          style={{ marginTop: '8px' }}
+                        >
+                          Проверить верификацию
+                        </Button>
+                        <Button 
+                          onClick={handleRejectNickname}
+                          block
+                        >
+                          Изменить профиль
+                        </Button>
+                      </Space>
+                    </>
+                  )}
+                  </>
+                )}
               </div>
             )}
           </Card>
@@ -367,13 +658,17 @@ const ProfileCompletion = ({ onComplete }) => {
         );
         
       default:
-        return null;
+        return (
+          <Card>
+            <Alert
+              message="Неизвестный шаг"
+              description="Произошла ошибка при определении текущего шага"
+              type="error"
+            />
+          </Card>
+        );
     }
   };
-
-  if (!profileStatus) {
-    return <div>Загрузка...</div>;
-  }
 
   return (
     <div style={{ padding: '24px', maxWidth: '800px', margin: '0 auto' }}>
@@ -384,16 +679,32 @@ const ProfileCompletion = ({ onComplete }) => {
       
       <Divider />
       
-      <Steps
-        current={currentStep}
-        onChange={handleStepChange}
-        items={steps}
-        style={{ marginBottom: '32px' }}
-      />
+      {profileStatus !== null && (
+        <div style={{ marginBottom: '32px' }}>
+          <style>
+            {`
+              .profile-completion-steps .ant-steps-item-title,
+              .profile-completion-steps .ant-steps-item-description {
+                color: white !important;
+              }
+              .profile-completion-steps .ant-steps-item-process .ant-steps-item-title,
+              .profile-completion-steps .ant-steps-item-finish .ant-steps-item-title {
+                color: white !important;
+              }
+            `}
+          </style>
+          <Steps
+            className="profile-completion-steps"
+            current={currentStep}
+            onChange={handleStepChange}
+            items={steps}
+          />
+        </div>
+      )}
       
       {renderStepContent()}
       
-      {currentStep < 3 && (
+      {profileStatus !== null && currentStep < 3 && (
         <div style={{ marginTop: '24px', textAlign: 'right' }}>
           <Space>
             {currentStep > 0 && (

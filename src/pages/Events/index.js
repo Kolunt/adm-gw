@@ -10,7 +10,7 @@ const { Title, Text, Paragraph } = Typography;
 const EventsPage = () => {
   const [events, setEvents] = useState([]);
   const [currentEvent, setCurrentEvent] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -19,17 +19,32 @@ const EventsPage = () => {
 
   const fetchEvents = async () => {
     try {
-      const [eventsResponse, currentEventResponse] = await Promise.all([
-        axios.get('/events/'),
-        axios.get('/events/current').catch(() => null)
-      ]);
+      setLoading(true);
+      console.log('EventsPage: Fetching events');
       
-      setEvents(eventsResponse.data);
-      setCurrentEvent(currentEventResponse?.data);
+      // Простые запросы без Promise.all
+      try {
+        const eventsResponse = await axios.get('/events/');
+        setEvents(eventsResponse.data || []);
+      } catch (err) {
+        console.error('EventsPage: Error fetching events:', err);
+        setEvents([]);
+      }
+      
+      try {
+        const currentEventResponse = await axios.get('/events/current');
+        setCurrentEvent(currentEventResponse.data || null);
+      } catch (err) {
+        console.error('EventsPage: Error fetching current event:', err);
+        setCurrentEvent(null);
+      }
+      
+      console.log('EventsPage: Events loaded');
     } catch (error) {
-      console.error('Error fetching events:', error);
+      console.error('EventsPage: Error fetching events:', error);
     } finally {
       setLoading(false);
+      console.log('EventsPage: Loading finished');
     }
   };
 
@@ -58,6 +73,7 @@ const EventsPage = () => {
     return (
       <div style={{ textAlign: 'center', padding: '50px' }}>
         <Spin size="large" />
+        <div style={{ marginTop: '16px' }}>Загрузка мероприятий...</div>
       </div>
     );
   }

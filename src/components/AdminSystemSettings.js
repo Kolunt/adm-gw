@@ -59,13 +59,21 @@ const AdminSystemSettings = () => {
       const response = await axios.get('/admin/settings');
       setSettings(response.data);
       
-      // Заполняем формы данными
+      // Заполняем формы данными после монтирования компонента
       const formData = {};
       response.data.forEach(setting => {
         formData[setting.key] = setting.value;
       });
-      form.setFieldsValue(formData);
-      smtpForm.setFieldsValue(formData);
+      
+      // Используем setTimeout для гарантии, что форма уже смонтирована
+      setTimeout(() => {
+        if (form && typeof form.setFieldsValue === 'function') {
+          form.setFieldsValue(formData);
+        }
+        if (smtpForm && typeof smtpForm.setFieldsValue === 'function') {
+          smtpForm.setFieldsValue(formData);
+        }
+      }, 0);
     } catch (error) {
       console.error('Error fetching settings:', error);
     }
