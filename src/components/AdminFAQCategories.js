@@ -1,77 +1,65 @@
 import React, { useState, useEffect } from 'react';
-import { Typography, Space, Button, Modal, Form, Input, message, Table, Tag, Select, Switch } from 'antd';
-import { QuestionCircleOutlined, PlusOutlined, EditOutlined, DeleteOutlined, UpOutlined, DownOutlined } from '@ant-design/icons';
+import { Typography, Space, Button, Modal, Form, Input, message, Table, Tag, Switch, Select } from 'antd';
+import { FolderOutlined, PlusOutlined, EditOutlined, DeleteOutlined, UpOutlined, DownOutlined } from '@ant-design/icons';
 import ProCard from '@ant-design/pro-card';
 import axios from '../utils/axiosConfig';
 
-const { Title, Text, Paragraph } = Typography;
+const { Title, Text } = Typography;
 const { TextArea } = Input;
 
-const AdminFAQ = () => {
-  const [faqData, setFaqData] = useState([]);
+const AdminFAQCategories = () => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
-  const [editingItem, setEditingItem] = useState(null);
+  const [editingCategory, setEditingCategory] = useState(null);
   const [form] = Form.useForm();
 
   useEffect(() => {
-    fetchFAQ();
     fetchCategories();
   }, []);
 
-  const fetchFAQ = async () => {
-    setLoading(true);
-    try {
-      const response = await axios.get('/admin/faq');
-      setFaqData(response.data);
-    } catch (error) {
-      console.error('Error fetching FAQ:', error);
-      message.error('Ошибка загрузки FAQ');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const fetchCategories = async () => {
+    setLoading(true);
     try {
       const response = await axios.get('/admin/faq/categories');
       setCategories(response.data);
     } catch (error) {
       console.error('Error fetching categories:', error);
+      message.error('Ошибка загрузки категорий');
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleAdd = () => {
-    setEditingItem(null);
+    setEditingCategory(null);
     form.resetFields();
     setModalVisible(true);
   };
 
-  const handleEdit = (item) => {
-    setEditingItem(item);
+  const handleEdit = (category) => {
+    setEditingCategory(category);
     form.setFieldsValue({
-      question: item.question,
-      answer: item.answer,
-      category_id: item.category_id,
-      order: item.order,
-      is_active: item.is_active
+      name: category.name,
+      description: category.description,
+      order: category.order,
+      is_active: category.is_active
     });
     setModalVisible(true);
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = (id) => {
     Modal.confirm({
-      title: 'Удалить вопрос?',
-      content: 'Вы уверены, что хотите удалить этот вопрос?',
+      title: 'Удалить категорию?',
+      content: 'Вы уверены, что хотите удалить эту категорию? Все FAQ в этой категории останутся без категории.',
       onOk: async () => {
         try {
-          await axios.delete(`/admin/faq/${id}`);
-          message.success('Вопрос удален');
-          fetchFAQ();
+          await axios.delete(`/admin/faq/categories/${id}`);
+          message.success('Категория удалена');
+          fetchCategories();
         } catch (error) {
-          console.error('Error deleting FAQ:', error);
-          message.error('Ошибка удаления вопроса');
+          console.error('Error deleting category:', error);
+          message.error('Ошибка удаления категории');
         }
       }
     });
@@ -79,34 +67,34 @@ const AdminFAQ = () => {
 
   const handleSubmit = async (values) => {
     try {
-      if (editingItem) {
-        // Редактирование существующего вопроса
-        await axios.put(`/admin/faq/${editingItem.id}`, values);
-        message.success('Вопрос обновлен');
+      if (editingCategory) {
+        // Редактирование существующей категории
+        await axios.put(`/admin/faq/categories/${editingCategory.id}`, values);
+        message.success('Категория обновлена');
       } else {
-        // Добавление нового вопроса
-        await axios.post('/admin/faq', values);
-        message.success('Вопрос добавлен');
+        // Добавление новой категории
+        await axios.post('/admin/faq/categories', values);
+        message.success('Категория добавлена');
       }
       setModalVisible(false);
       form.resetFields();
-      fetchFAQ();
+      fetchCategories();
     } catch (error) {
-      console.error('Error saving FAQ:', error);
-      message.error('Ошибка сохранения вопроса');
+      console.error('Error saving category:', error);
+      message.error('Ошибка сохранения категории');
     }
   };
 
-  const moveItem = async (id, direction) => {
-    const currentIndex = faqData.findIndex(item => item.id === id);
+  const moveCategory = async (id, direction) => {
+    const currentIndex = categories.findIndex(cat => cat.id === id);
     if (currentIndex === -1) return;
 
     const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
     
     // Проверяем границы
-    if (newIndex < 0 || newIndex >= faqData.length) return;
+    if (newIndex < 0 || newIndex >= categories.length) return;
 
-    const newData = [...faqData];
+    const newData = [...categories];
     const [movedItem] = newData.splice(currentIndex, 1);
     newData.splice(newIndex, 0, movedItem);
 
@@ -116,20 +104,33 @@ const AdminFAQ = () => {
       order: index + 1
     }));
 
-    setFaqData(updatedData);
+    setCategories(updatedData);
 
     // Сохраняем новый порядок на сервере
     try {
       for (let i = 0; i < updatedData.length; i++) {
-        await axios.put(`/admin/faq/${updatedData[i].id}`, {
+        await axios.put(`/admin/faq/categories/${updatedData[i].id}`, {
           order: i + 1
         });
       }
-      message.success(`Вопрос перемещен ${direction === 'up' ? 'вверх' : 'вниз'}`);
+      message.success(`Категория перемещена ${direction === 'up' ? 'вверх' : 'вниз'}`);
     } catch (error) {
       console.error('Error updating order:', error);
       message.error('Ошибка обновления порядка');
-      fetchFAQ(); // Восстанавливаем исходный порядок
+      fetchCategories(); // Восстанавливаем исходный порядок
+    }
+  };
+
+  const toggleActive = async (id, isActive) => {
+    try {
+      await axios.put(`/admin/faq/categories/${id}`, {
+        is_active: isActive
+      });
+      message.success(`Категория ${isActive ? 'активирована' : 'деактивирована'}`);
+      fetchCategories();
+    } catch (error) {
+      console.error('Error toggling category:', error);
+      message.error('Ошибка изменения статуса категории');
     }
   };
 
@@ -140,12 +141,12 @@ const AdminFAQ = () => {
           <div>
             <Title level={2}>
               <Space>
-                <QuestionCircleOutlined />
-                Управление FAQ
+                <FolderOutlined />
+                Управление категориями FAQ
               </Space>
             </Title>
             <Text type="secondary">
-              Редактирование часто задаваемых вопросов
+              Создание и редактирование категорий для FAQ
             </Text>
           </div>
           <Button 
@@ -153,14 +154,14 @@ const AdminFAQ = () => {
             icon={<PlusOutlined />} 
             onClick={handleAdd}
           >
-            Добавить вопрос
+            Добавить категорию
           </Button>
         </div>
       </ProCard>
 
       <ProCard>
         <Table
-          dataSource={faqData}
+          dataSource={categories}
           rowKey="id"
           loading={loading}
           pagination={false}
@@ -172,24 +173,13 @@ const AdminFAQ = () => {
               width: 80,
               align: 'center',
               render: (order) => (
-                <Tag color="green">{order}</Tag>
+                <Tag color="blue">{order}</Tag>
               ),
             },
             {
-              title: 'Категория',
-              dataIndex: 'category',
-              key: 'category',
-              width: 150,
-              render: (category) => (
-                <Tag color="blue">
-                  {category ? category.name : 'Без категории'}
-                </Tag>
-              ),
-            },
-            {
-              title: 'Вопрос',
-              dataIndex: 'question',
-              key: 'question',
+              title: 'Название',
+              dataIndex: 'name',
+              key: 'name',
               render: (text) => (
                 <Text strong style={{ color: '#ffffff' }}>
                   {text}
@@ -197,12 +187,12 @@ const AdminFAQ = () => {
               ),
             },
             {
-              title: 'Ответ',
-              dataIndex: 'answer',
-              key: 'answer',
+              title: 'Описание',
+              dataIndex: 'description',
+              key: 'description',
               render: (text) => (
                 <Text style={{ color: '#d9d9d9' }}>
-                  {text.length > 100 ? `${text.substring(0, 100)}...` : text}
+                  {text || 'Нет описания'}
                 </Text>
               ),
             },
@@ -210,12 +200,13 @@ const AdminFAQ = () => {
               title: 'Статус',
               dataIndex: 'is_active',
               key: 'is_active',
-              width: 80,
+              width: 100,
               align: 'center',
-              render: (isActive) => (
-                <Tag color={isActive ? 'green' : 'red'}>
-                  {isActive ? 'Активен' : 'Неактивен'}
-                </Tag>
+              render: (isActive, record) => (
+                <Switch
+                  checked={isActive}
+                  onChange={(checked) => toggleActive(record.id, checked)}
+                />
               ),
             },
             {
@@ -227,15 +218,15 @@ const AdminFAQ = () => {
                   <Button
                     type="text"
                     icon={<UpOutlined />}
-                    onClick={() => moveItem(record.id, 'up')}
+                    onClick={() => moveCategory(record.id, 'up')}
                     disabled={index === 0}
                     title="Переместить вверх"
                   />
                   <Button
                     type="text"
                     icon={<DownOutlined />}
-                    onClick={() => moveItem(record.id, 'down')}
-                    disabled={index === faqData.length - 1}
+                    onClick={() => moveCategory(record.id, 'down')}
+                    disabled={index === categories.length - 1}
                     title="Переместить вниз"
                   />
                   <Button
@@ -255,21 +246,11 @@ const AdminFAQ = () => {
               ),
             },
           ]}
-          expandable={{
-            expandedRowRender: (record) => (
-              <div style={{ padding: '16px', backgroundColor: '#1f1f1f', borderRadius: '6px' }}>
-                <Text style={{ color: '#d9d9d9', fontSize: '15px', lineHeight: '1.6' }}>
-                  {record.answer}
-                </Text>
-              </div>
-            ),
-            rowExpandable: (record) => true,
-          }}
         />
       </ProCard>
 
       <Modal
-        title={editingItem ? 'Редактировать вопрос' : 'Добавить вопрос'}
+        title={editingCategory ? 'Редактировать категорию' : 'Добавить категорию'}
         open={modalVisible}
         onCancel={() => {
           setModalVisible(false);
@@ -284,38 +265,21 @@ const AdminFAQ = () => {
           onFinish={handleSubmit}
         >
           <Form.Item
-            name="question"
-            label="Вопрос"
-            rules={[{ required: true, message: 'Пожалуйста, введите вопрос' }]}
+            name="name"
+            label="Название категории"
+            rules={[{ required: true, message: 'Пожалуйста, введите название категории' }]}
           >
-            <Input placeholder="Введите вопрос" />
+            <Input placeholder="Введите название категории" />
           </Form.Item>
           
           <Form.Item
-            name="answer"
-            label="Ответ"
-            rules={[{ required: true, message: 'Пожалуйста, введите ответ' }]}
+            name="description"
+            label="Описание"
           >
             <TextArea 
-              rows={4} 
-              placeholder="Введите ответ" 
+              rows={3} 
+              placeholder="Введите описание категории (необязательно)" 
             />
-          </Form.Item>
-
-          <Form.Item
-            name="category_id"
-            label="Категория"
-          >
-            <Select
-              placeholder="Выберите категорию (необязательно)"
-              allowClear
-            >
-              {categories.map(category => (
-                <Select.Option key={category.id} value={category.id}>
-                  {category.name}
-                </Select.Option>
-              ))}
-            </Select>
           </Form.Item>
 
           <Form.Item
@@ -326,10 +290,10 @@ const AdminFAQ = () => {
             <Input type="number" placeholder="Порядок отображения" />
           </Form.Item>
 
-          {editingItem && (
+          {editingCategory && (
             <Form.Item
               name="is_active"
-              label="Активен"
+              label="Активна"
               valuePropName="checked"
             >
               <Switch />
@@ -339,7 +303,7 @@ const AdminFAQ = () => {
           <Form.Item>
             <Space>
               <Button type="primary" htmlType="submit">
-                {editingItem ? 'Обновить' : 'Добавить'}
+                {editingCategory ? 'Обновить' : 'Добавить'}
               </Button>
               <Button onClick={() => {
                 setModalVisible(false);
@@ -355,4 +319,4 @@ const AdminFAQ = () => {
   );
 };
 
-export default AdminFAQ;
+export default AdminFAQCategories;

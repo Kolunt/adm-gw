@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Typography, Space, Collapse, Spin } from 'antd';
-import { QuestionCircleOutlined } from '@ant-design/icons';
+import { Card, Typography, Space, Collapse, Spin, Tabs, Tag } from 'antd';
+import { QuestionCircleOutlined, FolderOutlined } from '@ant-design/icons';
 import ProCard from '@ant-design/pro-card';
 import axios from '../../utils/axiosConfig';
 
@@ -8,49 +8,102 @@ const { Title, Text, Paragraph } = Typography;
 
 const FAQPage = () => {
   const [faqData, setFaqData] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('all');
 
   useEffect(() => {
     fetchFAQ();
+    fetchCategories();
   }, []);
 
   const fetchFAQ = async () => {
     try {
-      // Пока используем статические данные, позже можно подключить API
-      const staticFAQ = [
-        {
-          id: 1,
-          question: "Как работает система анонимного обмена подарками?",
-          answer: "Система позволяет участникам регистрироваться на мероприятия, указывать свои желания и получать подарки от других участников. Все происходит анонимно - вы не знаете, кто вам дарит подарок."
-        },
-        {
-          id: 2,
-          question: "Как зарегистрироваться на мероприятие?",
-          answer: "Перейдите в раздел 'Все мероприятия', выберите интересующее вас мероприятие и нажмите кнопку регистрации. Заполните форму с вашими пожеланиями."
-        },
-        {
-          id: 3,
-          question: "Могу ли я выбрать, кому дарить подарок?",
-          answer: "Нет, система автоматически назначает получателей подарков случайным образом, чтобы сохранить анонимность процесса."
-        },
-        {
-          id: 4,
-          question: "Что делать, если я не получил подарок?",
-          answer: "Свяжитесь с администраторами системы через раздел 'Контакты'. Мы поможем решить проблему."
-        },
-        {
-          id: 5,
-          question: "Как изменить свои данные в профиле?",
-          answer: "Перейдите в раздел 'Профиль' и нажмите кнопку 'Редактировать профиль'. Вы сможете изменить свои контактные данные и пожелания."
-        }
-      ];
-      setFaqData(staticFAQ);
+      const response = await axios.get('/api/faq');
+      setFaqData(response.data);
     } catch (error) {
       console.error('Error fetching FAQ:', error);
     } finally {
       setLoading(false);
     }
   };
+
+  const fetchCategories = async () => {
+    try {
+      const response = await axios.get('/api/faq/categories');
+      setCategories(response.data);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  };
+
+  const getFilteredFAQ = () => {
+    if (activeTab === 'all') {
+      return faqData;
+    }
+    return faqData.filter(item => item.category_id === parseInt(activeTab));
+  };
+
+  const getTabItems = () => {
+    const items = [
+      {
+        key: 'all',
+        label: (
+          <Space>
+            <QuestionCircleOutlined />
+            Все вопросы
+          </Space>
+        ),
+        children: renderFAQItems(getFilteredFAQ())
+      }
+    ];
+
+    categories.forEach(category => {
+      const categoryFAQ = faqData.filter(item => item.category_id === category.id);
+      if (categoryFAQ.length > 0) {
+        items.push({
+          key: category.id.toString(),
+          label: (
+            <Space>
+              <FolderOutlined />
+              {category.name}
+              <Tag color="blue">{categoryFAQ.length}</Tag>
+            </Space>
+          ),
+          children: renderFAQItems(categoryFAQ)
+        });
+      }
+    });
+
+    return items;
+  };
+
+  const renderFAQItems = (items) => (
+    <Collapse
+      size="large"
+      items={items.map((item) => ({
+        key: item.id,
+        label: (
+          <Text strong style={{ 
+            fontSize: '16px',
+            color: '#ffffff'
+          }}>
+            {item.question}
+          </Text>
+        ),
+        children: (
+          <Paragraph style={{ 
+            fontSize: '15px', 
+            marginBottom: 0,
+            color: '#d9d9d9',
+            lineHeight: '1.6'
+          }}>
+            {item.answer}
+          </Paragraph>
+        ),
+      }))}
+    />
+  );
 
   if (loading) {
     return (
@@ -75,29 +128,11 @@ const FAQPage = () => {
       </ProCard>
 
       <ProCard>
-        <Collapse
+        <Tabs
+          activeKey={activeTab}
+          onChange={setActiveTab}
+          items={getTabItems()}
           size="large"
-          items={faqData.map((item) => ({
-            key: item.id,
-            label: (
-              <Text strong style={{ 
-                fontSize: '16px',
-                color: '#ffffff'
-              }}>
-                {item.question}
-              </Text>
-            ),
-            children: (
-              <Paragraph style={{ 
-                fontSize: '15px', 
-                marginBottom: 0,
-                color: '#d9d9d9',
-                lineHeight: '1.6'
-              }}>
-                {item.answer}
-              </Paragraph>
-            ),
-          }))}
         />
       </ProCard>
     </div>

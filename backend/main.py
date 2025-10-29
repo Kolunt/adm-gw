@@ -128,12 +128,24 @@ class Interest(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
+class FAQCategory(Base):
+    __tablename__ = "faq_categories"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False, unique=True, index=True)
+    description = Column(String, nullable=True)
+    order = Column(Integer, default=0)  # Порядок отображения
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
 class FAQ(Base):
     __tablename__ = "faq"
 
     id = Column(Integer, primary_key=True, index=True)
     question = Column(String, nullable=False, index=True)
     answer = Column(String, nullable=False)
+    category_id = Column(Integer, ForeignKey("faq_categories.id"), nullable=True)  # Категория FAQ
     is_active = Column(Boolean, default=True)
     order = Column(Integer, default=0)  # Порядок отображения
     created_by_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # Кто создал FAQ
@@ -550,9 +562,36 @@ class InterestResponse(BaseModel):
         from_attributes = True
 
 
+class FAQCategoryCreate(BaseModel):
+    name: str
+    description: str | None = None
+    order: int = 0
+
+
+class FAQCategoryUpdate(BaseModel):
+    name: str | None = None
+    description: str | None = None
+    order: int | None = None
+    is_active: bool | None = None
+
+
+class FAQCategoryResponse(BaseModel):
+    id: int
+    name: str
+    description: str | None = None
+    order: int
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
 class FAQCreate(BaseModel):
     question: str
     answer: str
+    category_id: int | None = None
     order: int = 0
     created_by_user_id: int | None = None
 
@@ -560,6 +599,7 @@ class FAQCreate(BaseModel):
 class FAQUpdate(BaseModel):
     question: str | None = None
     answer: str | None = None
+    category_id: int | None = None
     is_active: bool | None = None
     order: int | None = None
 
@@ -568,6 +608,8 @@ class FAQResponse(BaseModel):
     id: int
     question: str
     answer: str
+    category_id: int | None = None
+    category: FAQCategoryResponse | None = None
     is_active: bool
     order: int
     created_by_user_id: int | None = None
@@ -2341,16 +2383,125 @@ async def suggest_address(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Ошибка автодополнения: {str(e)}")
 
+# FAQ Categories API endpoints
+
+@app.get("/api/faq/categories", response_model=list[FAQCategoryResponse])
+async def get_faq_categories(
+    db: Session = Depends(get_db)
+):
+    """Получение всех активных категорий FAQ (доступно всем)"""
+    categories = db.query(FAQCategory).filter(
+        FAQCategory.is_active == True
+    ).order_by(FAQCategory.order.asc(), FAQCategory.created_at.asc()).all()
+    
+    return categories
+
+@app.get("/admin/faq/categories", response_model=list[FAQCategoryResponse])
+async def get_all_faq_categories(
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """Получение всех категорий FAQ для администратора"""
+    categories = db.query(FAQCategory).order_by(FAQCategory.order.asc(), FAQCategory.created_at.asc()).all()
+    return categories
+
+@app.post("/admin/faq/categories", response_model=FAQCategoryResponse)
+async def create_faq_category(
+    category_data: FAQCategoryCreate,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """Создание новой категории FAQ (только для администраторов)"""
+    # Проверяем, что категория с таким именем не существует
+    existing_category = db.query(FAQCategory).filter(FAQCategory.name == category_data.name).first()
+    if existing_category:
+        raise HTTPException(status_code=400, detail="Категория с таким именем уже существует")
+    
+    category = FAQCategory(
+        name=category_data.name,
+        description=category_data.description,
+        order=category_data.order,
+        is_active=True
+    )
+    db.add(category)
+    db.commit()
+    db.refresh(category)
+    return category
+
+@app.put("/admin/faq/categories/{category_id}", response_model=FAQCategoryResponse)
+async def update_faq_category(
+    category_id: int,
+    category_data: FAQCategoryUpdate,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """Обновление категории FAQ (только для администраторов)"""
+    category = db.query(FAQCategory).filter(FAQCategory.id == category_id).first()
+    if not category:
+        raise HTTPException(status_code=404, detail="Категория FAQ не найдена")
+    
+    # Проверяем, что новое имя не конфликтует с существующими
+    if category_data.name and category_data.name != category.name:
+        existing_category = db.query(FAQCategory).filter(
+            FAQCategory.name == category_data.name,
+            FAQCategory.id != category_id
+        ).first()
+        if existing_category:
+            raise HTTPException(status_code=400, detail="Категория с таким именем уже существует")
+    
+    if category_data.name is not None:
+        category.name = category_data.name
+    if category_data.description is not None:
+        category.description = category_data.description
+    if category_data.order is not None:
+        category.order = category_data.order
+    if category_data.is_active is not None:
+        category.is_active = category_data.is_active
+    
+    category.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(category)
+    return category
+
+@app.delete("/admin/faq/categories/{category_id}")
+async def delete_faq_category(
+    category_id: int,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """Удаление категории FAQ (только для администраторов)"""
+    category = db.query(FAQCategory).filter(FAQCategory.id == category_id).first()
+    if not category:
+        raise HTTPException(status_code=404, detail="Категория FAQ не найдена")
+    
+    # Проверяем, есть ли FAQ в этой категории
+    faq_in_category = db.query(FAQ).filter(FAQ.category_id == category_id).first()
+    if faq_in_category:
+        raise HTTPException(status_code=400, detail="Нельзя удалить категорию, в которой есть FAQ. Сначала переместите или удалите все FAQ из этой категории.")
+    
+    db.delete(category)
+    db.commit()
+    return {"message": "Категория FAQ успешно удалена"}
+
 # FAQ API endpoints
 
 @app.get("/api/faq", response_model=list[FAQResponse])
 async def get_faq(
+    category_id: int | None = None,
     db: Session = Depends(get_db)
 ):
     """Получение всех активных FAQ (доступно всем)"""
-    faq_items = db.query(FAQ).filter(
-        FAQ.is_active == True
-    ).order_by(FAQ.order.asc(), FAQ.created_at.asc()).all()
+    query = db.query(FAQ).filter(FAQ.is_active == True)
+    
+    if category_id:
+        query = query.filter(FAQ.category_id == category_id)
+    
+    faq_items = query.order_by(FAQ.order.asc(), FAQ.created_at.asc()).all()
+    
+    # Загружаем информацию о категориях
+    for faq in faq_items:
+        if faq.category_id:
+            faq.category = db.query(FAQCategory).filter(FAQCategory.id == faq.category_id).first()
     
     return faq_items
 
@@ -2361,6 +2512,12 @@ async def get_all_faq(
 ):
     """Получение всех FAQ для администратора"""
     faq_items = db.query(FAQ).order_by(FAQ.order.asc(), FAQ.created_at.asc()).all()
+    
+    # Загружаем информацию о категориях
+    for faq in faq_items:
+        if faq.category_id:
+            faq.category = db.query(FAQCategory).filter(FAQCategory.id == faq.category_id).first()
+    
     return faq_items
 
 @app.post("/admin/faq", response_model=FAQResponse)
@@ -2370,9 +2527,16 @@ async def create_faq(
     db: Session = Depends(get_db)
 ):
     """Создание нового FAQ (только для администраторов)"""
+    # Проверяем, что категория существует, если указана
+    if faq_data.category_id:
+        category = db.query(FAQCategory).filter(FAQCategory.id == faq_data.category_id).first()
+        if not category:
+            raise HTTPException(status_code=400, detail="Указанная категория не найдена")
+    
     faq = FAQ(
         question=faq_data.question,
         answer=faq_data.answer,
+        category_id=faq_data.category_id,
         order=faq_data.order,
         is_active=True,
         created_by_user_id=faq_data.created_by_user_id
@@ -2380,6 +2544,11 @@ async def create_faq(
     db.add(faq)
     db.commit()
     db.refresh(faq)
+    
+    # Загружаем информацию о категории
+    if faq.category_id:
+        faq.category = db.query(FAQCategory).filter(FAQCategory.id == faq.category_id).first()
+    
     return faq
 
 @app.put("/admin/faq/{faq_id}", response_model=FAQResponse)
@@ -2394,10 +2563,19 @@ async def update_faq(
     if not faq:
         raise HTTPException(status_code=404, detail="FAQ не найден")
     
+    # Проверяем, что категория существует, если указана
+    if faq_data.category_id is not None:
+        if faq_data.category_id:
+            category = db.query(FAQCategory).filter(FAQCategory.id == faq_data.category_id).first()
+            if not category:
+                raise HTTPException(status_code=400, detail="Указанная категория не найдена")
+    
     if faq_data.question is not None:
         faq.question = faq_data.question
     if faq_data.answer is not None:
         faq.answer = faq_data.answer
+    if faq_data.category_id is not None:
+        faq.category_id = faq_data.category_id
     if faq_data.is_active is not None:
         faq.is_active = faq_data.is_active
     if faq_data.order is not None:
@@ -2406,6 +2584,11 @@ async def update_faq(
     faq.updated_at = datetime.utcnow()
     db.commit()
     db.refresh(faq)
+    
+    # Загружаем информацию о категории
+    if faq.category_id:
+        faq.category = db.query(FAQCategory).filter(FAQCategory.id == faq.category_id).first()
+    
     return faq
 
 @app.delete("/admin/faq/{faq_id}")
