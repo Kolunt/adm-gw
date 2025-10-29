@@ -39,7 +39,6 @@ import AdminTesting from './components/AdminTesting';
 import AdminInterests from './components/AdminInterests';
 import AdminFAQ from './components/AdminFAQ';
 import AdminFAQCategories from './components/AdminFAQCategories';
-import AdminMenuManagement from './components/AdminMenuManagement';
 import AdminDocumentation from './components/AdminDocumentation';
 import AdminAbout from './components/AdminAbout';
 import UserProfile from './pages/Profile';
@@ -70,49 +69,9 @@ const AppContent = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [dynamicMenuItems, setDynamicMenuItems] = useState([]);
-  const [menuLoading, setMenuLoading] = useState(false);
   const [faqCount, setFaqCount] = useState(0);
 
-  // Функция загрузки динамического меню
-  const fetchMenuItems = async () => {
-    setMenuLoading(true);
-    try {
-      const response = await axios.get('/api/menu');
-      setDynamicMenuItems(response.data);
-    } catch (error) {
-      console.error('Error fetching menu items:', error);
-      // В случае ошибки используем статическое меню
-      setDynamicMenuItems([]);
-    } finally {
-      setMenuLoading(false);
-    }
-  };
 
-  // Функция для преобразования данных меню из API в формат Ant Design
-  const convertMenuItems = (items) => {
-    return items
-      .filter(item => {
-        // Если это FAQ и нет вопросов - скрываем
-        if (item.path === '/faq' && faqCount === 0) {
-          return false;
-        }
-        return true;
-      })
-      .map(item => {
-        const menuItem = {
-          key: item.path || `menu-${item.id}`,
-          icon: getIconComponent(item.icon),
-          label: item.title,
-        };
-
-        if (item.children && item.children.length > 0) {
-          menuItem.children = convertMenuItems(item.children);
-        }
-
-        return menuItem;
-      });
-  };
 
   // Функция для получения компонента иконки по названию
   const getIconComponent = (iconName) => {
@@ -163,9 +122,8 @@ const AppContent = () => {
     }
   };
 
-  // Загружаем меню при изменении пользователя
+  // Загружаем FAQ count при изменении пользователя
   useEffect(() => {
-    fetchMenuItems();
     checkFaqCount();
   }, [user]);
 
@@ -220,83 +178,8 @@ const AppContent = () => {
     return baseItems;
   };
 
-  // Формируем меню: сначала динамическое, затем статическое как fallback
-  const menuItems = useMemo(() => [
-    ...(dynamicMenuItems.length > 0 ? convertMenuItems(dynamicMenuItems) : getMenuItems()),
-    // Если динамическое меню не загружено или пустое, добавляем статическое админ-меню
-    ...(user?.role === 'admin' && dynamicMenuItems.length === 0 ? [{
-      key: '/admin',
-      icon: <SettingOutlined />,
-      label: 'Админ-панель',
-      children: [
-        {
-          key: '/admin/dashboard',
-          icon: <DashboardOutlined />,
-          label: 'Панель управления',
-        },
-        {
-          key: '/admin/events',
-          icon: <CalendarOutlined />,
-          label: 'Управление мероприятиями',
-        },
-        {
-          key: '/admin/gift-assignments',
-          icon: <GiftOutlined />,
-          label: 'Назначения подарков',
-        },
-        {
-          key: '/admin/users',
-          icon: <TeamOutlined />,
-          label: 'Управление пользователями',
-        },
-        {
-          key: '/admin/testing',
-          icon: <ExperimentOutlined />,
-          label: 'Тестирование',
-        },
-        {
-          key: '/admin/interests',
-          icon: <HeartOutlined />,
-          label: 'Интересы',
-        },
-        {
-          key: '/admin/faq',
-          icon: <QuestionCircleOutlined />,
-          label: 'FAQ',
-        },
-        {
-          key: '/admin/faq/categories',
-          icon: <FolderOutlined />,
-          label: 'Категории FAQ',
-        },
-        {
-          key: '/admin/menu',
-          icon: <MenuOutlined />,
-          label: 'Управление меню',
-        },
-        {
-          key: '/admin/documentation',
-          icon: <BookOutlined />,
-          label: 'Документация',
-        },
-        {
-          key: '/admin/contacts',
-          icon: <ContactsOutlined />,
-          label: 'Контакты',
-        },
-        {
-          key: '/admin/about',
-          icon: <InfoCircleOutlined />,
-          label: 'О системе',
-        },
-        {
-          key: '/admin/settings',
-          icon: <SettingOutlined />,
-          label: 'Настройки системы',
-        },
-      ],
-    }] : []),
-  ], [dynamicMenuItems, user, faqCount]);
+  // Формируем статическое меню
+  const menuItems = useMemo(() => getMenuItems(), [user, faqCount]);
 
   const rightContentRender = () => {
     if (!user) {
@@ -547,11 +430,6 @@ const AppContent = () => {
         <Route path="/admin/faq/categories" element={
           <ProtectedRoute requireAdmin={true}>
             <AdminFAQCategories />
-          </ProtectedRoute>
-        } />
-        <Route path="/admin/menu" element={
-          <ProtectedRoute requireAdmin={true}>
-            <AdminMenuManagement />
           </ProtectedRoute>
         } />
         <Route path="/admin/documentation" element={

@@ -153,22 +153,6 @@ class FAQ(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
-class MenuItem(Base):
-    __tablename__ = "menu_items"
-
-    id = Column(Integer, primary_key=True, index=True)
-    title = Column(String, nullable=False)  # Название пункта меню
-    path = Column(String, nullable=True)  # Путь (для ссылок)
-    icon = Column(String, nullable=True)  # Иконка (название иконки из antd)
-    parent_id = Column(Integer, ForeignKey("menu_items.id"), nullable=True)  # Родительский элемент
-    order = Column(Integer, default=0)  # Порядок отображения
-    is_active = Column(Boolean, default=True)  # Активен ли пункт
-    is_admin_only = Column(Boolean, default=False)  # Только для администраторов
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-    # Связь с родительским элементом
-    parent = relationship("MenuItem", remote_side=[id], backref="children")
 
 
 class TelegramBot(Base):
@@ -638,37 +622,6 @@ class FAQResponse(BaseModel):
         from_attributes = True
 
 
-class MenuItemCreate(BaseModel):
-    title: str
-    path: str | None = None
-    icon: str | None = None
-    parent_id: int | None = None
-    order: int = 0
-    is_admin_only: bool = False
-
-
-class MenuItemUpdate(BaseModel):
-    title: str | None = None
-    path: str | None = None
-    icon: str | None = None
-    parent_id: int | None = None
-    order: int | None = None
-    is_active: bool | None = None
-    is_admin_only: bool | None = None
-
-
-class MenuItemResponse(BaseModel):
-    id: int
-    title: str
-    path: str | None = None
-    icon: str | None = None
-    parent_id: int | None = None
-    order: int
-    is_active: bool
-    is_admin_only: bool
-    children: list['MenuItemResponse'] = []
-    created_at: datetime
-    updated_at: datetime
 
     class Config:
         from_attributes = True
@@ -2673,37 +2626,6 @@ async def delete_faq(
     return {"message": "FAQ удален"}
 
 
-# Menu Items API endpoints
-
-@app.get("/api/menu", response_model=list[MenuItemResponse])
-async def get_menu_items(
-    authorization: str = Header(None),
-    db: Session = Depends(get_db)
-):
-    """Получение структуры меню (доступно всем, но с учетом прав)"""
-    # Пытаемся получить пользователя, но не требуем аутентификации
-    current_user = None
-    if authorization and authorization.startswith("Bearer "):
-        try:
-            token = authorization.split(" ")[1]
-            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-            email: str = payload.get("sub")
-            if email:
-                current_user = db.query(User).filter(User.email == email).first()
-        except:
-            pass  # Игнорируем ошибки аутентификации
-    
-    # Получаем все активные элементы меню
-    query = db.query(MenuItem).filter(MenuItem.is_active == True)
-    
-    # Если пользователь не админ, исключаем админские элементы
-    if not current_user or current_user.role != 'admin':
-        query = query.filter(MenuItem.is_admin_only == False)
-    
-    menu_items = query.order_by(MenuItem.order.asc()).all()
-    
-    # Строим иерархическую структуру
-    return build_menu_tree(menu_items)
 
 @app.get("/api/test")
 async def test_endpoint():
@@ -2719,139 +2641,6 @@ async def test_faq(db: Session = Depends(get_db)):
     except Exception as e:
         return {"message": f"Error: {str(e)}", "status": "error"}
 
-@app.get("/admin/menu", response_model=list[MenuItemResponse])
-async def get_all_menu_items(
-    current_admin: User = Depends(get_current_admin),
-    db: Session = Depends(get_db)
-):
-    """Получение всех элементов меню для администратора"""
-    menu_items = db.query(MenuItem).order_by(MenuItem.order.asc()).all()
-    return build_menu_tree(menu_items)
-
-@app.post("/admin/menu", response_model=MenuItemResponse)
-async def create_menu_item(
-    menu_data: MenuItemCreate,
-    current_admin: User = Depends(get_current_admin),
-    db: Session = Depends(get_db)
-):
-    """Создание нового элемента меню (только для администраторов)"""
-    # Проверяем, что родительский элемент существует, если указан
-    if menu_data.parent_id:
-        parent = db.query(MenuItem).filter(MenuItem.id == menu_data.parent_id).first()
-        if not parent:
-            raise HTTPException(status_code=400, detail="Родительский элемент не найден")
-    
-    menu_item = MenuItem(
-        title=menu_data.title,
-        path=menu_data.path,
-        icon=menu_data.icon,
-        parent_id=menu_data.parent_id,
-        order=menu_data.order,
-        is_admin_only=menu_data.is_admin_only,
-        is_active=True
-    )
-    db.add(menu_item)
-    db.commit()
-    db.refresh(menu_item)
-    return menu_item
-
-@app.put("/admin/menu/{item_id}", response_model=MenuItemResponse)
-async def update_menu_item(
-    item_id: int,
-    menu_data: MenuItemUpdate,
-    current_admin: User = Depends(get_current_admin),
-    db: Session = Depends(get_db)
-):
-    """Обновление элемента меню (только для администраторов)"""
-    menu_item = db.query(MenuItem).filter(MenuItem.id == item_id).first()
-    if not menu_item:
-        raise HTTPException(status_code=404, detail="Элемент меню не найден")
-    
-    # Проверяем, что новый родительский элемент существует, если указан
-    if menu_data.parent_id is not None and menu_data.parent_id:
-        parent = db.query(MenuItem).filter(MenuItem.id == menu_data.parent_id).first()
-        if not parent:
-            raise HTTPException(status_code=400, detail="Родительский элемент не найден")
-        # Проверяем, что не создается циклическая ссылка
-        if menu_data.parent_id == item_id:
-            raise HTTPException(status_code=400, detail="Элемент не может быть родителем самому себе")
-    
-    if menu_data.title is not None:
-        menu_item.title = menu_data.title
-    if menu_data.path is not None:
-        menu_item.path = menu_data.path
-    if menu_data.icon is not None:
-        menu_item.icon = menu_data.icon
-    if menu_data.parent_id is not None:
-        menu_item.parent_id = menu_data.parent_id
-    if menu_data.order is not None:
-        menu_item.order = menu_data.order
-    if menu_data.is_active is not None:
-        menu_item.is_active = menu_data.is_active
-    if menu_data.is_admin_only is not None:
-        menu_item.is_admin_only = menu_data.is_admin_only
-    
-    menu_item.updated_at = datetime.utcnow()
-    db.commit()
-    db.refresh(menu_item)
-    return menu_item
-
-@app.delete("/admin/menu/{item_id}")
-async def delete_menu_item(
-    item_id: int,
-    current_admin: User = Depends(get_current_admin),
-    db: Session = Depends(get_db)
-):
-    """Удаление элемента меню (только для администраторов)"""
-    menu_item = db.query(MenuItem).filter(MenuItem.id == item_id).first()
-    if not menu_item:
-        raise HTTPException(status_code=404, detail="Элемент меню не найден")
-    
-    # Проверяем, есть ли дочерние элементы
-    children = db.query(MenuItem).filter(MenuItem.parent_id == item_id).first()
-    if children:
-        raise HTTPException(status_code=400, detail="Нельзя удалить элемент, у которого есть дочерние элементы. Сначала удалите или переместите дочерние элементы.")
-    
-    db.delete(menu_item)
-    db.commit()
-    return {"message": "Элемент меню успешно удален"}
-
-def build_menu_tree(menu_items):
-    """Строит иерархическое дерево меню из плоского списка"""
-    # Создаем словарь для быстрого поиска элементов
-    items_dict = {item.id: MenuItemResponse(
-        id=item.id,
-        title=item.title,
-        path=item.path,
-        icon=item.icon,
-        parent_id=item.parent_id,
-        order=item.order,
-        is_active=item.is_active,
-        is_admin_only=item.is_admin_only,
-        children=[],
-        created_at=item.created_at,
-        updated_at=item.updated_at
-    ) for item in menu_items}
-    
-    # Строим дерево
-    root_items = []
-    for item in menu_items:
-        if item.parent_id is None:
-            root_items.append(items_dict[item.id])
-        else:
-            if item.parent_id in items_dict:
-                items_dict[item.parent_id].children.append(items_dict[item.id])
-    
-    # Сортируем каждый уровень по порядку
-    def sort_children(items):
-        for item in items:
-            item.children.sort(key=lambda x: x.order)
-            sort_children(item.children)
-    
-    root_items.sort(key=lambda x: x.order)
-    sort_children(root_items)
-    
-    return root_items
 
 
 # Telegram Bot API endpoints
