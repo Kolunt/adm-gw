@@ -1805,6 +1805,32 @@ async def unblock_user(
     db.refresh(user)
     return {"message": "User unblocked successfully", "user": user}
 
+@app.delete("/admin/users/test/delete-all")
+async def delete_all_test_users(
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """Удаление всех тестовых пользователей"""
+    # Находим всех тестовых пользователей
+    test_users = db.query(User).filter(User.is_test == True).all()
+    
+    if not test_users:
+        return {"message": "Тестовые пользователи не найдены", "deleted_count": 0}
+    
+    # Удаляем всех тестовых пользователей
+    deleted_count = 0
+    for user in test_users:
+        # Удаляем связанные данные (регистрации на мероприятия, подарки и т.д.)
+        db.query(EventRegistration).filter(EventRegistration.user_id == user.id).delete()
+        db.query(GiftAssignment).filter(GiftAssignment.giver_id == user.id).delete()
+        db.query(GiftAssignment).filter(GiftAssignment.receiver_id == user.id).delete()
+        
+        # Удаляем самого пользователя
+        db.delete(user)
+        deleted_count += 1
+    
+    db.commit()
+    return {"message": f"Удалено {deleted_count} тестовых пользователей", "deleted_count": deleted_count}
 
 @app.put("/auth/profile")
 async def update_user_profile(

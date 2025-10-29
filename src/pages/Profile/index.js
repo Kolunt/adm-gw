@@ -86,6 +86,13 @@ const UserProfile = () => {
     return isViewingOwnProfile || (user.role === 'admin' && targetUserId);
   };
 
+  // Проверяем, может ли пользователь видеть личные данные
+  const canViewPersonalData = () => {
+    if (!user || !profileData) return false;
+    // Личные данные видны только владельцу профиля или администратору
+    return isViewingOwnProfile || user.role === 'admin';
+  };
+
   useEffect(() => {
     if (isViewingOwnProfile && user) {
       fetchProfileData();
@@ -382,36 +389,45 @@ const UserProfile = () => {
                   column={2}
                   bordered
                   items={[
-                    {
-                      key: 'email',
-                      label: 'Email',
-                      children: profileData.email,
-                    },
-                    {
-                      key: 'name',
-                      label: 'Имя пользователя',
-                      children: profileData.name,
-                    },
-                    {
-                      key: 'full_name',
-                      label: 'Полное имя',
-                      children: profileData.full_name,
-                    },
-                    {
-                      key: 'phone_number',
-                      label: 'Телефон',
-                      children: profileData.phone_number || 'Не указан',
-                    },
-                    {
-                      key: 'telegram_username',
-                      label: 'Telegram',
-                      children: profileData.telegram_username || 'Не указан',
-                    },
-                    {
-                      key: 'created_at',
-                      label: 'Дата регистрации',
-                      children: new Date(profileData.created_at).toLocaleDateString('ru-RU'),
-                    },
+                    ...(canViewPersonalData() ? [
+                      {
+                        key: 'email',
+                        label: 'Email',
+                        children: profileData.email,
+                      },
+                      {
+                        key: 'name',
+                        label: 'Имя пользователя',
+                        children: profileData.name,
+                      },
+                      {
+                        key: 'full_name',
+                        label: 'Полное имя',
+                        children: profileData.full_name,
+                      },
+                      {
+                        key: 'phone_number',
+                        label: 'Телефон',
+                        children: profileData.phone_number || 'Не указан',
+                      },
+                      {
+                        key: 'telegram_username',
+                        label: 'Telegram',
+                        children: profileData.telegram_username || 'Не указан',
+                      },
+                      {
+                        key: 'created_at',
+                        label: 'Дата регистрации',
+                        children: new Date(profileData.created_at).toLocaleDateString('ru-RU'),
+                      },
+                    ] : [
+                      {
+                        key: 'privacy_notice',
+                        label: 'Личные данные',
+                        children: 'Скрыты для защиты конфиденциальности',
+                        span: 2,
+                      },
+                    ]),
                   ]}
                 />
               </div>

@@ -192,6 +192,33 @@ const AdminUsers = () => {
     });
   };
 
+  const handleDeleteAllTestUsers = async () => {
+    Modal.confirm({
+      title: <span style={{ color: '#ffffff' }}>Удалить всех тестовых пользователей</span>,
+      content: (
+        <div style={{ color: '#ffffff' }}>
+          <p>Это действие нельзя отменить. Будут удалены все пользователи с меткой 'тест' и их данные.</p>
+          <p style={{ fontWeight: 'bold', color: '#ff4d4f' }}>
+            ВНИМАНИЕ: Это действие необратимо!
+          </p>
+        </div>
+      ),
+      okText: 'Удалить всех тестовых',
+      okType: 'danger',
+      cancelText: 'Отмена',
+      onOk: async () => {
+        try {
+          const response = await axios.delete('/admin/users/test/delete-all');
+          message.success(response.data.message);
+          fetchUsers();
+        } catch (error) {
+          message.error(error.response?.data?.detail || 'Ошибка при удалении тестовых пользователей');
+          console.error('Error deleting test users:', error);
+        }
+      },
+    });
+  };
+
   const columns = [
     {
       title: 'Аватар',
@@ -337,6 +364,13 @@ const AdminUsers = () => {
                 loading={loading}
               >
                 Обновить
+              </Button>
+              <Button 
+                danger
+                icon={<DeleteOutlined />}
+                onClick={handleDeleteAllTestUsers}
+              >
+                Удалить тестовых
               </Button>
               <Button 
                 type="primary"
