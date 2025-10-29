@@ -17,11 +17,21 @@ import {
 } from '@ant-design/icons';
 import ProCard from '@ant-design/pro-card';
 import axios from '../utils/axiosConfig';
+import { useTheme } from '../contexts/ThemeContext';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
 
 const AdminSystemSettings = () => {
+  const { isDark } = useTheme();
+  
+  // Общие стили для полей ввода
+  const inputStyle = {
+    backgroundColor: isDark ? '#2f2f2f' : '#ffffff',
+    color: isDark ? '#ffffff' : '#000000',
+    border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+  };
+  
   const [form] = Form.useForm();
   const [smtpForm] = Form.useForm();
   const [loading, setLoading] = useState(false);
@@ -113,49 +123,81 @@ const AdminSystemSettings = () => {
       layout="vertical"
       onFinish={handleSave}
     >
-      <ProCard size="small" title="Общие настройки сайта">
+      <ProCard 
+        size="small" 
+        title={
+          <span style={{ color: isDark ? '#ffffff' : '#000000' }}>
+            Общие настройки сайта
+          </span>
+        }
+        style={{
+          backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+          border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+        }}
+      >
         <Alert
           message="Основные настройки"
           description="Настройте название сайта и описание, которые будут отображаться пользователям."
           type="info"
           showIcon
-          style={{ marginBottom: 16 }}
+          style={{ 
+            marginBottom: 16,
+            backgroundColor: isDark ? '#2f2f2f' : '#f6ffed',
+            border: isDark ? '1px solid #404040' : '1px solid #b7eb8f',
+            color: isDark ? '#ffffff' : '#000000'
+          }}
         />
         
         <Form.Item
           name="site_title"
-          label="Название сайта"
+          label={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Название сайта</span>}
           rules={[
             { required: true, message: 'Название сайта обязательно' },
             { max: 100, message: 'Название сайта не должно превышать 100 символов' }
           ]}
         >
           <Input
+            style={inputStyle}
             placeholder="Введите название сайта"
             prefix={<GlobalOutlined />}
             maxLength={100}
             showCount
+            style={inputStyle}
           />
-                </Form.Item>
+        </Form.Item>
 
         <Form.Item
           name="site_description"
-          label="Описание сайта"
+          label={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Описание сайта</span>}
           rules={[
             { required: true, message: 'Описание сайта обязательно' },
             { max: 500, message: 'Описание сайта не должно превышать 500 символов' }
           ]}
         >
           <TextArea
+            style={inputStyle}
             placeholder="Введите описание сайта"
             rows={4}
             maxLength={500}
             showCount
+            style={inputStyle}
           />
-                </Form.Item>
+        </Form.Item>
       </ProCard>
 
-      <ProCard size="small" title="Приветственное сообщение" style={{ marginTop: 16 }}>
+      <ProCard 
+        size="small" 
+        title={
+          <span style={{ color: isDark ? '#ffffff' : '#000000' }}>
+            Приветственное сообщение
+          </span>
+        }
+        style={{ 
+          marginTop: 16,
+          backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+          border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+        }}
+      >
         <Alert
           message="Настройки главной страницы"
           description="Настройте приветственные сообщения, которые будут отображаться на главной странице."
@@ -173,6 +215,7 @@ const AdminSystemSettings = () => {
           ]}
         >
           <Input
+            style={inputStyle}
             placeholder="Введите заголовок приветствия"
             prefix={<SettingOutlined />}
             maxLength={100}
@@ -189,6 +232,7 @@ const AdminSystemSettings = () => {
           ]}
         >
           <Input
+            style={inputStyle}
             placeholder="Введите подзаголовок приветствия"
             prefix={<SettingOutlined />}
             maxLength={200}
@@ -205,6 +249,7 @@ const AdminSystemSettings = () => {
           ]}
         >
           <Input
+            style={inputStyle}
             placeholder="Привет, Тестовый пользователь 1!"
             prefix={<UserOutlined />}
             maxLength={300}
@@ -231,6 +276,7 @@ const AdminSystemSettings = () => {
           ]}
         >
           <Input
+            style={inputStyle}
             placeholder="Хочу!"
             prefix={<SettingOutlined />}
             maxLength={50}
@@ -247,6 +293,7 @@ const AdminSystemSettings = () => {
           ]}
         >
           <Input
+            style={inputStyle}
             placeholder="Регистрация"
             prefix={<SettingOutlined />}
             maxLength={50}
@@ -263,6 +310,7 @@ const AdminSystemSettings = () => {
           ]}
         >
           <Input
+            style={inputStyle}
             placeholder="Подтвердить участие"
             prefix={<SettingOutlined />}
             maxLength={50}
@@ -279,6 +327,7 @@ const AdminSystemSettings = () => {
           ]}
         >
           <Input
+            style={inputStyle}
             placeholder="Уже скоро :)"
             prefix={<SettingOutlined />}
             maxLength={50}
@@ -295,6 +344,7 @@ const AdminSystemSettings = () => {
           ]}
         >
           <Input
+            style={inputStyle}
             placeholder="Вы участвуете в мероприятии"
             prefix={<SettingOutlined />}
             maxLength={50}
@@ -849,6 +899,7 @@ const AdminSystemSettings = () => {
           label="Адрес SMTP сервера"
         >
           <Input
+            style={inputStyle}
             placeholder="smtp.gmail.com"
             prefix={<MailOutlined />}
           />
@@ -859,6 +910,7 @@ const AdminSystemSettings = () => {
           label="Порт SMTP сервера"
         >
           <Input
+            style={inputStyle}
             placeholder="587"
             prefix={<SettingOutlined />}
           />
@@ -869,6 +921,7 @@ const AdminSystemSettings = () => {
           label="Имя пользователя SMTP"
         >
           <Input
+            style={inputStyle}
             placeholder="your-email@gmail.com"
             prefix={<UserOutlined />}
           />
@@ -878,7 +931,8 @@ const AdminSystemSettings = () => {
           name="smtp_password"
           label="Пароль SMTP"
         >
-          <Input.Password
+          <Input
+            style={inputStyle}.Password
             placeholder="Введите пароль"
             prefix={<SettingOutlined />}
           />
@@ -889,6 +943,7 @@ const AdminSystemSettings = () => {
           label="Email отправителя"
         >
           <Input
+            style={inputStyle}
             placeholder="noreply@example.com"
             prefix={<MailOutlined />}
           />
@@ -899,6 +954,7 @@ const AdminSystemSettings = () => {
           label="Имя отправителя"
         >
           <Input
+            style={inputStyle}
             placeholder="Анонимный Дед Мороз"
             prefix={<UserOutlined />}
           />
@@ -952,7 +1008,8 @@ const AdminSystemSettings = () => {
             { type: 'number', min: 5, max: 1440, message: 'Время должно быть от 5 до 1440 минут' }
           ]}
         >
-          <InputNumber
+          <Input
+            style={inputStyle}Number
             placeholder="480"
             prefix={<ClockCircleOutlined />}
             style={{ width: '100%' }}
@@ -969,7 +1026,8 @@ const AdminSystemSettings = () => {
             { type: 'number', min: 3, max: 10, message: 'Количество должно быть от 3 до 10' }
           ]}
         >
-          <InputNumber
+          <Input
+            style={inputStyle}Number
             placeholder="5"
             prefix={<SecurityScanOutlined />}
             style={{ width: '100%' }}
@@ -986,7 +1044,8 @@ const AdminSystemSettings = () => {
             { type: 'number', min: 6, max: 20, message: 'Длина должна быть от 6 до 20 символов' }
           ]}
         >
-          <InputNumber
+          <Input
+            style={inputStyle}Number
             placeholder="8"
             prefix={<SecurityScanOutlined />}
             style={{ width: '100%' }}
@@ -1024,6 +1083,7 @@ const AdminSystemSettings = () => {
           label="Разрешенные IP адреса (через запятую)"
         >
           <TextArea
+            style={inputStyle}
             placeholder="192.168.1.0/24, 10.0.0.0/8"
             rows={3}
             prefix={<SecurityScanOutlined />}
@@ -1110,7 +1170,8 @@ const AdminSystemSettings = () => {
             { type: 'number', min: 1, max: 30, message: 'Количество должно быть от 1 до 30 дней' }
           ]}
         >
-          <InputNumber
+          <Input
+            style={inputStyle}Number
             placeholder="3"
             prefix={<NotificationOutlined />}
             style={{ width: '100%' }}
@@ -1141,7 +1202,8 @@ const AdminSystemSettings = () => {
           name="telegram_bot_token"
           label="Токен Telegram бота"
         >
-          <Input.Password
+          <Input
+            style={inputStyle}.Password
             placeholder="123456789:ABCdefGHIjklMNOpqrsTUVwxyz"
             prefix={<NotificationOutlined />}
           />
@@ -1152,6 +1214,7 @@ const AdminSystemSettings = () => {
           label="ID чата для уведомлений"
         >
           <Input
+            style={inputStyle}
             placeholder="-1001234567890"
             prefix={<NotificationOutlined />}
           />
@@ -1197,7 +1260,8 @@ const AdminSystemSettings = () => {
             { type: 'number', min: 2, max: 1000, message: 'Количество должно быть от 2 до 1000' }
           ]}
         >
-          <InputNumber
+          <Input
+            style={inputStyle}Number
             placeholder="100"
             prefix={<TeamOutlined />}
             style={{ width: '100%' }}
@@ -1230,7 +1294,8 @@ const AdminSystemSettings = () => {
             { type: 'number', min: 1, max: 168, message: 'Количество должно быть от 1 до 168 часов' }
           ]}
         >
-          <InputNumber
+          <Input
+            style={inputStyle}Number
             placeholder="24"
             prefix={<ClockCircleOutlined />}
             style={{ width: '100%' }}
@@ -1247,7 +1312,8 @@ const AdminSystemSettings = () => {
             { type: 'number', min: 1, max: 365, message: 'Продолжительность должна быть от 1 до 365 дней' }
           ]}
         >
-          <InputNumber
+          <Input
+            style={inputStyle}Number
             placeholder="7"
             prefix={<ClockCircleOutlined />}
             style={{ width: '100%' }}
@@ -1303,7 +1369,8 @@ const AdminSystemSettings = () => {
             { type: 'number', min: 30, max: 3650, message: 'Количество должно быть от 30 до 3650 дней' }
           ]}
         >
-          <InputNumber
+          <Input
+            style={inputStyle}Number
             placeholder="365"
             prefix={<DatabaseOutlined />}
             style={{ width: '100%' }}
@@ -1330,32 +1397,56 @@ const AdminSystemSettings = () => {
   );
 
   return (
-    <div style={{ padding: '24px' }}>
-      <ProCard style={{ marginBottom: '24px' }}>
+    <div style={{ 
+      padding: '24px',
+      backgroundColor: isDark ? '#141414' : '#ffffff',
+      minHeight: '100vh'
+    }}>
+      <ProCard 
+        style={{ 
+          marginBottom: '24px',
+          backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+          border: isDark ? '1px solid #303030' : '1px solid #d9d9d9'
+        }}
+      >
         <Row gutter={[16, 16]} align="middle">
           <Col xs={24} md={16}>
-            <Title level={2}>
+            <Title 
+              level={2}
+              style={{ color: isDark ? '#ffffff' : '#000000' }}
+            >
               <Space>
                 <SettingOutlined />
                 Системные настройки
               </Space>
             </Title>
-            <Text type="secondary">
+            <Text 
+              type="secondary"
+              style={{ color: isDark ? '#a6a6a6' : '#666666' }}
+            >
               Управление конфигурацией системы
             </Text>
           </Col>
         </Row>
       </ProCard>
 
-      <ProCard>
+      <ProCard
+        style={{
+          backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+          border: isDark ? '1px solid #303030' : '1px solid #d9d9d9'
+        }}
+      >
         <Tabs
           activeKey={activeTab}
           onChange={handleTabChange}
+          style={{
+            color: isDark ? '#ffffff' : '#000000'
+          }}
           items={[
             {
               key: 'general',
               label: (
-                <span>
+                <span style={{ color: isDark ? '#ffffff' : '#000000' }}>
                   <GlobalOutlined />
                   Общие
                 </span>
@@ -1365,7 +1456,7 @@ const AdminSystemSettings = () => {
             {
               key: 'colors',
               label: (
-                <span>
+                <span style={{ color: isDark ? '#ffffff' : '#000000' }}>
                   <BgColorsOutlined />
                   Цвета
                 </span>
@@ -1375,7 +1466,7 @@ const AdminSystemSettings = () => {
             {
               key: 'smtp',
               label: (
-                <span>
+                <span style={{ color: isDark ? '#ffffff' : '#000000' }}>
                   <MailOutlined />
                   SMTP
                 </span>
@@ -1385,7 +1476,7 @@ const AdminSystemSettings = () => {
             {
               key: 'security',
               label: (
-                <span>
+                <span style={{ color: isDark ? '#ffffff' : '#000000' }}>
                   <SecurityScanOutlined />
                   Безопасность
                 </span>
@@ -1395,7 +1486,7 @@ const AdminSystemSettings = () => {
             {
               key: 'notifications',
               label: (
-                <span>
+                <span style={{ color: isDark ? '#ffffff' : '#000000' }}>
                   <NotificationOutlined />
                   Уведомления
                 </span>
@@ -1405,7 +1496,7 @@ const AdminSystemSettings = () => {
             {
               key: 'system',
               label: (
-                <span>
+                <span style={{ color: isDark ? '#ffffff' : '#000000' }}>
                   <DatabaseOutlined />
                   Система
                 </span>
