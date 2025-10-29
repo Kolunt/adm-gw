@@ -217,6 +217,14 @@ const ProfileCompletion = ({ onComplete }) => {
   const handleGwarsVerification = async () => {
     setLoading(true);
     setVerificationError(null); // Очищаем предыдущую ошибку
+    
+    // Проверяем, что profileUrl установлен
+    if (!profileUrl) {
+      setVerificationError('Сначала необходимо ввести и подтвердить ссылку на GWars профиль');
+      setLoading(false);
+      return;
+    }
+    
     try {
       console.log('Проверка верификации токена для профиля:', profileUrl);
       const response = await axios.post('/profile/verify-gwars', {
@@ -254,8 +262,18 @@ const ProfileCompletion = ({ onComplete }) => {
       }
     } catch (error) {
       console.error('Ошибка при проверке верификации:', error);
-      // Обрабатываем ошибки сети и другие ошибки
-      const errorMessage = error.response?.data?.detail || error.response?.data?.message || 'Ошибка верификации GWars профиля: возможно, вы неполностью вставили сообщение в профиль. Рекомендуем воспользоваться кнопкой "Копировать"';
+      
+      let errorMessage;
+      if (error.code === 'ERR_NETWORK') {
+        errorMessage = 'Ошибка сети. Проверьте подключение к интернету и попробуйте снова.';
+      } else if (error.response?.status === 500) {
+        errorMessage = 'Ошибка сервера. Попробуйте позже или обратитесь к администратору.';
+      } else if (error.response?.status === 401) {
+        errorMessage = 'Сессия истекла. Пожалуйста, войдите в систему заново.';
+      } else {
+        errorMessage = error.response?.data?.detail || error.response?.data?.message || 'Ошибка верификации GWars профиля: возможно, вы неполностью вставили сообщение в профиль. Рекомендуем воспользоваться кнопкой "Копировать"';
+      }
+      
       setVerificationError(errorMessage);
       message.error({
         content: errorMessage,
