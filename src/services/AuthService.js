@@ -16,6 +16,7 @@ export const AuthProvider = ({ children }) => {
   const [profileStatus, setProfileStatus] = useState(null);
   const [loading, setLoading] = useState(false); // Начинаем с false
   const [profileStatusLoading, setProfileStatusLoading] = useState(false);
+  const [profileStatusFetched, setProfileStatusFetched] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -28,43 +29,42 @@ export const AuthProvider = ({ children }) => {
 
   const fetchUserProfile = async () => {
     try {
-      console.log('AuthService: Fetching user profile');
       const response = await axios.get('/auth/me');
-      console.log('AuthService: User profile loaded:', response.data);
       setUser(response.data);
+      setProfileStatusFetched(false); // Сбрасываем флаг при смене пользователя
       
-      // Получаем статус профиля только если пользователь авторизован
-      if (response.data) {
+      // Получаем статус профиля только если пользователь авторизован и это не админ
+      if (response.data && response.data.role !== 'admin') {
         fetchProfileStatus();
       } else {
         setProfileStatus(null);
       }
     } catch (error) {
-      console.error('AuthService: Error fetching user profile:', error);
       if (error.response?.status === 401) {
         localStorage.removeItem('token');
         delete axios.defaults.headers.common['Authorization'];
         setUser(null);
         setProfileStatus(null);
+        setProfileStatusFetched(false);
       } else {
         setUser(null);
         setProfileStatus(null);
+        setProfileStatusFetched(false);
       }
     }
   };
 
   const fetchProfileStatus = async () => {
-    if (profileStatusLoading || !user) return;
+    if (profileStatusLoading || !user || profileStatusFetched) return;
     
     setProfileStatusLoading(true);
     try {
-      console.log('AuthService: Fetching profile status');
       const response = await axios.get('/profile/status');
-      console.log('AuthService: Profile status loaded:', response.data);
       setProfileStatus(response.data);
+      setProfileStatusFetched(true);
     } catch (error) {
-      console.error('AuthService: Error fetching profile status:', error);
       setProfileStatus(null);
+      setProfileStatusFetched(true);
     } finally {
       setProfileStatusLoading(false);
     }
@@ -119,6 +119,8 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('token');
     delete axios.defaults.headers.common['Authorization'];
     setUser(null);
+    setProfileStatus(null);
+    setProfileStatusFetched(false);
     window.location.href = '/';
   };
 
