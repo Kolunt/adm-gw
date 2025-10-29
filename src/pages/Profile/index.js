@@ -88,8 +88,10 @@ const UserProfile = () => {
 
   // Проверяем, может ли пользователь видеть личные данные
   const canViewPersonalData = () => {
-    if (!user || !profileData) return false;
+    if (!profileData) return false;
     // Личные данные видны только владельцу профиля или администратору
+    // Если пользователь не авторизован (гость), личные данные скрыты
+    if (!user) return false;
     return isViewingOwnProfile || user.role === 'admin';
   };
 
@@ -98,7 +100,7 @@ const UserProfile = () => {
       fetchProfileData();
     } else if (targetUserId) {
       fetchUserProfile(targetUserId);
-    } else {
+    } else if (!viewUserId && !user) {
       // Если нет пользователя и нет ID, сбрасываем загрузку
       setLoading(false);
     }
@@ -128,7 +130,10 @@ const UserProfile = () => {
     try {
       setLoading(true);
       console.log('Fetching user profile for ID:', userId);
-      const response = await axios.get(`/users/${userId}`);
+      
+      // Используем публичный эндпоинт для гостей, приватный для авторизованных пользователей
+      const endpoint = user ? `/users/${userId}` : `/users/${userId}/public`;
+      const response = await axios.get(endpoint);
       console.log('User profile response:', response.data);
       setProfileData(response.data);
     } catch (error) {
