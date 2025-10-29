@@ -1231,17 +1231,17 @@ async def get_users(
         users = db.query(User).filter(User.is_active == True).all()
     return users
 
-@app.get("/users/{user_id}", response_model=UserResponse)
-async def get_user(user_id: int, current_admin: User = Depends(get_current_admin), db: Session = Depends(get_db)):
-    """Получение профиля пользователя по ID (только для администраторов)"""
+@app.get("/users/{user_id}/public", response_model=UserResponse)
+async def get_user_public(user_id: int, db: Session = Depends(get_db)):
+    """Публичный просмотр профиля пользователя (доступно всем, включая гостей)"""
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
-@app.get("/users/{user_id}/public", response_model=UserResponse)
-async def get_user_public(user_id: int, db: Session = Depends(get_db)):
-    """Публичный просмотр профиля пользователя (доступно всем, включая гостей)"""
+@app.get("/users/{user_id}", response_model=UserResponse)
+async def get_user(user_id: int, current_admin: User = Depends(get_current_admin), db: Session = Depends(get_db)):
+    """Получение профиля пользователя по ID (только для администраторов)"""
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
