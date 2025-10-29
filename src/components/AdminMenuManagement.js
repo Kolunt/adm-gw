@@ -295,12 +295,11 @@ const AdminMenuManagement = () => {
         }}
         footer={null}
         width={600}
-        style={{
-          backgroundColor: isDark ? '#1f1f1f' : '#ffffff'
-        }}
-        bodyStyle={{
-          backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
-          color: isDark ? '#ffffff' : '#000000'
+        styles={{
+          body: {
+            backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+            color: isDark ? '#ffffff' : '#000000'
+          }
         }}
       >
         <Form
