@@ -224,8 +224,8 @@ const AdminTesting = () => {
                 Создать тестовых пользователей
               </Button>
               <Popconfirm
-                title="Удалить всех тестовых пользователей?"
-                description="Это действие нельзя отменить. Будут удалены все пользователи с меткой 'тест' и их данные."
+                title={<span style={{ color: '#ffffff' }}>Удалить всех тестовых пользователей?</span>}
+                description={<span style={{ color: '#ffffff' }}>Это действие нельзя отменить. Будут удалены все пользователи с меткой 'тест' и их данные.</span>}
                 onConfirm={deleteTestUsers}
                 okText="Да, удалить"
                 cancelText="Отмена"
