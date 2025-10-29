@@ -1,0 +1,6 @@
+@echo off
+echo Запуск бэкенда...
+start cmd /k "cd backend && python main.py"
+echo Запуск фронтенда...
+start cmd /k "npm start"
+echo Готово!
