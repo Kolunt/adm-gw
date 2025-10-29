@@ -175,6 +175,77 @@ const AppContent = () => {
       return [];
     }
 
+    // Если пользователь - администратор, добавляем админ-панель
+    if (user?.role === 'admin') {
+      baseItems.push({
+        key: '/admin',
+        icon: <SettingOutlined />,
+        label: 'Админ-панель',
+        children: [
+          {
+            key: '/admin/dashboard',
+            icon: <DashboardOutlined />,
+            label: 'Панель управления',
+          },
+          {
+            key: '/admin/events',
+            icon: <CalendarOutlined />,
+            label: 'Управление мероприятиями',
+          },
+          {
+            key: '/admin/gift-assignments',
+            icon: <GiftOutlined />,
+            label: 'Назначения подарков',
+          },
+          {
+            key: '/admin/users',
+            icon: <TeamOutlined />,
+            label: 'Управление пользователями',
+          },
+          {
+            key: '/admin/testing',
+            icon: <ExperimentOutlined />,
+            label: 'Тестирование',
+          },
+          {
+            key: '/admin/interests',
+            icon: <HeartOutlined />,
+            label: 'Интересы',
+          },
+          {
+            key: '/admin/faq',
+            icon: <QuestionCircleOutlined />,
+            label: 'FAQ',
+          },
+          {
+            key: '/admin/faq/categories',
+            icon: <FolderOutlined />,
+            label: 'Категории FAQ',
+          },
+          {
+            key: '/admin/documentation',
+            icon: <BookOutlined />,
+            label: 'Документация',
+          },
+          {
+            key: '/admin/contacts',
+            icon: <ContactsOutlined />,
+            label: 'Контакты',
+          },
+          {
+            key: '/admin/about',
+            icon: <InfoCircleOutlined />,
+            label: 'О системе',
+          },
+          {
+            key: '/admin/settings',
+            icon: <SettingOutlined />,
+            label: 'Настройки системы',
+          },
+        ],
+      });
+    }
+
     return baseItems;
   };
 
