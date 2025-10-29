@@ -19,7 +19,8 @@ import {
   InfoCircleOutlined,
   ContactsOutlined,
   MenuUnfoldOutlined,
-  FolderOutlined
+  FolderOutlined,
+  MenuOutlined
 } from '@ant-design/icons';
 import ruRU from 'antd/locale/ru_RU';
 
@@ -34,6 +35,7 @@ import AdminTesting from './components/AdminTesting';
 import AdminInterests from './components/AdminInterests';
 import AdminFAQ from './components/AdminFAQ';
 import AdminFAQCategories from './components/AdminFAQCategories';
+import AdminMenuManagement from './components/AdminMenuManagement';
 import AdminDocumentation from './components/AdminDocumentation';
 import AdminAbout from './components/AdminAbout';
 import UserProfile from './pages/Profile';
@@ -53,6 +55,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider, useAuth } from './services/AuthService';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { useColorSettings } from './hooks/useColorSettings';
+import axios from './utils/axiosConfig';
 
 // Import styles
 import './App.css';
@@ -63,6 +66,71 @@ const AppContent = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [dynamicMenuItems, setDynamicMenuItems] = useState([]);
+  const [menuLoading, setMenuLoading] = useState(false);
+
+  // Функция загрузки динамического меню
+  const fetchMenuItems = async () => {
+    setMenuLoading(true);
+    try {
+      const response = await axios.get('/api/menu');
+      setDynamicMenuItems(response.data);
+    } catch (error) {
+      console.error('Error fetching menu items:', error);
+      // В случае ошибки используем статическое меню
+      setDynamicMenuItems([]);
+    } finally {
+      setMenuLoading(false);
+    }
+  };
+
+  // Функция для преобразования данных меню из API в формат Ant Design
+  const convertMenuItems = (items) => {
+    return items.map(item => {
+      const menuItem = {
+        key: item.path || `menu-${item.id}`,
+        icon: getIconComponent(item.icon),
+        label: item.title,
+      };
+
+      if (item.children && item.children.length > 0) {
+        menuItem.children = convertMenuItems(item.children);
+      }
+
+      return menuItem;
+    });
+  };
+
+  // Функция для получения компонента иконки по названию
+  const getIconComponent = (iconName) => {
+    if (!iconName) return null;
+    
+    const iconMap = {
+      'HomeOutlined': <HomeOutlined />,
+      'UserOutlined': <UserOutlined />,
+      'SettingOutlined': <SettingOutlined />,
+      'TeamOutlined': <TeamOutlined />,
+      'GiftOutlined': <GiftOutlined />,
+      'QuestionCircleOutlined': <QuestionCircleOutlined />,
+      'CalendarOutlined': <CalendarOutlined />,
+      'HeartOutlined': <HeartOutlined />,
+      'BookOutlined': <BookOutlined />,
+      'ExperimentOutlined': <ExperimentOutlined />,
+      'InfoCircleOutlined': <InfoCircleOutlined />,
+      'ContactsOutlined': <ContactsOutlined />,
+      'MenuOutlined': <MenuOutlined />,
+      'FolderOutlined': <FolderOutlined />,
+      'FileOutlined': <FileOutlined />,
+      'DashboardOutlined': <DashboardOutlined />,
+      'LoginOutlined': <LoginOutlined />,
+      'LogoutOutlined': <LogoutOutlined />,
+      'PlusOutlined': <PlusOutlined />,
+      'EditOutlined': <EditOutlined />,
+      'DeleteOutlined': <DeleteOutlined />,
+    };
+
+    return iconMap[iconName] || null;
+  };
 
   // Проверяем статус профиля при загрузке
   useEffect(() => {
@@ -70,6 +138,11 @@ const AppContent = () => {
       fetchProfileStatus();
     }
   }, [user, fetchProfileStatus]);
+
+  // Загружаем меню при изменении пользователя
+  useEffect(() => {
+    fetchMenuItems();
+  }, [user]);
 
   const handleMenuClick = ({ key }) => {
     if (key !== location.pathname) {
@@ -121,9 +194,11 @@ const AppContent = () => {
     return baseItems;
   };
 
+  // Формируем меню: сначала динамическое, затем статическое как fallback
   const menuItems = [
-    ...getMenuItems(),
-    ...(user?.role === 'admin' ? [{
+    ...(dynamicMenuItems.length > 0 ? convertMenuItems(dynamicMenuItems) : getMenuItems()),
+    // Если динамическое меню не загружено или пустое, добавляем статическое админ-меню
+    ...(user?.role === 'admin' && dynamicMenuItems.length === 0 ? [{
       key: '/admin',
       icon: <SettingOutlined />,
       label: 'Админ-панель',
@@ -167,6 +242,11 @@ const AppContent = () => {
           key: '/admin/faq/categories',
           icon: <FolderOutlined />,
           label: 'Категории FAQ',
+        },
+        {
+          key: '/admin/menu',
+          icon: <MenuOutlined />,
+          label: 'Управление меню',
         },
         {
           key: '/admin/documentation',
@@ -441,6 +521,11 @@ const AppContent = () => {
         <Route path="/admin/faq/categories" element={
           <ProtectedRoute requireAdmin={true}>
             <AdminFAQCategories />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/menu" element={
+          <ProtectedRoute requireAdmin={true}>
+            <AdminMenuManagement />
           </ProtectedRoute>
         } />
         <Route path="/admin/documentation" element={
