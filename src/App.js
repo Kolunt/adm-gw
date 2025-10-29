@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { ConfigProvider, App as AntdApp } from 'antd';
 import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { Layout, Menu, Drawer, Button } from 'antd';
@@ -72,6 +72,7 @@ const AppContent = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dynamicMenuItems, setDynamicMenuItems] = useState([]);
   const [menuLoading, setMenuLoading] = useState(false);
+  const [faqCount, setFaqCount] = useState(0);
 
   // Функция загрузки динамического меню
   const fetchMenuItems = async () => {
@@ -90,19 +91,27 @@ const AppContent = () => {
 
   // Функция для преобразования данных меню из API в формат Ant Design
   const convertMenuItems = (items) => {
-    return items.map(item => {
-      const menuItem = {
-        key: item.path || `menu-${item.id}`,
-        icon: getIconComponent(item.icon),
-        label: item.title,
-      };
+    return items
+      .filter(item => {
+        // Если это FAQ и нет вопросов - скрываем
+        if (item.path === '/faq' && faqCount === 0) {
+          return false;
+        }
+        return true;
+      })
+      .map(item => {
+        const menuItem = {
+          key: item.path || `menu-${item.id}`,
+          icon: getIconComponent(item.icon),
+          label: item.title,
+        };
 
-      if (item.children && item.children.length > 0) {
-        menuItem.children = convertMenuItems(item.children);
-      }
+        if (item.children && item.children.length > 0) {
+          menuItem.children = convertMenuItems(item.children);
+        }
 
-      return menuItem;
-    });
+        return menuItem;
+      });
   };
 
   // Функция для получения компонента иконки по названию
@@ -143,9 +152,21 @@ const AppContent = () => {
     }
   }, [user, fetchProfileStatus]);
 
+  // Функция проверки количества FAQ
+  const checkFaqCount = async () => {
+    try {
+      const response = await axios.get('/api/faq');
+      setFaqCount(response.data.length);
+    } catch (error) {
+      console.error('Error checking FAQ count:', error);
+      setFaqCount(0);
+    }
+  };
+
   // Загружаем меню при изменении пользователя
   useEffect(() => {
     fetchMenuItems();
+    checkFaqCount();
   }, [user]);
 
   const handleMenuClick = ({ key }) => {
@@ -173,11 +194,12 @@ const AppContent = () => {
         icon: <TeamOutlined />,
         label: 'Все участники',
       },
-      {
+      // FAQ показываем только если есть вопросы
+      ...(faqCount > 0 ? [{
         key: '/faq',
         icon: <QuestionCircleOutlined />,
         label: 'FAQ',
-      },
+      }] : []),
       {
         key: '/about',
         icon: <InfoCircleOutlined />,
@@ -199,7 +221,7 @@ const AppContent = () => {
   };
 
   // Формируем меню: сначала динамическое, затем статическое как fallback
-  const menuItems = [
+  const menuItems = useMemo(() => [
     ...(dynamicMenuItems.length > 0 ? convertMenuItems(dynamicMenuItems) : getMenuItems()),
     // Если динамическое меню не загружено или пустое, добавляем статическое админ-меню
     ...(user?.role === 'admin' && dynamicMenuItems.length === 0 ? [{
@@ -274,7 +296,7 @@ const AppContent = () => {
         },
       ],
     }] : []),
-  ];
+  ], [dynamicMenuItems, user, faqCount]);
 
   const rightContentRender = () => {
     if (!user) {
