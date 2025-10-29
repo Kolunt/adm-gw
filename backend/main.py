@@ -2677,10 +2677,22 @@ async def delete_faq(
 
 @app.get("/api/menu", response_model=list[MenuItemResponse])
 async def get_menu_items(
-    current_user: User = Depends(get_current_user_optional),
+    authorization: str = Header(None),
     db: Session = Depends(get_db)
 ):
     """Получение структуры меню (доступно всем, но с учетом прав)"""
+    # Пытаемся получить пользователя, но не требуем аутентификации
+    current_user = None
+    if authorization and authorization.startswith("Bearer "):
+        try:
+            token = authorization.split(" ")[1]
+            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+            email: str = payload.get("sub")
+            if email:
+                current_user = db.query(User).filter(User.email == email).first()
+        except:
+            pass  # Игнорируем ошибки аутентификации
+    
     # Получаем все активные элементы меню
     query = db.query(MenuItem).filter(MenuItem.is_active == True)
     
@@ -2692,6 +2704,20 @@ async def get_menu_items(
     
     # Строим иерархическую структуру
     return build_menu_tree(menu_items)
+
+@app.get("/api/test")
+async def test_endpoint():
+    """Тестовый эндпоинт для проверки работы сервера"""
+    return {"message": "Server is working", "status": "ok"}
+
+@app.get("/api/faq/test")
+async def test_faq(db: Session = Depends(get_db)):
+    """Тестовый эндпоинт для проверки FAQ"""
+    try:
+        count = db.query(FAQ).count()
+        return {"message": f"FAQ table has {count} items", "status": "ok"}
+    except Exception as e:
+        return {"message": f"Error: {str(e)}", "status": "error"}
 
 @app.get("/admin/menu", response_model=list[MenuItemResponse])
 async def get_all_menu_items(
