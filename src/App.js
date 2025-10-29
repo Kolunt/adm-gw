@@ -20,7 +20,11 @@ import {
   ContactsOutlined,
   MenuUnfoldOutlined,
   FolderOutlined,
-  MenuOutlined
+  MenuOutlined,
+  FileOutlined,
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined
 } from '@ant-design/icons';
 import ruRU from 'antd/locale/ru_RU';
 
