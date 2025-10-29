@@ -3,11 +3,13 @@ import { Typography, Space, Button, Modal, Form, Input, message, Table, Tag, Swi
 import { MenuOutlined, PlusOutlined, EditOutlined, DeleteOutlined, UpOutlined, DownOutlined, FolderOutlined, FileOutlined } from '@ant-design/icons';
 import ProCard from '@ant-design/pro-card';
 import axios from '../utils/axiosConfig';
+import { useTheme } from '../services/ThemeService';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 
 const AdminMenuManagement = () => {
+  const { isDark } = useTheme();
   const [menuItems, setMenuItems] = useState([]);
   const [flatMenuItems, setFlatMenuItems] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -221,17 +223,33 @@ const AdminMenuManagement = () => {
   };
 
   return (
-    <div style={{ padding: '24px' }}>
-      <ProCard style={{ marginBottom: '24px' }}>
+    <div style={{ 
+      padding: '24px',
+      backgroundColor: isDark ? '#141414' : '#ffffff',
+      minHeight: '100vh'
+    }}>
+      <ProCard 
+        style={{ 
+          marginBottom: '24px',
+          backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+          border: isDark ? '1px solid #303030' : '1px solid #d9d9d9'
+        }}
+      >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <Title level={2}>
+            <Title 
+              level={2} 
+              style={{ color: isDark ? '#ffffff' : '#000000' }}
+            >
               <Space>
                 <MenuOutlined />
                 Управление меню
               </Space>
             </Title>
-            <Text type="secondary">
+            <Text 
+              type="secondary"
+              style={{ color: isDark ? '#a6a6a6' : '#666666' }}
+            >
               Настройка структуры левого меню с поддержкой многоуровневой вложенности
             </Text>
           </div>
@@ -245,19 +263,31 @@ const AdminMenuManagement = () => {
         </div>
       </ProCard>
 
-      <ProCard>
+      <ProCard
+        style={{
+          backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+          border: isDark ? '1px solid #303030' : '1px solid #d9d9d9'
+        }}
+      >
         <Tree
           treeData={renderTreeData(menuItems)}
           expandedKeys={expandedKeys}
           onExpand={setExpandedKeys}
           showLine
           defaultExpandAll
-          style={{ backgroundColor: 'transparent' }}
+          style={{ 
+            backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+            color: isDark ? '#ffffff' : '#000000'
+          }}
         />
       </ProCard>
 
       <Modal
-        title={editingItem ? 'Редактировать элемент меню' : 'Добавить элемент меню'}
+        title={
+          <span style={{ color: isDark ? '#ffffff' : '#000000' }}>
+            {editingItem ? 'Редактировать элемент меню' : 'Добавить элемент меню'}
+          </span>
+        }
         open={modalVisible}
         onCancel={() => {
           setModalVisible(false);
@@ -265,6 +295,13 @@ const AdminMenuManagement = () => {
         }}
         footer={null}
         width={600}
+        style={{
+          backgroundColor: isDark ? '#1f1f1f' : '#ffffff'
+        }}
+        bodyStyle={{
+          backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+          color: isDark ? '#ffffff' : '#000000'
+        }}
       >
         <Form
           form={form}
@@ -273,27 +310,45 @@ const AdminMenuManagement = () => {
         >
           <Form.Item
             name="title"
-            label="Название"
+            label={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Название</span>}
             rules={[{ required: true, message: 'Пожалуйста, введите название' }]}
           >
-            <Input placeholder="Введите название элемента меню" />
+            <Input 
+              placeholder="Введите название элемента меню"
+              style={{
+                backgroundColor: isDark ? '#2f2f2f' : '#ffffff',
+                color: isDark ? '#ffffff' : '#000000',
+                border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+              }}
+            />
           </Form.Item>
           
           <Form.Item
             name="path"
-            label="Путь"
+            label={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Путь</span>}
           >
-            <Input placeholder="Введите путь (например, /admin/users)" />
+            <Input 
+              placeholder="Введите путь (например, /admin/users)"
+              style={{
+                backgroundColor: isDark ? '#2f2f2f' : '#ffffff',
+                color: isDark ? '#ffffff' : '#000000',
+                border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+              }}
+            />
           </Form.Item>
 
           <Form.Item
             name="icon"
-            label="Иконка"
+            label={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Иконка</span>}
           >
             <Select
               placeholder="Выберите иконку"
               allowClear
               showSearch
+              style={{
+                backgroundColor: isDark ? '#2f2f2f' : '#ffffff',
+                color: isDark ? '#ffffff' : '#000000'
+              }}
               filterOption={(input, option) =>
                 option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }
@@ -308,11 +363,15 @@ const AdminMenuManagement = () => {
 
           <Form.Item
             name="parent_id"
-            label="Родительский элемент"
+            label={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Родительский элемент</span>}
           >
             <Select
               placeholder="Выберите родительский элемент (необязательно)"
               allowClear
+              style={{
+                backgroundColor: isDark ? '#2f2f2f' : '#ffffff',
+                color: isDark ? '#ffffff' : '#000000'
+              }}
             >
               {flatMenuItems.map(item => (
                 <Option key={item.id} value={item.id}>
@@ -324,15 +383,23 @@ const AdminMenuManagement = () => {
 
           <Form.Item
             name="order"
-            label="Порядок отображения"
+            label={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Порядок отображения</span>}
             rules={[{ required: true, message: 'Пожалуйста, введите порядок' }]}
           >
-            <Input type="number" placeholder="Порядок отображения" />
+            <Input 
+              type="number" 
+              placeholder="Порядок отображения"
+              style={{
+                backgroundColor: isDark ? '#2f2f2f' : '#ffffff',
+                color: isDark ? '#ffffff' : '#000000',
+                border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+              }}
+            />
           </Form.Item>
 
           <Form.Item
             name="is_active"
-            label="Активен"
+            label={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Активен</span>}
             valuePropName="checked"
           >
             <Switch />
@@ -340,7 +407,7 @@ const AdminMenuManagement = () => {
 
           <Form.Item
             name="is_admin_only"
-            label="Только для администраторов"
+            label={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Только для администраторов</span>}
             valuePropName="checked"
           >
             <Switch />
