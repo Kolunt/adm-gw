@@ -3,7 +3,7 @@ import { Typography, Space, Button, Modal, Form, Input, message, Table, Tag, Swi
 import { MenuOutlined, PlusOutlined, EditOutlined, DeleteOutlined, UpOutlined, DownOutlined, FolderOutlined, FileOutlined } from '@ant-design/icons';
 import ProCard from '@ant-design/pro-card';
 import axios from '../utils/axiosConfig';
-import { useTheme } from '../services/ThemeService';
+import { useTheme } from '../contexts/ThemeContext';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
