@@ -3,11 +3,21 @@ import { Typography, Space, Row, Col, Button, Modal, Form, Input, message, Divid
 import { InfoCircleOutlined, EditOutlined, SaveOutlined, ReloadOutlined } from '@ant-design/icons';
 import ProCard from '@ant-design/pro-card';
 import axios from '../utils/axiosConfig';
+import { useTheme } from '../contexts/ThemeContext';
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
 
 const AdminAbout = () => {
+  const { isDark } = useTheme();
+  
+  // Общие стили для полей ввода
+  const inputStyle = {
+    backgroundColor: isDark ? '#2f2f2f' : '#ffffff',
+    color: isDark ? '#ffffff' : '#000000',
+    border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+  };
+  
   const [aboutData, setAboutData] = useState({
     title: 'О системе "Анонимный Дед Мороз"',
     subtitle: 'Информация о системе анонимного обмена подарками',
@@ -90,17 +100,33 @@ const AdminAbout = () => {
   };
 
   return (
-    <div style={{ padding: '24px' }}>
-      <ProCard style={{ marginBottom: '24px' }}>
+    <div style={{ 
+      padding: '24px',
+      backgroundColor: isDark ? '#141414' : '#ffffff',
+      minHeight: '100vh'
+    }}>
+      <ProCard 
+        style={{ 
+          marginBottom: '24px',
+          backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+          border: isDark ? '1px solid #303030' : '1px solid #d9d9d9'
+        }}
+      >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <Title level={2}>
+            <Title 
+              level={2}
+              style={{ color: isDark ? '#ffffff' : '#000000' }}
+            >
               <Space>
                 <InfoCircleOutlined />
                 Управление информацией о системе
               </Space>
             </Title>
-            <Text type="secondary">
+            <Text 
+              type="secondary"
+              style={{ color: isDark ? '#a6a6a6' : '#666666' }}
+            >
               Редактирование контента страницы "О системе"
             </Text>
           </div>
@@ -124,17 +150,53 @@ const AdminAbout = () => {
       </ProCard>
 
       {/* Предварительный просмотр */}
-      <ProCard title="Предварительный просмотр" style={{ marginBottom: '24px' }}>
-        <div style={{ padding: '24px', background: '#f5f5f5', borderRadius: '8px' }}>
-          <Title level={2}>{aboutData.title}</Title>
-          <Text type="secondary">{aboutData.subtitle}</Text>
+      <ProCard 
+        title={
+          <span style={{ color: isDark ? '#ffffff' : '#000000' }}>
+            Предварительный просмотр
+          </span>
+        }
+        style={{ 
+          marginBottom: '24px',
+          backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+          border: isDark ? '1px solid #303030' : '1px solid #d9d9d9'
+        }}
+      >
+        <div style={{ 
+          padding: '24px', 
+          background: isDark ? '#2f2f2f' : '#f5f5f5', 
+          borderRadius: '8px' 
+        }}>
+          <Title 
+            level={2}
+            style={{ color: isDark ? '#ffffff' : '#000000' }}
+          >
+            {aboutData.title}
+          </Title>
+          <Text 
+            type="secondary"
+            style={{ color: isDark ? '#a6a6a6' : '#666666' }}
+          >
+            {aboutData.subtitle}
+          </Text>
           
           <Divider />
           
           <Row gutter={[24, 24]}>
             <Col xs={24} md={12}>
-              <ProCard title={aboutData.description} style={{ height: '100%' }}>
-                <Paragraph>
+              <ProCard 
+                title={
+                  <span style={{ color: isDark ? '#ffffff' : '#000000' }}>
+                    {aboutData.description}
+                  </span>
+                }
+                style={{ 
+                  height: '100%',
+                  backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+                  border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+                }}
+              >
+                <Paragraph style={{ color: isDark ? '#ffffff' : '#000000' }}>
                   {aboutData.descriptionText.split('\n').map((line, index) => (
                     <span key={index}>
                       {line}
@@ -146,39 +208,97 @@ const AdminAbout = () => {
             </Col>
 
             <Col xs={24} md={12}>
-              <ProCard title={aboutData.howItWorks} style={{ height: '100%' }}>
+              <ProCard 
+                title={
+                  <span style={{ color: isDark ? '#ffffff' : '#000000' }}>
+                    {aboutData.howItWorks}
+                  </span>
+                }
+                style={{ 
+                  height: '100%',
+                  backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+                  border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+                }}
+              >
                 <Space direction="vertical" size="large" style={{ width: '100%' }}>
                   <div>
-                    <Text strong>1. {aboutData.step1}</Text>
+                    <Text strong style={{ color: isDark ? '#ffffff' : '#000000' }}>
+                      1. {aboutData.step1}
+                    </Text>
                     <br />
-                    <Text type="secondary">{aboutData.step1Desc}</Text>
+                    <Text 
+                      type="secondary"
+                      style={{ color: isDark ? '#a6a6a6' : '#666666' }}
+                    >
+                      {aboutData.step1Desc}
+                    </Text>
                   </div>
                   <div>
-                    <Text strong>2. {aboutData.step2}</Text>
+                    <Text strong style={{ color: isDark ? '#ffffff' : '#000000' }}>
+                      2. {aboutData.step2}
+                    </Text>
                     <br />
-                    <Text type="secondary">{aboutData.step2Desc}</Text>
+                    <Text 
+                      type="secondary"
+                      style={{ color: isDark ? '#a6a6a6' : '#666666' }}
+                    >
+                      {aboutData.step2Desc}
+                    </Text>
                   </div>
                   <div>
-                    <Text strong>3. {aboutData.step3}</Text>
+                    <Text strong style={{ color: isDark ? '#ffffff' : '#000000' }}>
+                      3. {aboutData.step3}
+                    </Text>
                     <br />
-                    <Text type="secondary">{aboutData.step3Desc}</Text>
+                    <Text 
+                      type="secondary"
+                      style={{ color: isDark ? '#a6a6a6' : '#666666' }}
+                    >
+                      {aboutData.step3Desc}
+                    </Text>
                   </div>
                   <div>
-                    <Text strong>4. {aboutData.step4}</Text>
+                    <Text strong style={{ color: isDark ? '#ffffff' : '#000000' }}>
+                      4. {aboutData.step4}
+                    </Text>
                     <br />
-                    <Text type="secondary">{aboutData.step4Desc}</Text>
+                    <Text 
+                      type="secondary"
+                      style={{ color: isDark ? '#a6a6a6' : '#666666' }}
+                    >
+                      {aboutData.step4Desc}
+                    </Text>
                   </div>
                 </Space>
               </ProCard>
             </Col>
           </Row>
 
-          <ProCard title={aboutData.techDetails} style={{ marginTop: '24px' }}>
+          <ProCard 
+            title={
+              <span style={{ color: isDark ? '#ffffff' : '#000000' }}>
+                {aboutData.techDetails}
+              </span>
+            }
+            style={{ 
+              marginTop: '24px',
+              backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+              border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+            }}
+          >
             <Row gutter={[24, 24]}>
               <Col xs={24} md={8}>
                 <div style={{ textAlign: 'center' }}>
-                  <Title level={4}>{aboutData.backendTitle}</Title>
-                  <Text type="secondary">
+                  <Title 
+                    level={4}
+                    style={{ color: isDark ? '#ffffff' : '#000000' }}
+                  >
+                    {aboutData.backendTitle}
+                  </Title>
+                  <Text 
+                    type="secondary"
+                    style={{ color: isDark ? '#a6a6a6' : '#666666' }}
+                  >
                     {aboutData.backendDesc.split('\n').map((line, index) => (
                       <span key={index}>
                         {line}
@@ -190,8 +310,16 @@ const AdminAbout = () => {
               </Col>
               <Col xs={24} md={8}>
                 <div style={{ textAlign: 'center' }}>
-                  <Title level={4}>{aboutData.frontendTitle}</Title>
-                  <Text type="secondary">
+                  <Title 
+                    level={4}
+                    style={{ color: isDark ? '#ffffff' : '#000000' }}
+                  >
+                    {aboutData.frontendTitle}
+                  </Title>
+                  <Text 
+                    type="secondary"
+                    style={{ color: isDark ? '#a6a6a6' : '#666666' }}
+                  >
                     {aboutData.frontendDesc.split('\n').map((line, index) => (
                       <span key={index}>
                         {line}
@@ -203,8 +331,16 @@ const AdminAbout = () => {
               </Col>
               <Col xs={24} md={8}>
                 <div style={{ textAlign: 'center' }}>
-                  <Title level={4}>{aboutData.functionsTitle}</Title>
-                  <Text type="secondary">
+                  <Title 
+                    level={4}
+                    style={{ color: isDark ? '#ffffff' : '#000000' }}
+                  >
+                    {aboutData.functionsTitle}
+                  </Title>
+                  <Text 
+                    type="secondary"
+                    style={{ color: isDark ? '#a6a6a6' : '#666666' }}
+                  >
                     {aboutData.functionsDesc.split('\n').map((line, index) => (
                       <span key={index}>
                         {line}
@@ -217,17 +353,42 @@ const AdminAbout = () => {
             </Row>
           </ProCard>
 
-          <ProCard title={aboutData.versionTitle} style={{ marginTop: '24px' }}>
+          <ProCard 
+            title={
+              <span style={{ color: isDark ? '#ffffff' : '#000000' }}>
+                {aboutData.versionTitle}
+              </span>
+            }
+            style={{ 
+              marginTop: '24px',
+              backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+              border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+            }}
+          >
             <Row gutter={[16, 16]}>
               <Col xs={24} md={12}>
-                <Text strong>Текущая версия:</Text>
+                <Text strong style={{ color: isDark ? '#ffffff' : '#000000' }}>
+                  Текущая версия:
+                </Text>
                 <br />
-                <Text type="secondary">{aboutData.currentVersion} ({aboutData.versionDesc})</Text>
+                <Text 
+                  type="secondary"
+                  style={{ color: isDark ? '#a6a6a6' : '#666666' }}
+                >
+                  {aboutData.currentVersion} ({aboutData.versionDesc})
+                </Text>
               </Col>
               <Col xs={24} md={12}>
-                <Text strong>Дата обновления:</Text>
+                <Text strong style={{ color: isDark ? '#ffffff' : '#000000' }}>
+                  Дата обновления:
+                </Text>
                 <br />
-                <Text type="secondary">{aboutData.updateDate}</Text>
+                <Text 
+                  type="secondary"
+                  style={{ color: isDark ? '#a6a6a6' : '#666666' }}
+                >
+                  {aboutData.updateDate}
+                </Text>
               </Col>
             </Row>
           </ProCard>
@@ -236,12 +397,22 @@ const AdminAbout = () => {
 
       {/* Модальное окно редактирования */}
       <Modal
-        title="Редактировать информацию о системе"
+        title={
+          <span style={{ color: isDark ? '#ffffff' : '#000000' }}>
+            Редактировать информацию о системе
+          </span>
+        }
         open={modalVisible}
         onCancel={() => setModalVisible(false)}
         footer={null}
         width={800}
         style={{ top: 20 }}
+        styles={{
+          body: {
+            backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+            color: isDark ? '#ffffff' : '#000000'
+          }
+        }}
       >
         <Form
           form={form}
@@ -250,33 +421,53 @@ const AdminAbout = () => {
         >
           <Row gutter={[16, 16]}>
             <Col span={24}>
-              <Form.Item name="title" label="Заголовок страницы" rules={[{ required: true, message: 'Введите заголовок' }]}>
-                <Input />
+              <Form.Item 
+                name="title" 
+                label={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Заголовок страницы</span>} 
+                rules={[{ required: true, message: 'Введите заголовок' }]}
+              >
+                <Input style={inputStyle} />
               </Form.Item>
             </Col>
             <Col span={24}>
-              <Form.Item name="subtitle" label="Подзаголовок" rules={[{ required: true, message: 'Введите подзаголовок' }]}>
-                <Input />
+              <Form.Item 
+                name="subtitle" 
+                label={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Подзаголовок</span>} 
+                rules={[{ required: true, message: 'Введите подзаголовок' }]}
+              >
+                <Input style={inputStyle} />
               </Form.Item>
             </Col>
           </Row>
 
-          <Divider>Описание системы</Divider>
+          <Divider style={{ color: isDark ? '#ffffff' : '#000000' }}>
+            Описание системы
+          </Divider>
           
           <Row gutter={[16, 16]}>
             <Col span={24}>
-              <Form.Item name="description" label="Заголовок описания" rules={[{ required: true, message: 'Введите заголовок описания' }]}>
-                <Input />
+              <Form.Item 
+                name="description" 
+                label={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Заголовок описания</span>} 
+                rules={[{ required: true, message: 'Введите заголовок описания' }]}
+              >
+                <Input style={inputStyle} />
               </Form.Item>
             </Col>
             <Col span={24}>
-              <Form.Item name="descriptionText" label="Текст описания" rules={[{ required: true, message: 'Введите текст описания' }]}>
-                <TextArea rows={6} />
+              <Form.Item 
+                name="descriptionText" 
+                label={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Текст описания</span>} 
+                rules={[{ required: true, message: 'Введите текст описания' }]}
+              >
+                <TextArea rows={6} style={inputStyle} />
               </Form.Item>
             </Col>
           </Row>
 
-          <Divider>Как это работает</Divider>
+          <Divider style={{ color: isDark ? '#ffffff' : '#000000' }}>
+            Как это работает
+          </Divider>
           
           <Row gutter={[16, 16]}>
             <Col span={24}>
