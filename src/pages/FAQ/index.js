@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Typography, Space, Collapse, Spin, Tabs, Tag, Button, Modal, Form, Input, message, Select, Switch } from 'antd';
-import { QuestionCircleOutlined, FolderOutlined, PlusOutlined, EditOutlined } from '@ant-design/icons';
+import { Card, Typography, Space, Collapse, Spin, Button, Modal, Form, Input, message, Select, Switch } from 'antd';
+import { QuestionCircleOutlined, PlusOutlined, EditOutlined } from '@ant-design/icons';
 import ProCard from '@ant-design/pro-card';
 import axios from '../../utils/axiosConfig';
 import { useAuth } from '../../services/AuthService';
@@ -10,17 +10,12 @@ const { Title, Text, Paragraph } = Typography;
 const FAQPage = () => {
   const { user } = useAuth();
   const [faqData, setFaqData] = useState([]);
-  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('all');
-  const [isCategoryModalVisible, setIsCategoryModalVisible] = useState(false);
   const [isFaqModalVisible, setIsFaqModalVisible] = useState(false);
-  const [categoryForm] = Form.useForm();
   const [faqForm] = Form.useForm();
 
   useEffect(() => {
     fetchFAQ();
-    fetchCategories();
   }, []);
 
   const fetchFAQ = async () => {
@@ -34,27 +29,6 @@ const FAQPage = () => {
     }
   };
 
-  const fetchCategories = async () => {
-    try {
-      const response = await axios.get('/api/faq/categories');
-      setCategories(response.data);
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-    }
-  };
-
-  const handleCreateCategory = async (values) => {
-    try {
-      await axios.post('/admin/faq/categories', values);
-      message.success('Категория успешно создана!');
-      setIsCategoryModalVisible(false);
-      categoryForm.resetFields();
-      fetchCategories(); // Обновляем список категорий
-    } catch (error) {
-      console.error('Error creating category:', error);
-      message.error('Ошибка при создании категории');
-    }
-  };
 
   const handleCreateFAQ = async (values) => {
     try {
@@ -69,17 +43,8 @@ const FAQPage = () => {
     }
   };
 
-  const showCategoryModal = () => {
-    setIsCategoryModalVisible(true);
-  };
-
   const showFaqModal = () => {
     setIsFaqModalVisible(true);
-  };
-
-  const handleCategoryCancel = () => {
-    setIsCategoryModalVisible(false);
-    categoryForm.resetFields();
   };
 
   const handleFaqCancel = () => {
@@ -87,51 +52,10 @@ const FAQPage = () => {
     faqForm.resetFields();
   };
 
-  const getFilteredFAQ = () => {
-    if (activeTab === 'all') {
-      return faqData;
-    }
-    return faqData.filter(item => item.category_id === parseInt(activeTab));
-  };
-
-  const getTabItems = () => {
-    const items = [
-      {
-        key: 'all',
-        label: (
-          <Space>
-            <QuestionCircleOutlined />
-            Все вопросы
-          </Space>
-        ),
-        children: renderFAQItems(getFilteredFAQ())
-      }
-    ];
-
-    categories.forEach(category => {
-      const categoryFAQ = faqData.filter(item => item.category_id === category.id);
-      if (categoryFAQ.length > 0) {
-        items.push({
-          key: category.id.toString(),
-          label: (
-            <Space>
-              <FolderOutlined />
-              {category.name}
-              <Tag color="blue">{categoryFAQ.length}</Tag>
-            </Space>
-          ),
-          children: renderFAQItems(categoryFAQ)
-        });
-      }
-    });
-
-    return items;
-  };
-
-  const renderFAQItems = (items) => (
+  const renderFAQItems = () => (
     <Collapse
       size="large"
-      items={items.map((item) => ({
+      items={faqData.map((item) => ({
         key: item.id,
         label: (
           <Text strong style={{ 
@@ -181,12 +105,6 @@ const FAQPage = () => {
           {user?.role === 'admin' && (
             <Space style={{ marginTop: '8px' }}>
               <Button 
-                icon={<FolderOutlined />} 
-                onClick={showCategoryModal}
-              >
-                Добавить категорию
-              </Button>
-              <Button 
                 type="primary" 
                 icon={<PlusOutlined />} 
                 onClick={showFaqModal}
@@ -199,76 +117,15 @@ const FAQPage = () => {
       </ProCard>
 
       <ProCard>
-        <Tabs
-          activeKey={activeTab}
-          onChange={setActiveTab}
-          items={getTabItems()}
-          size="large"
-        />
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '50px' }}>
+            <Spin size="large" />
+          </div>
+        ) : (
+          renderFAQItems()
+        )}
       </ProCard>
 
-      <Modal
-        title="Создать новую категорию FAQ"
-        open={isCategoryModalVisible}
-        onCancel={handleCategoryCancel}
-        footer={null}
-        width={500}
-      >
-        <Form
-          form={categoryForm}
-          layout="vertical"
-          onFinish={handleCreateCategory}
-        >
-          <Form.Item
-            name="name"
-            label="Название категории"
-            rules={[
-              { required: true, message: 'Пожалуйста, введите название категории' },
-              { min: 2, message: 'Название должно содержать минимум 2 символа' }
-            ]}
-          >
-            <Input placeholder="Например: Общие вопросы" />
-          </Form.Item>
-
-          <Form.Item
-            name="description"
-            label="Описание категории"
-            rules={[
-              { max: 200, message: 'Описание не должно превышать 200 символов' }
-            ]}
-          >
-            <Input.TextArea 
-              placeholder="Краткое описание категории (необязательно)"
-              rows={3}
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="order"
-            label="Порядок отображения"
-            rules={[
-              { type: 'number', message: 'Порядок должен быть числом' }
-            ]}
-          >
-            <Input 
-              type="number" 
-              placeholder="0" 
-              min={0}
-            />
-          </Form.Item>
-
-          <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>
-            <Space>
-              <Button onClick={handleCategoryCancel}>
-                Отмена
-              </Button>
-              <Button type="primary" htmlType="submit">
-                Создать категорию
-              </Button>
-            </Space>
-          </Form.Item>
-        </Form>
-      </Modal>
 
       <Modal
         title="Создать новый вопрос-ответ FAQ"
@@ -307,21 +164,6 @@ const FAQPage = () => {
             />
           </Form.Item>
 
-          <Form.Item
-            name="category_id"
-            label="Категория"
-          >
-            <Select
-              placeholder="Выберите категорию (необязательно)"
-              allowClear
-            >
-              {categories.map(category => (
-                <Select.Option key={category.id} value={category.id}>
-                  {category.name}
-                </Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
 
           <Form.Item
             name="order"
