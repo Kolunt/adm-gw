@@ -1202,8 +1202,8 @@ const AdminSystemSettings = () => {
           name="telegram_bot_token"
           label="Токен Telegram бота"
         >
-          <Input
-            style={inputStyle}.Password
+          <Input.Password
+            style={inputStyle}
             placeholder="123456789:ABCdefGHIjklMNOpqrsTUVwxyz"
             prefix={<NotificationOutlined />}
           />
