@@ -19,7 +19,6 @@ import {
   InfoCircleOutlined,
   ContactsOutlined,
   MenuUnfoldOutlined,
-  FolderOutlined,
   MenuOutlined,
   FileOutlined,
   PlusOutlined,
@@ -38,7 +37,6 @@ import AdminGiftAssignments from './components/AdminGiftAssignments';
 import AdminTesting from './components/AdminTesting';
 import AdminInterests from './components/AdminInterests';
 import AdminFAQ from './components/AdminFAQ';
-import AdminFAQCategories from './components/AdminFAQCategories';
 import AdminDocumentation from './components/AdminDocumentation';
 import AdminAbout from './components/AdminAbout';
 import UserProfile from './pages/Profile';
@@ -91,7 +89,6 @@ const AppContent = () => {
       'InfoCircleOutlined': <InfoCircleOutlined />,
       'ContactsOutlined': <ContactsOutlined />,
       'MenuOutlined': <MenuOutlined />,
-      'FolderOutlined': <FolderOutlined />,
       'FileOutlined': <FileOutlined />,
       'DashboardOutlined': <DashboardOutlined />,
       'LoginOutlined': <LoginOutlined />,
@@ -216,11 +213,6 @@ const AppContent = () => {
             key: '/admin/faq',
             icon: <QuestionCircleOutlined />,
             label: 'FAQ',
-          },
-          {
-            key: '/admin/faq/categories',
-            icon: <FolderOutlined />,
-            label: 'Категории FAQ',
           },
           {
             key: '/admin/documentation',
@@ -496,11 +488,6 @@ const AppContent = () => {
         <Route path="/admin/faq" element={
           <ProtectedRoute requireAdmin={true}>
             <AdminFAQ />
-          </ProtectedRoute>
-        } />
-        <Route path="/admin/faq/categories" element={
-          <ProtectedRoute requireAdmin={true}>
-            <AdminFAQCategories />
           </ProtectedRoute>
         } />
         <Route path="/admin/documentation" element={
