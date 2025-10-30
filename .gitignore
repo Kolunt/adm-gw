@@ -69,3 +69,24 @@ coverage/
 
 # Yarn Integrity file
 .yarn-integrity
+
+# Old backups
+backup_current_project/
+src_old_backup/
+
+# Test scripts (optional - can be kept but not tracked)
+test_*.py
+check_*.py
+create_*.py
+copy_*.py
+debug_*.py
+*_REPORT.md
+!README.md
+!CHANGELOG.md
+!README_ANTD_PRO.md
+
+# Temporary files
+analyze_size.py
+*.bat
+!install_deps.bat
+!start_all.bat
