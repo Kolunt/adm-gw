@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Form, Input, Button, Typography, Space, Alert, Tabs, Switch, Row, Col, ColorPicker, InputNumber, Select } from 'antd';
+import { Form, Input, Button, Typography, Space, Alert, Tabs, Switch, Row, Col, ColorPicker, InputNumber, Select, Table, Popconfirm, App } from 'antd';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   SettingOutlined, 
@@ -13,7 +13,12 @@ import {
   DatabaseOutlined,
   NotificationOutlined,
   ClockCircleOutlined,
-  TeamOutlined
+  TeamOutlined,
+  PlusOutlined,
+  UploadOutlined,
+  DeleteOutlined,
+  DownloadOutlined,
+  EditOutlined
 } from '@ant-design/icons';
 import ProCard from '@ant-design/pro-card';
 import axios from '../utils/axiosConfig';
@@ -44,7 +49,7 @@ const AdminSystemSettings = () => {
   const getActiveTabFromUrl = () => {
     const pathParts = location.pathname.split('/');
     const tab = pathParts[pathParts.length - 1];
-    const validTabs = ['general', 'colors', 'smtp', 'security', 'notifications', 'system', 'dadata'];
+    const validTabs = ['general', 'colors', 'smtp', 'security', 'notifications', 'system', 'dadata', 'tokens'];
     return validTabs.includes(tab) ? tab : 'general';
   };
   
@@ -54,6 +59,13 @@ const AdminSystemSettings = () => {
 
   // Правка 2: отдельная форма для DaData Tab
   const [dadataForm] = Form.useForm();
+
+  // Состояния для сезонных слов
+  const { message } = App.useApp();
+  const [seasonWords, setSeasonWords] = useState([]);
+  const [seasonWordsLoading, setSeasonWordsLoading] = useState(false);
+  const [newWord, setNewWord] = useState('');
+  const [csvText, setCsvText] = useState('');
 
   useEffect(() => {
     fetchSettings();
@@ -1347,6 +1359,200 @@ const AdminSystemSettings = () => {
     </Form>
   );
 
+  // Функции для работы с сезонными словами
+  const fetchSeasonWords = async () => {
+    try {
+      setSeasonWordsLoading(true);
+      const resp = await axios.get('/admin/season-words');
+      setSeasonWords(resp.data || []);
+    } catch (e) {
+      message.error('Не удалось загрузить список слов');
+    } finally {
+      setSeasonWordsLoading(false);
+    }
+  };
+
+  const addSeasonWord = async () => {
+    const w = (newWord || '').trim();
+    if (!w) return;
+    try {
+      setSeasonWordsLoading(true);
+      const resp = await axios.post('/admin/season-words', { words: [w] });
+      if ((resp.data?.added || []).length > 0) {
+        message.success('Слово добавлено');
+        setNewWord('');
+        fetchSeasonWords();
+      } else {
+        message.warning('Такое слово уже существует или пустое');
+      }
+    } catch (e) {
+      message.error('Ошибка добавления слова');
+    } finally {
+      setSeasonWordsLoading(false);
+    }
+  };
+
+  const importSeasonWordsCsv = async () => {
+    const payload = (csvText || '').trim();
+    if (!payload) return;
+    try {
+      setSeasonWordsLoading(true);
+      const resp = await axios.post('/admin/season-words/import', { csv: payload });
+      const added = resp.data?.added || [];
+      message.success(`Импортировано: ${added.length}`);
+      setCsvText('');
+      fetchSeasonWords();
+    } catch (e) {
+      message.error('Ошибка импорта CSV');
+    } finally {
+      setSeasonWordsLoading(false);
+    }
+  };
+
+  const deleteSeasonWord = async (id) => {
+    try {
+      setSeasonWordsLoading(true);
+      await axios.delete(`/admin/season-words/${id}`);
+      message.success('Удалено');
+      fetchSeasonWords();
+    } catch (e) {
+      message.error('Ошибка удаления');
+    } finally {
+      setSeasonWordsLoading(false);
+    }
+  };
+
+  const exportSeasonWordsCsv = () => {
+    const header = 'normalized\n';
+    const rows = (seasonWords || []).map(w => {
+      const norm = (w.normalized || '').replaceAll('"', '""');
+      return `"${norm}"`;
+    }).join('\n');
+    const csv = header + rows + '\n';
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'season_words.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  // Загружаем слова при открытии таба
+  useEffect(() => {
+    if (activeTab === 'tokens') {
+      fetchSeasonWords();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
+
+  const renderSeasonWordsTab = () => {
+    const columns = [
+      { title: 'ID', dataIndex: 'id', key: 'id', width: 80 },
+      { title: 'Исходное', dataIndex: 'original', key: 'original' },
+      { title: 'Нормализованное', dataIndex: 'normalized', key: 'normalized' },
+      {
+        title: 'Действия',
+        key: 'actions',
+        width: 120,
+        render: (_, rec) => (
+          <Popconfirm title="Удалить слово?" onConfirm={() => deleteSeasonWord(rec.id)}>
+            <Button size="small" danger icon={<DeleteOutlined />}>Удалить</Button>
+          </Popconfirm>
+        )
+      }
+    ];
+
+    return (
+      <div>
+        <ProCard
+          size="small"
+          title={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Слова для генерации токенов</span>}
+          style={{
+            backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+            border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+          }}
+        >
+          <Alert
+            message="Новогодние слова"
+            description="Добавляйте слова для генерации токенов. Они будут нормализованы (нижний регистр, без знаков и пробелов) и использованы при генерации токенов."
+            type="info"
+            showIcon
+            style={{ marginBottom: 16 }}
+          />
+          
+          <Row gutter={12} style={{ marginBottom: 16 }}>
+            <Col xs={24} md={12}>
+              <Space.Compact style={{ width: '100%' }}>
+                <Input
+                  placeholder="Новое слово"
+                  value={newWord}
+                  onChange={(e) => setNewWord(e.target.value)}
+                  onPressEnter={addSeasonWord}
+                  style={inputStyle}
+                />
+                <Button type="primary" icon={<PlusOutlined />} onClick={addSeasonWord} loading={seasonWordsLoading}>
+                  Добавить
+                </Button>
+              </Space.Compact>
+            </Col>
+            <Col xs={24} md={12}>
+              <div style={{ width: '100%' }}>
+                <Input.TextArea
+                  placeholder="CSV/строки: ёлка, снег; гирлянда\nподарок"
+                  value={csvText}
+                  onChange={(e) => setCsvText(e.target.value)}
+                  autoSize={{ minRows: 2, maxRows: 6 }}
+                  style={{ width: '100%', ...inputStyle }}
+                />
+                <div style={{ marginTop: 8, textAlign: 'right' }}>
+                  <Button
+                    type="primary"
+                    icon={<UploadOutlined />}
+                    onClick={() => { console.debug('Import click'); importSeasonWordsCsv(); }}
+                    loading={seasonWordsLoading}
+                    disabled={!csvText.trim()}
+                  >
+                    Импорт
+                  </Button>
+                </div>
+              </div>
+            </Col>
+          </Row>
+
+          <Space style={{ marginBottom: 16 }}>
+            <Button icon={<ReloadOutlined />} onClick={fetchSeasonWords} loading={seasonWordsLoading}>
+              Обновить список
+            </Button>
+            <Button icon={<DownloadOutlined />} onClick={exportSeasonWordsCsv} disabled={!seasonWords.length}>
+              Экспорт CSV
+            </Button>
+          </Space>
+        </ProCard>
+
+        <ProCard
+          size="small"
+          title={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Список слов</span>}
+          style={{
+            marginTop: 16,
+            backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+            border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+          }}
+        >
+          <Table
+            rowKey="id"
+            dataSource={seasonWords}
+            columns={columns}
+            loading={seasonWordsLoading}
+            pagination={{ pageSize: 10 }}
+          />
+        </ProCard>
+      </div>
+    );
+  };
+
   return (
     <div style={{ 
       padding: '24px',
@@ -1463,6 +1669,16 @@ const AdminSystemSettings = () => {
                 </span>
               ),
               children: renderSystemTab(),
+            },
+            {
+              key: 'tokens',
+              label: (
+                <span style={{ color: isDark ? '#ffffff' : '#000000' }}>
+                  <EditOutlined />
+                  Слова токена
+                </span>
+              ),
+              children: renderSeasonWordsTab(),
             },
           ]}
         />

@@ -17,6 +17,7 @@ from datetime import datetime, timedelta
 from telegram_bot import TelegramBot, create_telegram_bot
 import requests
 import re
+import random
 from starlette.requests import Request
 from secrets import token_urlsafe, token_hex
 
@@ -119,6 +120,15 @@ class SystemSettings(Base):
     value = Column(String)  # Значение настройки
     description = Column(String)  # Описание настройки
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+# Таблица сезонных слов для генерации токенов
+class SeasonWord(Base):
+    __tablename__ = "season_words"
+
+    id = Column(Integer, primary_key=True, index=True)
+    original = Column(String)
+    normalized = Column(String, unique=True, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
 
 class Interest(Base):
     __tablename__ = "interests"
@@ -349,6 +359,16 @@ def create_default_settings():
             )
             db.add(dadata_enabled_setting)
         
+        # Количество слов для генерации токена
+        token_words_count = db.query(SystemSettings).filter(SystemSettings.key == "token_words_count").first()
+        if not token_words_count:
+            token_words_count = SystemSettings(
+                key="token_words_count",
+                value="3",
+                description="Количество слов, используемых при генерации верификационного токена"
+            )
+            db.add(token_words_count)
+
         # Настройки приветственного сообщения
         welcome_title_setting = db.query(SystemSettings).filter(SystemSettings.key == "welcome_title").first()
         if not welcome_title_setting:
@@ -772,7 +792,7 @@ class GiftAssignmentApproval(BaseModel):
 
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.1.21")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.1.22")
 
 # CORS middleware
 app.add_middleware(
@@ -2786,6 +2806,55 @@ async def get_telegram_bot(current_user: User = Depends(get_current_admin_user))
         db.close()
 
 
+# Админ-эндпоинты для управления сезонными словами
+@app.get("/admin/season-words")
+async def list_season_words(current_admin: User = Depends(get_current_admin), db: Session = Depends(get_db)):
+    words = db.query(SeasonWord).order_by(SeasonWord.created_at.desc()).all()
+    return [
+        {"id": w.id, "original": w.original, "normalized": w.normalized, "created_at": w.created_at}
+        for w in words
+    ]
+
+class WordsPayload(BaseModel):
+    words: list[str]
+
+@app.post("/admin/season-words")
+async def add_season_words(payload: WordsPayload, current_admin: User = Depends(get_current_admin), db: Session = Depends(get_db)):
+    added = []
+    for raw in payload.words:
+        norm = re.sub(r"[^0-9A-Za-zА-Яа-я]+", "", (raw or ""), flags=re.UNICODE).lower()
+        if not norm:
+            continue
+        # Пропускаем дубликаты нормализованных слов
+        exists = db.query(SeasonWord).filter(SeasonWord.normalized == norm).first()
+        if exists:
+            continue
+        w = SeasonWord(original=raw, normalized=norm)
+        db.add(w)
+        added.append(norm)
+    db.commit()
+    return {"added": added}
+
+class CsvPayload(BaseModel):
+    csv: str
+
+@app.post("/admin/season-words/import")
+async def import_season_words(payload: CsvPayload, current_admin: User = Depends(get_current_admin), db: Session = Depends(get_db)):
+    content = payload.csv or ""
+    # Разделители: запятая, точка с запятой, перевод строки
+    parts = re.split(r"[\n,;]+", content)
+    words = [p.strip() for p in parts if p.strip()]
+    return await add_season_words(WordsPayload(words=words), current_admin=current_admin, db=db)
+
+@app.delete("/admin/season-words/{word_id}")
+async def delete_season_word(word_id: int, current_admin: User = Depends(get_current_admin), db: Session = Depends(get_db)):
+    w = db.query(SeasonWord).filter(SeasonWord.id == word_id).first()
+    if not w:
+        raise HTTPException(status_code=404, detail="Word not found")
+    db.delete(w)
+    db.commit()
+    return {"deleted": word_id}
+
 @app.post("/admin/telegram/bot", response_model=TelegramBotResponse)
 async def create_or_update_telegram_bot(
     bot_data: TelegramBotCreate,
@@ -3690,12 +3759,37 @@ app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 def generate_unique_verification_token(db: Session, user: User) -> str:
     # Деактивируем прошлые токены пользователя (в одной транзакции)
     db.execute(text("UPDATE verification_tokens SET is_active = 0 WHERE user_id = :uid AND is_active = 1"), {"uid": user.id})
-    # Генерируем 32-символьный HEX-токен с высокой энтропией; гарантируем уникальность
+
+    # Получаем настроку количества слов
+    words_count_setting = db.query(SystemSettings).filter(SystemSettings.key == "token_words_count").first()
+    try:
+        words_count = int(words_count_setting.value) if words_count_setting and words_count_setting.value else 3
+    except Exception:
+        words_count = 3
+
+    # Загружаем список нормализованных слов
+    words = [w[0] for w in db.execute(text("SELECT normalized FROM season_words")).fetchall()]
+
+    def build_candidate_from_words() -> str:
+        if not words:
+            return token_hex(16)  # Fallback: старый hex-токен
+        selected = [random.choice(words) for _ in range(max(1, words_count))]
+        base = ''.join(selected)
+        return ''.join(c.upper() if random.choice([True, False]) else c.lower() for c in base)
+
+    # Генерация уникального токена
+    attempts = 0
     while True:
-        candidate = token_hex(16)  # 32 hex chars
+        candidate = build_candidate_from_words()
         exists = db.execute(text("SELECT 1 FROM verification_tokens WHERE token = :t LIMIT 1"), {"t": candidate}).fetchone()
         if not exists:
             break
+        attempts += 1
+        if attempts > 50:
+            # На всякий случай аварийный переход на hex при сильных коллизиях
+            candidate = token_hex(16)
+            break
+
     # Обновляем пользователя и вставляем новый активный токен
     db.execute(text("UPDATE users SET gwars_verification_token = :tok WHERE id = :uid"), {"tok": candidate, "uid": user.id})
     db.execute(text("INSERT INTO verification_tokens (user_id, token, is_active, created_at) VALUES (:uid, :tok, 1, :dt)"), {

@@ -552,6 +552,11 @@ const AppContent = () => {
             <AdminSettings />
           </ProtectedRoute>
         } />
+        <Route path="/admin/settings/tokens" element={
+          <ProtectedRoute requireAdmin={true}>
+            <AdminSettings />
+          </ProtectedRoute>
+        } />
         <Route path="/admin/users/:id" element={
           <ProtectedRoute requireAdmin={true}>
             <UserProfile />
