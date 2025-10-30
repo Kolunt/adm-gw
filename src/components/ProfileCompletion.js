@@ -792,7 +792,7 @@ const ProfileCompletion = ({ onComplete }) => {
                   style={{ width: '100%' }}
                   notFoundContent={addressLoading ? 'Загрузка…' : 'Нет подсказок'}
                 >
-                  <Input placeholder="Начните вводить адрес (DaData)" />
+                  <Input placeholder="Начните вводить адрес" />
                 </AutoComplete>
               </Form.Item>
             </Form>
