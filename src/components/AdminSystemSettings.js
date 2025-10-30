@@ -353,6 +353,59 @@ const AdminSystemSettings = () => {
                 </Form.Item>
       </ProCard>
 
+      <ProCard 
+        size="small" 
+        title={
+          <span style={{ color: isDark ? '#ffffff' : '#000000' }}>
+            Настройки DaData
+          </span>
+        }
+        style={{ 
+          marginTop: 16,
+          backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+          border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+        }}
+      >
+        <Alert
+          message="Интеграция с DaData.ru"
+          description="Настройте автодополнение адресов через сервис DaData.ru для удобства пользователей."
+          type="info"
+          showIcon
+          style={{ 
+            marginBottom: 16,
+            backgroundColor: isDark ? '#2f2f2f' : '#f6ffed',
+            border: isDark ? '1px solid #404040' : '1px solid #b7eb8f',
+            color: isDark ? '#ffffff' : '#000000'
+          }}
+        />
+        
+        <Form.Item
+          name="dadata_enabled"
+          label={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Включить автодополнение адресов</span>}
+          valuePropName="checked"
+        >
+          <Switch 
+            checkedChildren="Включено" 
+            unCheckedChildren="Отключено"
+          />
+        </Form.Item>
+
+        <Form.Item
+          name="dadata_token"
+          label={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>API токен DaData</span>}
+          rules={[
+            { required: true, message: 'API токен DaData обязателен для работы автодополнения' },
+            { min: 10, message: 'Токен должен содержать минимум 10 символов' }
+          ]}
+        >
+          <Input.Password
+            style={inputStyle}
+            placeholder="Введите API токен от DaData.ru"
+            prefix={<SettingOutlined />}
+          />
+        </Form.Item>
+      </ProCard>
+
       <div style={{ textAlign: 'center', marginTop: '24px' }}>
         <Space size="middle">
           <Button 
