@@ -357,7 +357,7 @@ const UserProfile = () => {
               icon={<UserOutlined />}
             />
             <div style={{ marginTop: '16px' }}>
-              <Title level={3}>{profileData.name || profileData.email}</Title>
+              <Title level={3}>{profileData.gwars_nickname || 'Враг неизвестен'}</Title>
               {profileData.role === 'admin' && (
                 <Tag color="red" style={{ marginTop: '8px' }}>
                   Администратор

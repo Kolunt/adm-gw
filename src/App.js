@@ -447,11 +447,14 @@ const AppContent = () => {
         <Route path="/events" element={<EventsPage />} />
         <Route path="/events/:id" element={<EventDetail />} />
         <Route path="/users" element={<UserListPage />} />
-        <Route path="/profile/:id?" element={
+        {/* Собственный профиль — только для авторизованных */}
+        <Route path="/profile" element={
           <ProtectedRoute>
             <UserProfile />
           </ProtectedRoute>
         } />
+        {/* Публичный просмотр чужого профиля по ID — доступен гостям */}
+        <Route path="/profile/:id" element={<UserProfile />} />
         <Route path="/faq" element={<FAQPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/contacts" element={<ContactsPage />} />
