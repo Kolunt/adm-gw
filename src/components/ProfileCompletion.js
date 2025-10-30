@@ -21,6 +21,7 @@ import {
   CloseOutlined
 } from '@ant-design/icons';
 import axios from '../utils/axiosConfig';
+import { AutoComplete } from 'antd';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -35,6 +36,30 @@ const ProfileCompletion = ({ onComplete }) => {
   const [verificationToken, setVerificationToken] = useState(null);
   const [verificationError, setVerificationError] = useState(null);
   const [nicknameConfirmed, setNicknameConfirmed] = useState(false);
+  const [addressOptions, setAddressOptions] = useState([]);
+  const [addressLoading, setAddressLoading] = useState(false);
+  const addressSearchDelayRef = React.useRef(null);
+
+  const fetchAddressSuggestions = async (query) => {
+    if (!query || query.length < 3) {
+      setAddressOptions([]);
+      return;
+    }
+    try {
+      setAddressLoading(true);
+      const resp = await axios.post('/api/suggest-address', { query });
+      const suggestions = (resp.data?.suggestions || []).map((s) => ({
+        value: s.unrestricted_value || s.value || '',
+        label: s.value || s.unrestricted_value || ''
+      }));
+      setAddressOptions(suggestions);
+    } catch (e) {
+      // Если отключено или токен не настроен — тихий фоллбек без авто-дополнения
+      setAddressOptions([]);
+    } finally {
+      setAddressLoading(false);
+    }
+  };
 
   useEffect(() => {
     // Получаем статус профиля только один раз при загрузке
@@ -94,7 +119,12 @@ const ProfileCompletion = ({ onComplete }) => {
 
 
   const handleStepChange = (step) => {
-    setCurrentStep(step);
+    // Разрешаем переход только на предыдущие шаги
+    if (step < currentStep) {
+      setCurrentStep(step);
+    } else if (step > currentStep) {
+      message.warning('Сначала завершите текущий шаг');
+    }
   };
 
   const handleNext = async () => {
@@ -593,10 +623,18 @@ const ProfileCompletion = ({ onComplete }) => {
                 label="Адрес для отправки подарков"
                 rules={[{ required: true, message: 'Введите адрес' }]}
               >
-                <TextArea 
-                  rows={4} 
-                  placeholder="Полный адрес с индексом для почтовой отправки"
-                />
+                <AutoComplete
+                  options={addressOptions}
+                  onSearch={(val) => {
+                    if (addressSearchDelayRef.current) clearTimeout(addressSearchDelayRef.current);
+                    addressSearchDelayRef.current = setTimeout(() => fetchAddressSuggestions(val), 300);
+                  }}
+                  onSelect={(val) => form.setFieldsValue({ address: val })}
+                  style={{ width: '100%' }}
+                  notFoundContent={addressLoading ? 'Загрузка…' : 'Нет подсказок'}
+                >
+                  <Input placeholder="Начните вводить адрес (DaData)" />
+                </AutoComplete>
               </Form.Item>
             </Form>
             

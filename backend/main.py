@@ -772,7 +772,7 @@ class GiftAssignmentApproval(BaseModel):
 
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.1.20")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.1.21")
 
 # CORS middleware
 app.add_middleware(
@@ -1141,6 +1141,12 @@ async def verify_gwars_profile(
         current_user.gwars_profile_url = profile_url
         if nickname:
             current_user.gwars_nickname = nickname
+        # Синхронизируем изменения пользователя в текущей транзакции
+        try:
+            db.flush()
+        except Exception as e:
+            db.rollback()
+            return JSONResponse(status_code=500, content={"detail": f"DB flush error: {str(e)}"}, headers=cors_headers)
         
         # генерируем новый уникальный токен всегда после подтверждения персонажа (skip_verification=true)
         if skip_verification:
@@ -1162,7 +1168,7 @@ async def verify_gwars_profile(
                 "token": new_token
             }, headers=cors_headers)
 
-        is_verified, error_message = verify_gwars_token(profile_url, token_to_check)
+        is_verified, error_message = verify_gwars_token_in_profile(profile_url, token_to_check)
         if is_verified:
             current_user.gwars_verified = True
             db.commit()
@@ -1177,7 +1183,11 @@ async def verify_gwars_profile(
                 "token": token_to_check
             }, headers=cors_headers)
     except Exception as e:
-        return JSONResponse(status_code=500, content={"detail": "Internal Server Error"}, headers=cors_headers)
+        # Не роняем фронтенд: сообщаем о проблеме, но без 500
+        return JSONResponse(status_code=200, content={
+            "verified": False,
+            "message": f"Ошибка проверки: {str(e)}"
+        }, headers=cors_headers)
 
 def check_profile_completion(user: User) -> bool:
     """Проверяет, заполнен ли профиль пользователя"""
@@ -1190,7 +1200,7 @@ def check_profile_completion(user: User) -> bool:
         user.interests is not None
     )
 
-def verify_gwars_token(profile_url: str, token: str) -> tuple[bool, str]:
+def verify_gwars_token_in_profile(profile_url: str, token: str) -> tuple[bool, str]:
     """
     Проверяет наличие токена в информации персонажа GWars
     Возвращает: (is_verified: bool, error_message: str)
@@ -2470,17 +2480,20 @@ async def suggest_address(
     """Автодополнение адресов через Dadata.ru"""
     query = request_data.get("query", "")
     if not query:
-        raise HTTPException(status_code=400, detail="Поле query обязательно")
+        # Тихий фолбэк: нет запроса — нет подсказок
+        return {"suggestions": []}
     
     # Проверяем, включено ли автодополнение
     dadata_enabled = db.query(SystemSettings).filter(SystemSettings.key == "dadata_enabled").first()
-    if not dadata_enabled or dadata_enabled.value.lower() != "true":
-        raise HTTPException(status_code=400, detail="Автодополнение адресов отключено")
+    if not dadata_enabled or str(dadata_enabled.value).lower() != "true":
+        # Тихий фолбэк: подсказки выключены — возвращаем пусто
+        return {"suggestions": []}
     
     # Получаем токен
     dadata_token = db.query(SystemSettings).filter(SystemSettings.key == "dadata_token").first()
     if not dadata_token or not dadata_token.value:
-        raise HTTPException(status_code=400, detail="Токен Dadata не настроен")
+        # Тихий фолбэк: нет токена — возвращаем пусто
+        return {"suggestions": []}
     
     try:
         import requests

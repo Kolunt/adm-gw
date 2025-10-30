@@ -439,11 +439,7 @@ const AppContent = () => {
           background: isDark ? '#001529' : '#f0f2f5'
         }}>
       <Routes>
-        <Route path="/" element={
-          <ProtectedRoute>
-            <HomePage />
-          </ProtectedRoute>
-        } />
+        <Route path="/" element={<HomePage />} />
         <Route path="/events" element={<EventsPage />} />
         <Route path="/events/:id" element={<EventDetail />} />
         <Route path="/users" element={<UserListPage />} />
