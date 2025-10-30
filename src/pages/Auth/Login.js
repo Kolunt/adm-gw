@@ -37,7 +37,7 @@ const LoginPage = () => {
       alignItems: 'center', 
       justifyContent: 'center',
       background: isDark 
-        ? 'linear-gradient(135deg, #001529 0%, #002140 100%)' 
+        ? 'linear-gradient(135deg, #030a03 0%, #081f08 100%)' 
         : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
       padding: '16px'
     }}>

@@ -23,7 +23,7 @@ export const ThemeProvider = ({ children }) => {
     // Обновляем meta тег для браузера
     const metaThemeColor = document.querySelector('meta[name="theme-color"]');
     if (metaThemeColor) {
-      metaThemeColor.content = '#001529';
+      metaThemeColor.content = '#030a03';
     }
   }, []);
 

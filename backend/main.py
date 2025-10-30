@@ -2391,6 +2391,18 @@ async def delete_interest(
     return {"message": "Интерес успешно удален"}
 
 # API эндпоинты для работы с интересами пользователей
+@app.get("/api/interests")
+async def get_all_interests(
+    db: Session = Depends(get_db)
+):
+    """Получение всех активных интересов (доступен всем)"""
+    interests = db.query(Interest).filter(
+        Interest.is_active == True,
+        Interest.is_blocked == False
+    ).order_by(Interest.name).all()
+    
+    return [{"id": interest.id, "name": interest.name} for interest in interests]
+
 @app.get("/api/interests/search")
 async def search_interests(
     query: str,
@@ -2402,6 +2414,7 @@ async def search_interests(
     
     interests = db.query(Interest).filter(
         Interest.is_active == True,
+        Interest.is_blocked == False,
         Interest.name.ilike(f"%{query.strip()}%")
     ).limit(10).all()
     

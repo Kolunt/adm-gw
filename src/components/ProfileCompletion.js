@@ -9,7 +9,8 @@ import {
   Space, 
   Alert, 
   message,
-  Divider
+  Divider,
+  Select
 } from 'antd';
 import { 
   UserOutlined, 
@@ -22,11 +23,13 @@ import {
 } from '@ant-design/icons';
 import axios from '../utils/axiosConfig';
 import { AutoComplete } from 'antd';
+import { useTheme } from '../contexts/ThemeContext';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
 
 const ProfileCompletion = ({ onComplete }) => {
+  const { isDark } = useTheme();
   const [currentStep, setCurrentStep] = useState(0);
   const [form] = Form.useForm();
   const [profileStatus, setProfileStatus] = useState(null);
@@ -39,6 +42,9 @@ const ProfileCompletion = ({ onComplete }) => {
   const [addressOptions, setAddressOptions] = useState([]);
   const [addressLoading, setAddressLoading] = useState(false);
   const addressSearchDelayRef = React.useRef(null);
+  const [interestsList, setInterestsList] = useState([]);
+  const [interestsLoading, setInterestsLoading] = useState(false);
+  const [interestsSearchOptions, setInterestsSearchOptions] = useState([]);
 
   const fetchAddressSuggestions = async (query) => {
     if (!query || query.length < 3) {
@@ -60,6 +66,77 @@ const ProfileCompletion = ({ onComplete }) => {
       setAddressLoading(false);
     }
   };
+
+  const fetchInterests = async () => {
+    try {
+      setInterestsLoading(true);
+      const response = await axios.get('/api/interests');
+      const interests = (response.data || []).map((interest) => ({
+        value: interest.name,
+        label: interest.name
+      }));
+      setInterestsList(interests);
+      setInterestsSearchOptions(interests);
+    } catch (error) {
+      console.error('Error fetching interests:', error);
+    } finally {
+      setInterestsLoading(false);
+    }
+  };
+
+  const searchInterests = async (query) => {
+    if (!query || query.length < 2) {
+      setInterestsSearchOptions(interestsList);
+      return;
+    }
+    try {
+      const response = await axios.get(`/api/interests/search?query=${encodeURIComponent(query)}`);
+      const suggestions = (response.data || []).map((interest) => ({
+        value: interest.name,
+        label: interest.name
+      }));
+      setInterestsSearchOptions(suggestions);
+    } catch (error) {
+      console.error('Error searching interests:', error);
+      setInterestsSearchOptions(interestsList);
+    }
+  };
+
+  const createInterestIfNeeded = async (interestName) => {
+    if (!interestName || !interestName.trim()) {
+      return;
+    }
+    
+    // Проверяем, есть ли уже такой интерес в списке
+    const normalizedName = interestName.toLowerCase().trim();
+    const exists = interestsList.some(i => i.value.toLowerCase() === normalizedName);
+    
+    if (exists) {
+      return;
+    }
+    
+    try {
+      const response = await axios.post('/api/interests/create', { name: interestName });
+      // Добавляем новый интерес в список
+      const newInterest = {
+        value: response.data.name,
+        label: response.data.name
+      };
+      setInterestsList([...interestsList, newInterest]);
+      return response.data.name;
+    } catch (error) {
+      console.error('Error creating interest:', error);
+      // Если интерес уже существует или другая ошибка, просто возвращаем имя
+      return interestName;
+    }
+  };
+
+  useEffect(() => {
+    // Загружаем интересы при переходе на шаг 3
+    if (currentStep === 2) {
+      fetchInterests();
+    }
+  }, [currentStep]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     // Получаем статус профиля только один раз при загрузке
@@ -339,8 +416,22 @@ const ProfileCompletion = ({ onComplete }) => {
   const handleInterests = async (values) => {
     setLoading(true);
     try {
+      // Перед сохранением создаем все новые интересы
+      const interests = values.interests || [];
+      for (const interest of interests) {
+        if (interest && interest.trim()) {
+          await createInterestIfNeeded(interest);
+        }
+      }
+      
+      // Преобразуем массив интересов в строку (если backend ожидает строку)
+      // или оставляем массив (если backend ожидает массив)
+      const interestsValue = Array.isArray(interests) 
+        ? interests.join(', ') 
+        : interests;
+      
       await axios.put('/auth/profile', {
-        interests: values.interests
+        interests: interestsValue
       });
       
       message.success('Интересы сохранены!');
@@ -380,9 +471,16 @@ const ProfileCompletion = ({ onComplete }) => {
   const renderStepContent = () => {
     if (profileStatus === null) {
       return (
-        <Card>
+        <Card
+          style={{
+            backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+            border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+          }}
+        >
           <div style={{ textAlign: 'center', padding: '40px' }}>
-            <Text type="secondary">Загрузка данных профиля...</Text>
+            <Text type="secondary" style={{ color: isDark ? '#bfbfbf' : '#8c8c8c' }}>
+              Загрузка данных профиля...
+            </Text>
           </div>
         </Card>
       );
@@ -391,28 +489,47 @@ const ProfileCompletion = ({ onComplete }) => {
     switch (currentStep) {
       case 0:
         return (
-          <Card>
-            <Title level={4}>Шаг 1: Подтверждение GWars профиля</Title>
+          <Card
+            style={{
+              backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+              border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+            }}
+          >
+            <Title level={4} style={{ color: isDark ? '#ffffff' : '#000000' }}>
+              Шаг 1: Подтверждение GWars профиля
+            </Title>
             <Alert
               message="Инструкция"
               description="Для участия в обмене подарками необходимо подтвердить свой игровой профиль на GWars.io"
               type="info"
-              style={{ marginBottom: '24px' }}
+              style={{
+                marginBottom: '24px',
+                backgroundColor: isDark ? '#2f2f2f' : '#f6ffed',
+                border: isDark ? '1px solid #404040' : '1px solid #b7eb8f',
+                color: isDark ? '#ffffff' : '#000000'
+              }}
             />
             
             <Form form={form} layout="vertical">
               <Form.Item
                 name="gwars_profile_url"
-                label="Ссылка на профиль GWars"
-                  rules={[
-                    { required: true, message: 'Введите ссылку на профиль' },
-                    { 
-                      pattern: /^https?:\/\/(www\.)?gwars\.io\/info\.php\?id=\d+$/,
-                      message: 'Ссылка должна быть в формате: https://gwars.io/info.php?id=123456 или https://www.gwars.io/info.php?id=123456'
-                    }
-                  ]}
+                label={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Ссылка на профиль GWars</span>}
+                rules={[
+                  { required: true, message: 'Введите ссылку на профиль' },
+                  { 
+                    pattern: /^https?:\/\/(www\.)?gwars\.io\/info\.php\?id=\d+$/,
+                    message: 'Ссылка должна быть в формате: https://gwars.io/info.php?id=123456 или https://www.gwars.io/info.php?id=123456'
+                  }
+                ]}
               >
-                <Input placeholder="https://www.gwars.io/info.php?id=123456" />
+                <Input
+                  placeholder="https://www.gwars.io/info.php?id=123456"
+                  style={{
+                    backgroundColor: isDark ? '#2f2f2f' : '#ffffff',
+                    color: isDark ? '#ffffff' : '#000000',
+                    border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+                  }}
+                />
               </Form.Item>
             </Form>
             
@@ -433,7 +550,12 @@ const ProfileCompletion = ({ onComplete }) => {
                       message="Профиль найден!"
                       description={`Никнейм: ${parsedNickname}. Это ваш персонаж?`}
                       type="success"
-                      style={{ marginBottom: '16px' }}
+                      style={{
+                        marginBottom: '16px',
+                        backgroundColor: isDark ? '#2f2f2f' : '#f6ffed',
+                        border: isDark ? '1px solid #404040' : '1px solid #b7eb8f',
+                        color: isDark ? '#ffffff' : '#000000'
+                      }}
                     />
                     
                     <Space style={{ marginBottom: '16px' }}>
@@ -450,6 +572,11 @@ const ProfileCompletion = ({ onComplete }) => {
                         icon={<CloseOutlined />}
                         onClick={handleRejectNickname}
                         size="large"
+                        style={{
+                          backgroundColor: isDark ? '#2f2f2f' : '#ffffff',
+                          borderColor: isDark ? '#404040' : '#d9d9d9',
+                          color: isDark ? '#ffffff' : '#000000'
+                        }}
                       >
                         Нет, это не я
                       </Button>
@@ -461,7 +588,12 @@ const ProfileCompletion = ({ onComplete }) => {
                       message="Профиль подтвержден!"
                       description={`Никнейм: ${parsedNickname}`}
                       type="success"
-                      style={{ marginBottom: '16px' }}
+                      style={{
+                        marginBottom: '16px',
+                        backgroundColor: isDark ? '#2f2f2f' : '#f6ffed',
+                        border: isDark ? '1px solid #404040' : '1px solid #b7eb8f',
+                        color: isDark ? '#ffffff' : '#000000'
+                      }}
                     />
                     
                     {verificationToken && (
@@ -469,7 +601,7 @@ const ProfileCompletion = ({ onComplete }) => {
                         message="Токен для верификации"
                         description={
                           <div>
-                            <div style={{ marginBottom: '8px' }}>
+                            <div style={{ marginBottom: '8px', color: isDark ? '#ffffff' : '#000000' }}>
                               Разместите этот токен в информации вашего профиля GWars:
                             </div>
                             <Space 
@@ -510,7 +642,12 @@ const ProfileCompletion = ({ onComplete }) => {
                           </div>
                         }
                         type="warning"
-                        style={{ marginBottom: '16px' }}
+                        style={{
+                          marginBottom: '16px',
+                          backgroundColor: isDark ? '#2f2f2f' : '#fffbe6',
+                          border: isDark ? '1px solid #404040' : '1px solid #ffe58f',
+                          color: isDark ? '#ffffff' : '#000000'
+                        }}
                       />
                     )}
                   
@@ -519,7 +656,12 @@ const ProfileCompletion = ({ onComplete }) => {
                       message="Генерация токена"
                       description="Получение токена для верификации..."
                       type="info"
-                      style={{ marginBottom: '16px' }}
+                      style={{
+                        marginBottom: '16px',
+                        backgroundColor: isDark ? '#2f2f2f' : '#f6ffed',
+                        border: isDark ? '1px solid #404040' : '1px solid #b7eb8f',
+                        color: isDark ? '#ffffff' : '#000000'
+                      }}
                     />
                   )}
                   
@@ -530,7 +672,12 @@ const ProfileCompletion = ({ onComplete }) => {
                       type="error"
                       closable
                       onClose={() => setVerificationError(null)}
-                      style={{ marginBottom: '16px' }}
+                      style={{
+                        marginBottom: '16px',
+                        backgroundColor: isDark ? '#2f2f2f' : '#fff2f0',
+                        border: isDark ? '1px solid #404040' : '1px solid #ffccc7',
+                        color: isDark ? '#ffffff' : '#000000'
+                      }}
                     />
                   )}
                   
@@ -540,26 +687,28 @@ const ProfileCompletion = ({ onComplete }) => {
                         message="Инструкция по верификации"
                         description={
                           <div>
-                            <p style={{ marginBottom: '8px' }}>
+                            <p style={{ marginBottom: '8px', color: isDark ? '#ffffff' : '#000000' }}>
                               Для завершения верификации выполните следующие шаги:
                             </p>
-                            <ol style={{ marginLeft: '20px', marginTop: '8px' }}>
+                            <ol style={{ marginLeft: '20px', marginTop: '8px', color: isDark ? '#ffffff' : '#000000' }}>
                               <li style={{ marginBottom: '8px' }}>
                                 Скопируйте токен выше (кнопка "Копировать")
                               </li>
                               <li style={{ marginBottom: '8px' }}>
-                                Войдите в игру, перейдите в <a href="https://www.gwars.io/info.edit.php?type=pinfo" target="_blank" rel="noopener noreferrer">"Личные настройки"</a> и добавьте всё скопированное в "Личную информацию" о персонаже
+                                Войдите в игру, перейдите в <a href="https://www.gwars.io/info.edit.php?type=pinfo" target="_blank" rel="noopener noreferrer" style={{ color: isDark ? '#52c41a' : '#1890ff' }}>"Личные настройки"</a> и добавьте всё скопированное в "Личную информацию" о персонаже
                               </li>
                               <li style={{ marginBottom: '8px' }}>
                                 Разместите в информации вашего персонажа <strong>точно</strong> следующий текст:
                                 <div style={{ 
                                   padding: '8px', 
-                                  background: '#f0f0f0', 
+                                  background: isDark ? '#1f1f1f' : '#f0f0f0',
+                                  color: isDark ? '#ffffff' : '#000000',
                                   borderRadius: '4px',
                                   fontFamily: 'monospace',
                                   fontSize: '12px',
                                   marginTop: '4px',
-                                  marginLeft: '0px'
+                                  marginLeft: '0px',
+                                  border: isDark ? '1px solid #404040' : 'none'
                                 }}>
                                   Я Анонимный Дед Мороз: {verificationToken}
                                 </div>
@@ -574,7 +723,12 @@ const ProfileCompletion = ({ onComplete }) => {
                           </div>
                         }
                         type="info"
-                        style={{ marginBottom: '16px' }}
+                        style={{
+                          marginBottom: '16px',
+                          backgroundColor: isDark ? '#2f2f2f' : '#f6ffed',
+                          border: isDark ? '1px solid #404040' : '1px solid #b7eb8f',
+                          color: isDark ? '#ffffff' : '#000000'
+                        }}
                       />
                       <Space direction="vertical" style={{ width: '100%' }} size="middle">
                         <Button 
@@ -590,6 +744,11 @@ const ProfileCompletion = ({ onComplete }) => {
                         <Button 
                           onClick={handleRejectNickname}
                           block
+                          style={{
+                            backgroundColor: isDark ? '#2f2f2f' : '#ffffff',
+                            borderColor: isDark ? '#404040' : '#d9d9d9',
+                            color: isDark ? '#ffffff' : '#000000'
+                          }}
                         >
                           Изменить профиль
                         </Button>
@@ -651,19 +810,58 @@ const ProfileCompletion = ({ onComplete }) => {
         
       case 2:
         return (
-          <Card>
-            <Title level={4}>Шаг 3: Интересы</Title>
-            <Text type="secondary">Расскажите о своих интересах и предпочтениях</Text>
+          <Card
+            style={{
+              backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+              border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+            }}
+          >
+            <Title level={4} style={{ color: isDark ? '#ffffff' : '#000000' }}>
+              Шаг 3: Интересы
+            </Title>
+            <Text type="secondary" style={{ color: isDark ? '#bfbfbf' : '#8c8c8c' }}>
+              Расскажите о своих интересах и предпочтениях
+            </Text>
             
             <Form form={form} layout="vertical" style={{ marginTop: '24px' }}>
               <Form.Item
                 name="interests"
-                label="Ваши интересы"
-                rules={[{ required: true, message: 'Расскажите о своих интересах' }]}
+                label={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Ваши интересы</span>}
+                rules={[{ required: true, message: 'Выберите или введите хотя бы один интерес' }]}
               >
-                <TextArea 
-                  rows={6} 
-                  placeholder="Например: книги, музыка, спорт, технологии, путешествия, кулинария..."
+                <Select
+                  mode="tags"
+                  placeholder="Начните вводить интерес или выберите из списка..."
+                  style={{
+                    width: '100%'
+                  }}
+                  options={interestsSearchOptions.length > 0 ? interestsSearchOptions : interestsList}
+                  onSearch={async (query) => {
+                    if (query && query.length >= 2) {
+                      await searchInterests(query);
+                    } else {
+                      setInterestsSearchOptions([]);
+                    }
+                  }}
+                  onBlur={async () => {
+                    // При потере фокуса проверяем, нужно ли создать новые интересы
+                    const currentValues = form.getFieldValue('interests') || [];
+                    for (const interest of currentValues) {
+                      if (interest && interest.trim()) {
+                        await createInterestIfNeeded(interest);
+                      }
+                    }
+                    // Обновляем список после создания новых интересов
+                    await fetchInterests();
+                  }}
+                  tokenSeparators={[',']}
+                  loading={interestsLoading}
+                  filterOption={false}
+                  notFoundContent={interestsLoading ? 'Загрузка...' : 'Введите новый интерес и нажмите Enter'}
+                  dropdownStyle={{
+                    backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+                    border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+                  }}
                 />
               </Form.Item>
             </Form>
@@ -729,12 +927,14 @@ const ProfileCompletion = ({ onComplete }) => {
 
   return (
     <div style={{ padding: '24px', maxWidth: '800px', margin: '0 auto' }}>
-      <Title level={2}>Заполнение профиля</Title>
-      <Text type="secondary">
+      <Title level={2} style={{ color: isDark ? '#ffffff' : '#000000' }}>
+        Заполнение профиля
+      </Title>
+      <Text type="secondary" style={{ color: isDark ? '#bfbfbf' : '#8c8c8c' }}>
         Для участия в обмене подарками необходимо заполнить профиль
       </Text>
       
-      <Divider />
+      <Divider style={{ borderColor: isDark ? '#404040' : '#f0f0f0' }} />
       
       {profileStatus !== null && (
         <div style={{ marginBottom: '32px' }}>
@@ -765,7 +965,14 @@ const ProfileCompletion = ({ onComplete }) => {
         <div style={{ marginTop: '24px', textAlign: 'right' }}>
           <Space>
             {currentStep > 0 && (
-              <Button onClick={() => setCurrentStep(currentStep - 1)}>
+              <Button
+                onClick={() => setCurrentStep(currentStep - 1)}
+                style={{
+                  backgroundColor: isDark ? '#2f2f2f' : '#ffffff',
+                  borderColor: isDark ? '#404040' : '#d9d9d9',
+                  color: isDark ? '#ffffff' : '#000000'
+                }}
+              >
                 Назад
               </Button>
             )}

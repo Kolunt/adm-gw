@@ -436,7 +436,7 @@ const AppContent = () => {
         </Layout.Header>
         <Layout.Content className={theme} style={{ 
           padding: '24px',
-          background: isDark ? '#001529' : '#f0f2f5'
+          background: isDark ? '#030a03' : '#f0f2f5'
         }}>
       <Routes>
         <Route path="/" element={<HomePage />} />

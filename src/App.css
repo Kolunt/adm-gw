@@ -8,20 +8,20 @@
 html, body {
   margin: 0;
   padding: 0;
-  background: #001529;
+  background: #030a03;
 }
 
 body {
-  background: #001529 !important;
+  background: #030a03 !important;
 }
 
 #root {
-  background: #001529;
+  background: #030a03;
   min-height: 100vh;
 }
 
 .ant-pro-layout {
-  background: #001529 !important;
+  background: #030a03 !important;
 }
 
 .dark-theme .ant-pro-layout {
@@ -436,7 +436,7 @@ body {
 
 /* Dark Theme Styles */
 .dark-theme {
-  --bg-color: #001529;
+  --bg-color: #030a03;
   --text-color: #ffffff;
   --card-bg: #141414;
   --border-color: #303030;
