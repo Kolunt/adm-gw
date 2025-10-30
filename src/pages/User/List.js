@@ -5,11 +5,13 @@ import ProCard from '@ant-design/pro-card';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from '../../utils/axiosConfig';
 import { getUserAvatar } from '../../utils/avatarUtils';
+import { useTheme } from '../../contexts/ThemeContext';
 
 const { Title, Text } = Typography;
 const { useApp } = App;
 
 const UserListPage = () => {
+  const { isDark } = useTheme();
   const { message } = useApp();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -83,7 +85,7 @@ const UserListPage = () => {
   }
 
   return (
-    <div style={{ padding: '24px' }}>
+    <div style={{ padding: 24 }} className={isDark ? 'dark-theme' : 'light-theme'}>
       <ProCard style={{ marginBottom: '24px' }}>
         <Row gutter={[16, 16]} align="middle">
           <Col xs={24} md={16}>
@@ -156,6 +158,7 @@ const UserListPage = () => {
             pageSize: 12,
             showSizeChanger: true,
             showQuickJumper: true,
+            className: isDark ? 'dark-theme' : 'light-theme',
             showTotal: (total, range) => 
               `${range[0]}-${range[1]} из ${total} участников`,
           }}

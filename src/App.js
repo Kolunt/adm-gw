@@ -439,11 +439,19 @@ const AppContent = () => {
           background: isDark ? '#001529' : '#f0f2f5'
         }}>
       <Routes>
-        <Route path="/" element={<HomePage />} />
+        <Route path="/" element={
+          <ProtectedRoute>
+            <HomePage />
+          </ProtectedRoute>
+        } />
         <Route path="/events" element={<EventsPage />} />
         <Route path="/events/:id" element={<EventDetail />} />
         <Route path="/users" element={<UserListPage />} />
-        <Route path="/profile/:id?" element={<UserProfile />} />
+        <Route path="/profile/:id?" element={
+          <ProtectedRoute>
+            <UserProfile />
+          </ProtectedRoute>
+        } />
         <Route path="/faq" element={<FAQPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/contacts" element={<ContactsPage />} />
@@ -543,6 +551,11 @@ const AppContent = () => {
         <Route path="/admin/settings/dadata" element={
           <ProtectedRoute requireAdmin={true}>
             <AdminSettings />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/users/:id" element={
+          <ProtectedRoute requireAdmin={true}>
+            <UserProfile />
           </ProtectedRoute>
         } />
       </Routes>

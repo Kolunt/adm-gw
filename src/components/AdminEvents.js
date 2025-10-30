@@ -14,6 +14,24 @@ const AdminEvents = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
   const [form] = Form.useForm();
+  const eventStartValue = Form.useWatch('event_start', form);
+
+  const formatTimeDiff = (target) => {
+    if (!target) return '';
+    const now = dayjs();
+    const start = dayjs(target);
+    const diffMs = start.diff(now);
+    if (diffMs <= 0) return 'уже наступило или в прошлом';
+    const duration = dayjs.duration(diffMs);
+    const days = Math.floor(duration.asDays());
+    const hours = duration.hours();
+    const minutes = duration.minutes();
+    const parts = [];
+    if (days) parts.push(`${days} д`);
+    if (hours) parts.push(`${hours} ч`);
+    if (minutes) parts.push(`${minutes} м`);
+    return parts.length ? parts.join(' ') : 'менее минуты';
+  };
 
   useEffect(() => {
     fetchEvents();
@@ -45,7 +63,8 @@ const AdminEvents = () => {
       description: event.description,
       preregistration_start: dayjs(event.preregistration_start),
       registration_start: dayjs(event.registration_start),
-      registration_end: dayjs(event.registration_end)
+      registration_end: dayjs(event.registration_end),
+      event_start: event.event_start ? dayjs(event.event_start) : null,
     });
     setModalVisible(true);
   };
@@ -67,7 +86,8 @@ const AdminEvents = () => {
         ...values,
         preregistration_start: values.preregistration_start.toISOString(),
         registration_start: values.registration_start.toISOString(),
-        registration_end: values.registration_end.toISOString()
+        registration_end: values.registration_end.toISOString(),
+        event_start: values.event_start ? values.event_start.toISOString() : null,
       };
 
       if (editingEvent) {
@@ -254,10 +274,12 @@ const AdminEvents = () => {
           layout="vertical"
           onFinish={handleSubmit}
         >
+          {/* Информация о времени до события — удалено по запросу */}
+
           <Form.Item
             name="name"
             label="Название мероприятия"
-            rules={[{ required: true, message: 'Пожалуйста, введите название мероприятия' }]}
+            rules={[{ required: true, message: 'Пожалуйста, введите название' }]}
           >
             <Input placeholder="Введите название мероприятия" />
           </Form.Item>
@@ -265,12 +287,8 @@ const AdminEvents = () => {
           <Form.Item
             name="description"
             label="Описание"
-            rules={[{ required: true, message: 'Пожалуйста, введите описание' }]}
           >
-            <TextArea
-              rows={4}
-              placeholder="Введите описание мероприятия"
-            />
+            <TextArea rows={3} placeholder="Краткое описание" />
           </Form.Item>
 
           <Form.Item
@@ -306,6 +324,18 @@ const AdminEvents = () => {
               showTime
               style={{ width: '100%' }}
               placeholder="Выберите дату окончания регистрации"
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="event_start"
+            label="Дата и время события"
+            rules={[{ required: true, message: 'Пожалуйста, выберите дату и время события' }]}
+          >
+            <DatePicker
+              showTime
+              style={{ width: '100%' }}
+              placeholder="Выберите дату и время события"
             />
           </Form.Item>
 

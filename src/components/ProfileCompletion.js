@@ -179,11 +179,14 @@ const ProfileCompletion = ({ onComplete }) => {
         profile_url: profileUrl,
         nickname: parsedNickname,
         skip_verification: true
-      });
+      }, { timeout: 15000, withCredentials: true });
       
       // Получаем токен из ответа
       if (verifyResponse.data.token) {
-        setVerificationToken(verifyResponse.data.token);
+        // Всегда перечитываем статус, чтобы гарантированно получить актуальный токен с сервера
+        const statusResponse = await axios.get('/profile/status');
+        const serverToken = statusResponse.data?.gwars_verification_token || verifyResponse.data.token;
+        setVerificationToken(serverToken);
         setNicknameConfirmed(true);
         message.success('Никнейм подтвержден! Теперь разместите токен в вашем профиле.');
       } else {
@@ -230,7 +233,7 @@ const ProfileCompletion = ({ onComplete }) => {
       const response = await axios.post('/profile/verify-gwars', {
         profile_url: profileUrl,
         skip_verification: false // Явно указываем, что нужна проверка
-      });
+      }, { timeout: 15000, withCredentials: true });
       
       console.log('Ответ от API верификации:', response.data);
       
@@ -264,9 +267,7 @@ const ProfileCompletion = ({ onComplete }) => {
       console.error('Ошибка при проверке верификации:', error);
       
       let errorMessage;
-      if (error.code === 'ERR_NETWORK') {
-        errorMessage = 'Ошибка сети. Проверьте подключение к интернету и попробуйте снова.';
-      } else if (error.response?.status === 500) {
+      if (error.response?.status === 500) {
         errorMessage = 'Ошибка сервера. Попробуйте позже или обратитесь к администратору.';
       } else if (error.response?.status === 401) {
         errorMessage = 'Сессия истекла. Пожалуйста, войдите в систему заново.';
@@ -517,7 +518,7 @@ const ProfileCompletion = ({ onComplete }) => {
                                 Скопируйте токен выше (кнопка "Копировать")
                               </li>
                               <li style={{ marginBottom: '8px' }}>
-                                Откройте ваш профиль на GWars.io и перейдите в раздел "Информация"
+                                Войдите в игру, перейдите в <a href="https://www.gwars.io/info.edit.php?type=pinfo" target="_blank" rel="noopener noreferrer">"Личные настройки"</a> и добавьте всё скопированное в "Личную информацию" о персонаже
                               </li>
                               <li style={{ marginBottom: '8px' }}>
                                 Разместите в информации вашего персонажа <strong>точно</strong> следующий текст:

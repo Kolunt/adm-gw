@@ -2,7 +2,8 @@ from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.security import OAuth2PasswordBearer
-from sqlalchemy import create_engine, Column, Integer, String, Boolean, DateTime, ForeignKey, func
+from fastapi.responses import Response, JSONResponse
+from sqlalchemy import create_engine, Column, Integer, String, Boolean, DateTime, ForeignKey, func, text
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker, Session, relationship
 from pydantic import BaseModel, field_validator
@@ -16,6 +17,8 @@ from datetime import datetime, timedelta
 from telegram_bot import TelegramBot, create_telegram_bot
 import requests
 import re
+from starlette.requests import Request
+from secrets import token_urlsafe, token_hex
 
 # Database setup
 SQLALCHEMY_DATABASE_URL = "sqlite:///./santa.db"
@@ -91,6 +94,7 @@ class Event(Base):
     preregistration_start = Column(DateTime)  # Дата начала предварительной регистрации
     registration_start = Column(DateTime)     # Дата начала регистрации
     registration_end = Column(DateTime)       # Дата закрытия регистрации
+    event_start = Column(DateTime, nullable=True)  # Новое поле: фактическое время события
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     created_by = Column(Integer, index=True)  # ID администратора, создавшего мероприятие
@@ -231,6 +235,52 @@ def authenticate_user(email: str, password: str, db: Session):
 
 # Create tables
 Base.metadata.create_all(bind=engine)
+
+# Мягкие миграции для недостающих колонок в users (с явным коммитом транзакции)
+try:
+    with engine.begin() as conn:  # begin() гарантирует commit/rollback
+        cols = conn.execute(text("PRAGMA table_info(users)")).fetchall()
+        col_names = {row[1] for row in cols}
+        if 'gwars_verification_token' not in col_names:
+            conn.execute(text("ALTER TABLE users ADD COLUMN gwars_verification_token TEXT"))
+            print("Добавлен столбец users.gwars_verification_token")
+        if 'profile_completed' not in col_names:
+            conn.execute(text("ALTER TABLE users ADD COLUMN profile_completed BOOLEAN DEFAULT 0"))
+            print("Добавлен столбец users.profile_completed")
+        if 'gwars_verified' not in col_names:
+            conn.execute(text("ALTER TABLE users ADD COLUMN gwars_verified BOOLEAN DEFAULT 0"))
+            print("Добавлен столбец users.gwars_verified")
+        # Создаем служебную таблицу verification_tokens при отсутствии
+        vt_exists = conn.execute(text("SELECT name FROM sqlite_master WHERE type='table' AND name='verification_tokens'"))\
+            .fetchone()
+        if not vt_exists:
+            conn.execute(text(
+                """
+                CREATE TABLE verification_tokens (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    token TEXT NOT NULL UNIQUE,
+                    is_active INTEGER DEFAULT 1,
+                    created_at DATETIME
+                )
+                """
+            ))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_verification_tokens_user_id ON verification_tokens(user_id)"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_verification_tokens_token ON verification_tokens(token)"))
+            print("Создана таблица verification_tokens")
+except Exception as e:
+    print(f"Миграция users.* пропущена или не удалась: {e}")
+
+# Лёгкая миграция для добавления столбца event_start, если его нет
+try:
+    with engine.begin() as conn:
+        res = conn.execute(text("PRAGMA table_info(events)")).fetchall()
+        columns = {row[1] for row in res}  # name находится по индексу 1
+        if 'event_start' not in columns:
+            conn.execute(text("ALTER TABLE events ADD COLUMN event_start DATETIME"))
+            print("Добавлен столбец events.event_start")
+except Exception as mig_err:
+    print(f"Миграция event_start пропущена или не удалась: {mig_err}")
 
 # Create default admin user
 def create_default_admin():
@@ -495,6 +545,7 @@ class EventCreate(BaseModel):
     preregistration_start: datetime
     registration_start: datetime
     registration_end: datetime
+    event_start: datetime
 
 class EventUpdate(BaseModel):
     name: str = None
@@ -502,6 +553,7 @@ class EventUpdate(BaseModel):
     preregistration_start: datetime = None
     registration_start: datetime = None
     registration_end: datetime = None
+    event_start: datetime | None = None
     is_active: bool = None
 
 class EventResponse(BaseModel):
@@ -512,6 +564,7 @@ class EventResponse(BaseModel):
     preregistration_start: datetime
     registration_start: datetime
     registration_end: datetime
+    event_start: datetime | None = None
     is_active: bool
     created_at: datetime
     created_by: int
@@ -719,16 +772,47 @@ class GiftAssignmentApproval(BaseModel):
 
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.1.18")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.1.19")
 
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allow_headers=["Authorization", "Content-Type", "Accept", "X-Requested-With"],
 )
+
+ALLOWED_ORIGINS = {"http://localhost:3000", "http://127.0.0.1:3000"}
+
+@app.middleware("http")
+async def ensure_cors_headers(request: Request, call_next):
+    try:
+        response = await call_next(request)
+    except Exception as e:
+        # В случае необработанных исключений вернём 500 с CORS заголовками
+        response = Response(status_code=500, content=b"")
+    origin = request.headers.get("origin")
+    if origin in ALLOWED_ORIGINS:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Vary"] = "Origin"
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Access-Control-Allow-Headers"] = request.headers.get("access-control-request-headers", "*")
+        response.headers["Access-Control-Allow-Methods"] = request.headers.get("access-control-request-method", "*")
+    return response
+
+# Универсальный обработчик preflight-запросов
+@app.options("/{rest_of_path:path}")
+async def preflight_handler(request: Request):
+    origin = request.headers.get("origin")
+    headers = {}
+    if origin in ALLOWED_ORIGINS:
+        headers["Access-Control-Allow-Origin"] = origin
+        headers["Vary"] = "Origin"
+        headers["Access-Control-Allow-Credentials"] = "true"
+        headers["Access-Control-Allow-Headers"] = request.headers.get("access-control-request-headers", "*")
+        headers["Access-Control-Allow-Methods"] = request.headers.get("access-control-request-method", "*")
+    return Response(status_code=200, headers=headers)
 
 # Database dependency
 def get_db():
@@ -849,10 +933,30 @@ async def get_profile_status(current_user: User = Depends(get_current_user)):
     """Возвращает статус заполнения профиля"""
     is_completed = check_profile_completion(current_user)
     
-    # Обновляем статус в базе данных
-    current_user.profile_completed = is_completed
-    db = next(get_db())
-    db.commit()
+    # Обновляем статус в базе данных и синхронизируем токен
+    db = SessionLocal()
+    active_token = None
+    try:
+        try:
+            db.execute(text("UPDATE users SET profile_completed = :pc WHERE id = :uid"), {"pc": is_completed, "uid": current_user.id})
+        except Exception as e:
+            db.rollback()
+            print(f"[profile/status] update profile_completed failed: {e}")
+        try:
+            row = db.execute(text("SELECT token FROM verification_tokens WHERE user_id = :uid AND is_active = 1 ORDER BY id DESC LIMIT 1"), {"uid": current_user.id}).fetchone()
+            active_token = row[0] if row else None
+            if active_token and active_token != current_user.gwars_verification_token:
+                db.execute(text("UPDATE users SET gwars_verification_token = :tok WHERE id = :uid"), {"tok": active_token, "uid": current_user.id})
+        except Exception as e:
+            db.rollback()
+            print(f"[profile/status] fetch/sync verification token failed: {e}")
+        finally:
+            try:
+                db.commit()
+            except Exception:
+                db.rollback()
+    finally:
+        db.close()
     
     return {
         "profile_completed": is_completed,
@@ -869,7 +973,7 @@ async def get_profile_status(current_user: User = Depends(get_current_user)):
             "address": current_user.address is None,
             "interests": current_user.interests is None
         },
-        "gwars_verification_token": current_user.gwars_verification_token
+        "gwars_verification_token": active_token or current_user.gwars_verification_token
     }
 
 def validate_gwars_url(url: str) -> bool:
@@ -1007,63 +1111,73 @@ async def parse_gwars_profile_endpoint(
 @app.post("/profile/verify-gwars")
 async def verify_gwars_profile(
     gwars_data: dict,
+    request: Request,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Проверяет GWars профиль и токен"""
-    profile_url = gwars_data.get("profile_url")
-    nickname = gwars_data.get("nickname")
-    skip_verification = gwars_data.get("skip_verification", False)  # Параметр для пропуска проверки (только генерация токена)
-    
-    if not profile_url:
-        raise HTTPException(status_code=400, detail="Необходимо указать ссылку на профиль")
-    
-    # Проверяем URL
-    if not validate_gwars_url(profile_url):
-        raise HTTPException(status_code=400, detail="Ссылка должна вести на gwars.io")
-    
-    # Сохраняем URL профиля
-    current_user.gwars_profile_url = profile_url
-    if nickname:
-        current_user.gwars_nickname = nickname
-    
-    # Генерируем токен, если его нет
-    if not current_user.gwars_verification_token:
-        import secrets
-        import string
-        alphabet = string.ascii_lowercase
-        current_user.gwars_verification_token = ''.join(secrets.choice(alphabet) for _ in range(20))
-    
-    # Если нужно только сгенерировать токен (без проверки)
-    if skip_verification:
-        # Сохраняем изменения в базе данных (URL, никнейм и токен)
-        db.commit()
-        return {
-            "verified": False,
-            "message": "Токен сгенерирован",
-            "token": current_user.gwars_verification_token
+    origin = request.headers.get("origin")
+    cors_headers = {}
+    if origin in ALLOWED_ORIGINS:
+        cors_headers = {
+            "Access-Control-Allow-Origin": origin,
+            "Vary": "Origin",
+            "Access-Control-Allow-Credentials": "true",
+            "Access-Control-Allow-Headers": request.headers.get("access-control-request-headers", "*"),
+            "Access-Control-Allow-Methods": request.headers.get("access-control-request-method", "*")
         }
-    
-    # Проверяем токен на странице
-    is_verified, error_message = verify_gwars_token(profile_url, current_user.gwars_verification_token)
-    
-    if is_verified:
+
+    try:
+        profile_url = gwars_data.get("profile_url")
+        nickname = gwars_data.get("nickname")
+        skip_verification = gwars_data.get("skip_verification", False)
+        
+        if not profile_url:
+            return JSONResponse(status_code=400, content={"detail": "Необходимо указать ссылку на профиль"}, headers=cors_headers)
+        
+        if not validate_gwars_url(profile_url):
+            return JSONResponse(status_code=400, content={"detail": "Ссылка должна вести на gwars.io"}, headers=cors_headers)
+        
         current_user.gwars_profile_url = profile_url
         if nickname:
             current_user.gwars_nickname = nickname
-        current_user.gwars_verified = True
-        db.commit()
         
-        return {
-            "verified": True,
-            "message": "GWars профиль успешно верифицирован!"
-        }
-    else:
-        return {
-            "verified": False,
-            "message": error_message or f"Токен не найден в информации персонажа. Убедитесь, что вы разместили: 'Я Анонимный Дед Мороз: {current_user.gwars_verification_token}'",
-            "token": current_user.gwars_verification_token
-        }
+        # генерируем новый уникальный токен всегда после подтверждения персонажа (skip_verification=true)
+        if skip_verification:
+            new_token = generate_unique_verification_token(db, current_user)
+            return JSONResponse(status_code=200, content={
+                "verified": False,
+                "message": "Токен сгенерирован",
+                "token": new_token
+            }, headers=cors_headers)
+        
+        # обычная проверка — используем текущий активный токен у пользователя
+        token_to_check = current_user.gwars_verification_token
+        if not token_to_check:
+            # если по какой-то причине нет токена — генерируем и просим разместить
+            new_token = generate_unique_verification_token(db, current_user)
+            return JSONResponse(status_code=200, content={
+                "verified": False,
+                "message": "Токен сгенерирован. Разместите его в профиле и повторите проверку.",
+                "token": new_token
+            }, headers=cors_headers)
+
+        is_verified, error_message = verify_gwars_token(profile_url, token_to_check)
+        if is_verified:
+            current_user.gwars_verified = True
+            db.commit()
+            return JSONResponse(status_code=200, content={
+                "verified": True,
+                "message": "GWars профиль успешно верифицирован!"
+            }, headers=cors_headers)
+        else:
+            return JSONResponse(status_code=200, content={
+                "verified": False,
+                "message": error_message or f"Токен не найден в информации персонажа. Убедитесь, что вы разместили: 'Я Анонимный Дед Мороз: {token_to_check}'",
+                "token": token_to_check
+            }, headers=cors_headers)
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"detail": "Internal Server Error"}, headers=cors_headers)
 
 def check_profile_completion(user: User) -> bool:
     """Проверяет, заполнен ли профиль пользователя"""
@@ -1412,6 +1526,7 @@ async def create_event(
         preregistration_start=event.preregistration_start,
         registration_start=event.registration_start,
         registration_end=event.registration_end,
+        event_start=event.event_start,
         created_by=current_admin.id
     )
     db.add(db_event)
@@ -3558,6 +3673,25 @@ if os.path.exists("dist"):
 
 # Mount uploads directory for serving uploaded files
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
+
+def generate_unique_verification_token(db: Session, user: User) -> str:
+    # Деактивируем прошлые токены пользователя (в одной транзакции)
+    db.execute(text("UPDATE verification_tokens SET is_active = 0 WHERE user_id = :uid AND is_active = 1"), {"uid": user.id})
+    # Генерируем 32-символьный HEX-токен с высокой энтропией; гарантируем уникальность
+    while True:
+        candidate = token_hex(16)  # 32 hex chars
+        exists = db.execute(text("SELECT 1 FROM verification_tokens WHERE token = :t LIMIT 1"), {"t": candidate}).fetchone()
+        if not exists:
+            break
+    # Обновляем пользователя и вставляем новый активный токен
+    db.execute(text("UPDATE users SET gwars_verification_token = :tok WHERE id = :uid"), {"tok": candidate, "uid": user.id})
+    db.execute(text("INSERT INTO verification_tokens (user_id, token, is_active, created_at) VALUES (:uid, :tok, 1, :dt)"), {
+        "uid": user.id,
+        "tok": candidate,
+        "dt": datetime.utcnow()
+    })
+    db.commit()
+    return candidate
 
 if __name__ == "__main__":
     import uvicorn

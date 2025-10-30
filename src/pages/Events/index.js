@@ -4,10 +4,12 @@ import { CalendarOutlined, GiftOutlined, TeamOutlined, ClockCircleOutlined, EyeO
 import ProCard from '@ant-design/pro-card';
 import { useNavigate } from 'react-router-dom';
 import axios from '../../utils/axiosConfig';
+import { useTheme } from '../../contexts/ThemeContext';
 
 const { Title, Text, Paragraph } = Typography;
 
 const EventsPage = () => {
+  const { isDark } = useTheme();
   const [events, setEvents] = useState([]);
   const [currentEvent, setCurrentEvent] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -79,7 +81,7 @@ const EventsPage = () => {
   }
 
   return (
-    <div style={{ padding: '24px' }}>
+    <div style={{ padding: '24px' }} className={isDark ? 'dark-theme' : 'light-theme'}>
       <ProCard style={{ marginBottom: '24px' }}>
         <Row gutter={[16, 16]} align="middle">
           <Col xs={24} md={16}>
@@ -165,6 +167,7 @@ const EventsPage = () => {
             pageSize: 6,
             showSizeChanger: true,
             showQuickJumper: true,
+            className: isDark ? 'dark-theme' : 'light-theme',
             showTotal: (total, range) => 
               `${range[0]}-${range[1]} из ${total} мероприятий`,
           }}
