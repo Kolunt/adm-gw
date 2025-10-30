@@ -719,7 +719,7 @@ class GiftAssignmentApproval(BaseModel):
 
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.1.17")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.1.18")
 
 # CORS middleware
 app.add_middleware(

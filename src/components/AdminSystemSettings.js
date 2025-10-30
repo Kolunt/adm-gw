@@ -36,6 +36,7 @@ const AdminSystemSettings = () => {
   const [smtpForm] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [settings, setSettings] = useState([]);
+  const [settingsMap, setSettingsMap] = useState({});
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -43,11 +44,16 @@ const AdminSystemSettings = () => {
   const getActiveTabFromUrl = () => {
     const pathParts = location.pathname.split('/');
     const tab = pathParts[pathParts.length - 1];
-    const validTabs = ['general', 'colors', 'smtp', 'security', 'notifications', 'system'];
+    const validTabs = ['general', 'colors', 'smtp', 'security', 'notifications', 'system', 'dadata'];
     return validTabs.includes(tab) ? tab : 'general';
   };
   
   const [activeTab, setActiveTab] = useState(getActiveTabFromUrl());
+  const [dadataTokenStatus, setDadataTokenStatus] = useState(null);
+  const [dadataTokenLoading, setDadataTokenLoading] = useState(false);
+
+  // Правка 2: отдельная форма для DaData Tab
+  const [dadataForm] = Form.useForm();
 
   useEffect(() => {
     fetchSettings();
@@ -59,6 +65,17 @@ const AdminSystemSettings = () => {
     setActiveTab(newActiveTab);
   }, [location.pathname]);
 
+  // При смене таба наполняем соответствующую форму данными, когда она уже смонтирована
+  useEffect(() => {
+    if (!settingsMap) return;
+    if (activeTab === 'smtp' && smtpForm && typeof smtpForm.setFieldsValue === 'function') {
+      smtpForm.setFieldsValue(settingsMap);
+    }
+    if (activeTab === 'dadata' && dadataForm && typeof dadataForm.setFieldsValue === 'function') {
+      dadataForm.setFieldsValue(settingsMap);
+    }
+  }, [activeTab, settingsMap]);
+
   const handleTabChange = (key) => {
     setActiveTab(key);
     navigate(`/admin/settings/${key}`);
@@ -68,21 +85,19 @@ const AdminSystemSettings = () => {
     try {
       const response = await axios.get('/admin/settings');
       setSettings(response.data);
-      
-      // Заполняем формы данными после монтирования компонента
       const formData = {};
       response.data.forEach(setting => {
         formData[setting.key] = setting.value;
       });
-      
-      // Используем setTimeout для гарантии, что форма уже смонтирована
+      if (typeof formData.dadata_enabled === 'undefined' || formData.dadata_enabled === null) {
+        formData.dadata_enabled = false;
+      }
+      setSettingsMap(formData);
       setTimeout(() => {
         if (form && typeof form.setFieldsValue === 'function') {
           form.setFieldsValue(formData);
         }
-        if (smtpForm && typeof smtpForm.setFieldsValue === 'function') {
-          smtpForm.setFieldsValue(formData);
-        }
+        // Не трогаем smtpForm и dadataForm здесь, чтобы избежать предупреждения
       }, 0);
     } catch (error) {
       console.error('Error fetching settings:', error);
@@ -147,7 +162,6 @@ const AdminSystemSettings = () => {
             color: isDark ? '#ffffff' : '#000000'
           }}
         />
-        
         <Form.Item
           name="site_title"
           label={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Название сайта</span>}
@@ -162,10 +176,8 @@ const AdminSystemSettings = () => {
             prefix={<GlobalOutlined />}
             maxLength={100}
             showCount
-            style={inputStyle}
           />
         </Form.Item>
-
         <Form.Item
           name="site_description"
           label={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Описание сайта</span>}
@@ -177,182 +189,51 @@ const AdminSystemSettings = () => {
           <TextArea
             style={inputStyle}
             placeholder="Введите описание сайта"
-            rows={4}
+            rows={3}
             maxLength={500}
             showCount
+          />
+        </Form.Item>
+        <Form.Item
+          name="contact_email"
+          label={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Контактный email</span>}
+          rules={[
+            { type: 'email', message: 'Введите корректный email' },
+            { max: 50, message: 'Email не должен превышать 50 символов' }
+          ]}
+        >
+          <Input
             style={inputStyle}
+            placeholder="Введите контактный email"
+            prefix={<MailOutlined />}
+            maxLength={50}
+            showCount
           />
         </Form.Item>
       </ProCard>
+      <div style={{ textAlign: 'center', marginTop: '24px' }}>
+        <Space size="middle">
+          <Button 
+            type="primary" 
+            htmlType="submit"
+            loading={loading}
+            icon={<SaveOutlined />}
+            size="large"
+          >
+            Сохранить настройки
+          </Button>
+        </Space>
+      </div>
+    </Form>
+  );
 
-      <ProCard 
-        size="small" 
-        title={
-          <span style={{ color: isDark ? '#ffffff' : '#000000' }}>
-            Приветственное сообщение
-          </span>
-        }
-        style={{ 
-          marginTop: 16,
-          backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
-          border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
-        }}
-      >
-        <Alert
-          message="Настройки главной страницы"
-          description="Настройте приветственные сообщения, которые будут отображаться на главной странице."
-          type="info"
-          showIcon
-          style={{ marginBottom: 16 }}
-        />
-        
-        <Form.Item
-          name="welcome_title"
-          label="Заголовок приветствия"
-          rules={[
-            { required: true, message: 'Заголовок приветствия обязателен' },
-            { max: 100, message: 'Заголовок не должен превышать 100 символов' }
-          ]}
-        >
-          <Input
-            style={inputStyle}
-            placeholder="Введите заголовок приветствия"
-            prefix={<SettingOutlined />}
-            maxLength={100}
-            showCount
-          />
-                </Form.Item>
-
-        <Form.Item
-          name="welcome_subtitle"
-          label="Подзаголовок приветствия"
-          rules={[
-            { required: true, message: 'Подзаголовок приветствия обязателен' },
-            { max: 200, message: 'Подзаголовок не должен превышать 200 символов' }
-          ]}
-        >
-          <Input
-            style={inputStyle}
-            placeholder="Введите подзаголовок приветствия"
-            prefix={<SettingOutlined />}
-            maxLength={200}
-            showCount
-          />
-                </Form.Item>
-
-        <Form.Item
-          name="welcome_message"
-          label="Приветственное сообщение для пользователей"
-          rules={[
-            { required: true, message: 'Приветственное сообщение обязательно' },
-            { max: 300, message: 'Сообщение не должно превышать 300 символов' }
-          ]}
-        >
-          <Input
-            style={inputStyle}
-            placeholder="Привет, Тестовый пользователь 1!"
-            prefix={<UserOutlined />}
-            maxLength={300}
-            showCount
-          />
-                </Form.Item>
-      </ProCard>
-
-      <ProCard size="small" title="Настройки кнопок мероприятий" style={{ marginTop: 16 }}>
-        <Alert
-          message="Тексты кнопок для этапов мероприятий"
-          description="Настройте названия кнопок для разных этапов участия в мероприятиях."
-          type="info"
-          showIcon
-          style={{ marginBottom: 16 }}
-        />
-        
-        <Form.Item
-          name="button_preregistration"
-          label="Кнопка предварительной регистрации"
-          rules={[
-            { required: true, message: 'Текст кнопки обязателен' },
-            { max: 50, message: 'Текст кнопки не должен превышать 50 символов' }
-          ]}
-        >
-          <Input
-            style={inputStyle}
-            placeholder="Хочу!"
-            prefix={<SettingOutlined />}
-            maxLength={50}
-            showCount
-          />
-                </Form.Item>
-
-        <Form.Item
-          name="button_registration"
-          label="Кнопка основной регистрации"
-          rules={[
-            { required: true, message: 'Текст кнопки обязателен' },
-            { max: 50, message: 'Текст кнопки не должен превышать 50 символов' }
-          ]}
-        >
-          <Input
-            style={inputStyle}
-            placeholder="Регистрация"
-            prefix={<SettingOutlined />}
-            maxLength={50}
-            showCount
-          />
-                </Form.Item>
-
-        <Form.Item
-          name="button_confirm_participation"
-          label="Кнопка подтверждения участия"
-          rules={[
-            { required: true, message: 'Текст кнопки обязателен' },
-            { max: 50, message: 'Текст кнопки не должен превышать 50 символов' }
-          ]}
-        >
-          <Input
-            style={inputStyle}
-            placeholder="Подтвердить участие"
-            prefix={<SettingOutlined />}
-            maxLength={50}
-            showCount
-          />
-                </Form.Item>
-
-        <Form.Item
-          name="button_soon"
-          label="Кнопка для предварительно зарегистрированных"
-          rules={[
-            { required: true, message: 'Текст кнопки обязателен' },
-            { max: 50, message: 'Текст кнопки не должен превышать 50 символов' }
-          ]}
-        >
-          <Input
-            style={inputStyle}
-            placeholder="Уже скоро :)"
-            prefix={<SettingOutlined />}
-            maxLength={50}
-            showCount
-          />
-                </Form.Item>
-
-        <Form.Item
-          name="button_participating"
-          label="Кнопка для подтвержденных участников"
-          rules={[
-            { required: true, message: 'Текст кнопки обязателен' },
-            { max: 50, message: 'Текст кнопки не должен превышать 50 символов' }
-          ]}
-        >
-          <Input
-            style={inputStyle}
-            placeholder="Вы участвуете в мероприятии"
-            prefix={<SettingOutlined />}
-            maxLength={50}
-            showCount
-          />
-                </Form.Item>
-      </ProCard>
-
+  // Новый таб для DADATA
+  const renderDadataTab = () => (
+    <Form
+      form={dadataForm}
+      layout="vertical"
+      onFinish={handleSave}
+    >
       <ProCard 
         size="small" 
         title={
@@ -361,7 +242,6 @@ const AdminSystemSettings = () => {
           </span>
         }
         style={{ 
-          marginTop: 16,
           backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
           border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
         }}
@@ -378,7 +258,6 @@ const AdminSystemSettings = () => {
             color: isDark ? '#ffffff' : '#000000'
           }}
         />
-        
         <Form.Item
           name="dadata_enabled"
           label={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Включить автодополнение адресов</span>}
@@ -389,7 +268,6 @@ const AdminSystemSettings = () => {
             unCheckedChildren="Отключено"
           />
         </Form.Item>
-
         <Form.Item
           name="dadata_token"
           label={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>API токен DaData</span>}
@@ -398,14 +276,41 @@ const AdminSystemSettings = () => {
             { min: 10, message: 'Токен должен содержать минимум 10 символов' }
           ]}
         >
+          {/* Комментарий: Для placeholder цвета в дарк моде используйте глобальный CSS: .ant-input::placeholder { color: #bfbfbf; } */}
           <Input.Password
             style={inputStyle}
             placeholder="Введите API токен от DaData.ru"
             prefix={<SettingOutlined />}
+            addonAfter={<Button size="small" loading={dadataTokenLoading} onClick={async () => {
+              setDadataTokenStatus(null);
+              setDadataTokenLoading(true);
+              try {
+                const token = dadataForm.getFieldValue('dadata_token');
+                const resp = await fetch('https://suggestions.dadata.ru/suggestions/api/4_1/rs/suggest/address', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'Authorization': 'Token ' + token
+                  },
+                  body: JSON.stringify({ query: 'Москва' })
+                });
+                if (resp.status === 200) {
+                  setDadataTokenStatus('valid');
+                } else {
+                  setDadataTokenStatus('error');
+                }
+              } catch (e) {
+                setDadataTokenStatus('error');
+              } finally {
+                setDadataTokenLoading(false);
+              }
+            }} type={isDark ? 'ghost' : 'default'} style={{backgroundColor: isDark ? '#232a3c' : undefined, color: isDark ? '#fff' : undefined, border: isDark ? '1px solid #404040' : undefined}}>Проверить токен</Button>}
           />
         </Form.Item>
+        {dadataTokenStatus === 'valid' && <div style={{color:'green'}}>Токен валиден!</div>}
+        {dadataTokenStatus === 'error' && <div style={{color:'red'}}>Некорректный токен</div>}
       </ProCard>
-
       <div style={{ textAlign: 'center', marginTop: '24px' }}>
         <Space size="middle">
           <Button 
@@ -416,13 +321,6 @@ const AdminSystemSettings = () => {
             size="large"
           >
             Сохранить настройки
-          </Button>
-          <Button 
-            onClick={fetchSettings}
-            icon={<ReloadOutlined />}
-            size="large"
-          >
-            Обновить
           </Button>
         </Space>
       </div>
@@ -1062,7 +960,7 @@ const AdminSystemSettings = () => {
           ]}
         >
           <Input
-            style={inputStyle}Number
+            style={inputStyle}
             placeholder="480"
             prefix={<ClockCircleOutlined />}
             style={{ width: '100%' }}
@@ -1080,7 +978,7 @@ const AdminSystemSettings = () => {
           ]}
         >
           <Input
-            style={inputStyle}Number
+            style={inputStyle}
             placeholder="5"
             prefix={<SecurityScanOutlined />}
             style={{ width: '100%' }}
@@ -1098,7 +996,7 @@ const AdminSystemSettings = () => {
           ]}
         >
           <Input
-            style={inputStyle}Number
+            style={inputStyle}
             placeholder="8"
             prefix={<SecurityScanOutlined />}
             style={{ width: '100%' }}
@@ -1224,7 +1122,7 @@ const AdminSystemSettings = () => {
           ]}
         >
           <Input
-            style={inputStyle}Number
+            style={inputStyle}
             placeholder="3"
             prefix={<NotificationOutlined />}
             style={{ width: '100%' }}
@@ -1314,7 +1212,7 @@ const AdminSystemSettings = () => {
           ]}
         >
           <Input
-            style={inputStyle}Number
+            style={inputStyle}
             placeholder="100"
             prefix={<TeamOutlined />}
             style={{ width: '100%' }}
@@ -1348,7 +1246,7 @@ const AdminSystemSettings = () => {
           ]}
         >
           <Input
-            style={inputStyle}Number
+            style={inputStyle}
             placeholder="24"
             prefix={<ClockCircleOutlined />}
             style={{ width: '100%' }}
@@ -1366,7 +1264,7 @@ const AdminSystemSettings = () => {
           ]}
         >
           <Input
-            style={inputStyle}Number
+            style={inputStyle}
             placeholder="7"
             prefix={<ClockCircleOutlined />}
             style={{ width: '100%' }}
@@ -1423,7 +1321,7 @@ const AdminSystemSettings = () => {
           ]}
         >
           <Input
-            style={inputStyle}Number
+            style={inputStyle}
             placeholder="365"
             prefix={<DatabaseOutlined />}
             style={{ width: '100%' }}
@@ -1545,6 +1443,16 @@ const AdminSystemSettings = () => {
                 </span>
               ),
               children: renderNotificationsTab(),
+            },
+            {
+              key: 'dadata',
+              label: (
+                <span style={{ color: isDark ? '#ffffff' : '#000000' }}>
+                  <SettingOutlined />
+                  DaData
+                </span>
+              ),
+              children: renderDadataTab(),
             },
             {
               key: 'system',

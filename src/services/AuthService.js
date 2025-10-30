@@ -14,24 +14,33 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [profileStatus, setProfileStatus] = useState(null);
-  const [loading, setLoading] = useState(false); // Начинаем с false
+  const [loading, setLoading] = useState(true); // Изначально true, чтобы не редиректить до инициализации
   const [profileStatusLoading, setProfileStatusLoading] = useState(false);
   const [profileStatusFetched, setProfileStatusFetched] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      // Загружаем данные в фоне, не блокируя интерфейс
-      fetchUserProfile();
-    }
+    const init = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (token) {
+          axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+          await fetchUserProfile();
+        } else {
+          setUser(null);
+          setProfileStatus(null);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+    init();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchUserProfile = async () => {
     try {
       const response = await axios.get('/auth/me');
       setUser(response.data);
-      setProfileStatusFetched(false); // Сбрасываем флаг при смене пользователя
+      setProfileStatusFetched(false);
       
       // Получаем статус профиля только если пользователь авторизован и это не админ
       if (response.data && response.data.role !== 'admin') {
@@ -43,14 +52,10 @@ export const AuthProvider = ({ children }) => {
       if (error.response?.status === 401) {
         localStorage.removeItem('token');
         delete axios.defaults.headers.common['Authorization'];
-        setUser(null);
-        setProfileStatus(null);
-        setProfileStatusFetched(false);
-      } else {
-        setUser(null);
-        setProfileStatus(null);
-        setProfileStatusFetched(false);
       }
+      setUser(null);
+      setProfileStatus(null);
+      setProfileStatusFetched(false);
     }
   };
 

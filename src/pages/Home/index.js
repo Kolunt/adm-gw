@@ -85,8 +85,8 @@ const HomePage = () => {
         <ProCard style={{ marginBottom: '24px' }}>
           <div style={{ textAlign: 'center', padding: '40px' }}>
             <CalendarOutlined style={{ fontSize: '48px', color: '#2d5016', marginBottom: '16px' }} />
-            <Title level={3}>Нет активных мероприятий</Title>
-            <Text type="secondary" style={{ fontSize: '16px', marginBottom: '24px', display: 'block' }}>
+            <Title level={3} style={{ color: 'white' }}>Нет активных мероприятий</Title>
+            <Text style={{ fontSize: '16px', marginBottom: '24px', display: 'block', color: 'white' }}>
               В данный момент нет активных мероприятий обмена подарками
             </Text>
             <Button type="primary" href="/events">

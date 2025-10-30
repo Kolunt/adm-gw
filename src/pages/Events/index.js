@@ -156,6 +156,11 @@ const EventsPage = () => {
         <List
           dataSource={events}
           rowKey="id"
+          locale={{
+            emptyText: (
+              <span style={{ color: 'white', fontSize: 18 }}>Нет данных</span>
+            )
+          }}
           pagination={{
             pageSize: 6,
             showSizeChanger: true,

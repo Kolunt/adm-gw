@@ -540,6 +540,11 @@ const AppContent = () => {
             <AdminSettings />
           </ProtectedRoute>
         } />
+        <Route path="/admin/settings/dadata" element={
+          <ProtectedRoute requireAdmin={true}>
+            <AdminSettings />
+          </ProtectedRoute>
+        } />
       </Routes>
         </Layout.Content>
       </Layout>
