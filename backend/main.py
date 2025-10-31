@@ -1570,7 +1570,7 @@ async def get_events(db: Session = Depends(get_db)):
     events = db.query(Event).order_by(Event.created_at.desc()).all()
     return events
 
-@app.get("/events/current", response_model=EventResponse)
+@app.get("/events/current", response_model=EventResponse | None)
 async def get_current_event(db: Session = Depends(get_db)):
     """Получение ближайшего активного мероприятия"""
     now = datetime.utcnow()
@@ -1582,7 +1582,7 @@ async def get_current_event(db: Session = Depends(get_db)):
     ).order_by(Event.preregistration_start.asc()).all()
     
     if not active_events:
-        raise HTTPException(status_code=404, detail="Нет активных мероприятий")
+        return None
     
     # Возвращаем ближайшее мероприятие
     return active_events[0]
@@ -2676,7 +2676,8 @@ async def get_faq(
     if category_id:
         query = query.filter(FAQ.category_id == category_id)
     
-    faq_items = query.order_by(FAQ.order.asc(), FAQ.created_at.asc()).all()
+    # Сортировка: сначала по order (меньше = выше), потом по question (алфавит)
+    faq_items = query.order_by(FAQ.order.asc(), FAQ.question.asc()).all()
     
     # Загружаем информацию о категориях
     for faq in faq_items:
@@ -2691,7 +2692,8 @@ async def get_all_faq(
     db: Session = Depends(get_db)
 ):
     """Получение всех FAQ для администратора"""
-    faq_items = db.query(FAQ).order_by(FAQ.order.asc(), FAQ.created_at.asc()).all()
+    # Сортировка: сначала по order (меньше = выше), потом по question (алфавит)
+    faq_items = db.query(FAQ).order_by(FAQ.order.asc(), FAQ.question.asc()).all()
     
     # Загружаем информацию о категориях
     for faq in faq_items:

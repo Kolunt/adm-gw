@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Typography, Space, Button, Modal, Form, Input, message, Table, Tag, Select, Switch } from 'antd';
+import { Typography, Space, Button, Modal, Form, Input, message, Table, Tag, Switch } from 'antd';
 import { QuestionCircleOutlined, PlusOutlined, EditOutlined, DeleteOutlined, UpOutlined, DownOutlined } from '@ant-design/icons';
 import ProCard from '@ant-design/pro-card';
 import axios from '../utils/axiosConfig';
@@ -9,7 +9,6 @@ const { TextArea } = Input;
 
 const AdminFAQ = () => {
   const [faqData, setFaqData] = useState([]);
-  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
@@ -17,7 +16,6 @@ const AdminFAQ = () => {
 
   useEffect(() => {
     fetchFAQ();
-    fetchCategories();
   }, []);
 
   const fetchFAQ = async () => {
@@ -33,15 +31,6 @@ const AdminFAQ = () => {
     }
   };
 
-  const fetchCategories = async () => {
-    try {
-      const response = await axios.get('/admin/faq/categories');
-      setCategories(response.data);
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-    }
-  };
-
   const handleAdd = () => {
     setEditingItem(null);
     form.resetFields();
@@ -53,7 +42,6 @@ const AdminFAQ = () => {
     form.setFieldsValue({
       question: item.question,
       answer: item.answer,
-      category_id: item.category_id,
       order: item.order,
       is_active: item.is_active
     });
@@ -176,17 +164,6 @@ const AdminFAQ = () => {
               ),
             },
             {
-              title: 'Категория',
-              dataIndex: 'category',
-              key: 'category',
-              width: 150,
-              render: (category) => (
-                <Tag color="blue">
-                  {category ? category.name : 'Без категории'}
-                </Tag>
-              ),
-            },
-            {
               title: 'Вопрос',
               dataIndex: 'question',
               key: 'question',
@@ -303,27 +280,12 @@ const AdminFAQ = () => {
           </Form.Item>
 
           <Form.Item
-            name="category_id"
-            label="Категория"
-          >
-            <Select
-              placeholder="Выберите категорию (необязательно)"
-              allowClear
-            >
-              {categories.map(category => (
-                <Select.Option key={category.id} value={category.id}>
-                  {category.name}
-                </Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
-
-          <Form.Item
             name="order"
             label="Порядок отображения"
+            initialValue={100}
             rules={[{ required: true, message: 'Пожалуйста, введите порядок' }]}
           >
-            <Input type="number" placeholder="Порядок отображения" />
+            <Input type="number" placeholder="Порядок отображения" defaultValue={100} />
           </Form.Item>
 
           {editingItem && (

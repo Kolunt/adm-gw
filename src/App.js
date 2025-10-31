@@ -527,7 +527,22 @@ const AppContent = () => {
             <AdminSettings />
           </ProtectedRoute>
         } />
-        <Route path="/admin/settings/smtp" element={
+        <Route path="/admin/settings/integrations" element={
+          <ProtectedRoute requireAdmin={true}>
+            <AdminSettings />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/settings/integrations/smtp" element={
+          <ProtectedRoute requireAdmin={true}>
+            <AdminSettings />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/settings/integrations/telegram" element={
+          <ProtectedRoute requireAdmin={true}>
+            <AdminSettings />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/settings/integrations/dadata" element={
           <ProtectedRoute requireAdmin={true}>
             <AdminSettings />
           </ProtectedRoute>
@@ -543,11 +558,6 @@ const AppContent = () => {
           </ProtectedRoute>
         } />
         <Route path="/admin/settings/system" element={
-          <ProtectedRoute requireAdmin={true}>
-            <AdminSettings />
-          </ProtectedRoute>
-        } />
-        <Route path="/admin/settings/dadata" element={
           <ProtectedRoute requireAdmin={true}>
             <AdminSettings />
           </ProtectedRoute>

@@ -48,12 +48,37 @@ const AdminSystemSettings = () => {
   // Получаем активный таб из URL или используем дефолтный
   const getActiveTabFromUrl = () => {
     const pathParts = location.pathname.split('/');
-    const tab = pathParts[pathParts.length - 1];
-    const validTabs = ['general', 'colors', 'smtp', 'security', 'notifications', 'system', 'dadata', 'tokens'];
-    return validTabs.includes(tab) ? tab : 'general';
+    const lastPart = pathParts[pathParts.length - 1];
+    const secondLastPart = pathParts[pathParts.length - 2];
+    
+    // Если это integrations/smtp, integrations/telegram, integrations/dadata
+    if (secondLastPart === 'integrations') {
+      const validIntegrationsTabs = ['smtp', 'telegram', 'dadata'];
+      if (validIntegrationsTabs.includes(lastPart)) {
+        return 'integrations';
+      }
+    }
+    
+    // Обычные табы
+    const validTabs = ['general', 'colors', 'integrations', 'security', 'notifications', 'system', 'tokens'];
+    return validTabs.includes(lastPart) ? lastPart : 'general';
+  };
+  
+  // Получаем активный подтаб для интеграций
+  const getActiveIntegrationTab = () => {
+    const pathParts = location.pathname.split('/');
+    const lastPart = pathParts[pathParts.length - 1];
+    const secondLastPart = pathParts[pathParts.length - 2];
+    
+    if (secondLastPart === 'integrations') {
+      const validIntegrationTabs = ['smtp', 'telegram', 'dadata'];
+      return validIntegrationTabs.includes(lastPart) ? lastPart : 'smtp';
+    }
+    return 'smtp';
   };
   
   const [activeTab, setActiveTab] = useState(getActiveTabFromUrl());
+  const [activeIntegrationTab, setActiveIntegrationTab] = useState(getActiveIntegrationTab());
   const [dadataTokenStatus, setDadataTokenStatus] = useState(null);
   const [dadataTokenLoading, setDadataTokenLoading] = useState(false);
 
@@ -71,26 +96,44 @@ const AdminSystemSettings = () => {
     fetchSettings();
   }, []);
 
-  // Обновляем активный таб при изменении URL
+  // Обновляем активные табы при изменении URL
   useEffect(() => {
     const newActiveTab = getActiveTabFromUrl();
+    const newActiveIntegrationTab = getActiveIntegrationTab();
     setActiveTab(newActiveTab);
-  }, [location.pathname]);
+    setActiveIntegrationTab(newActiveIntegrationTab);
+    
+    // Редиректим на smtp если попали на /admin/settings/integrations без подтаба
+    if (newActiveTab === 'integrations' && location.pathname === '/admin/settings/integrations') {
+      navigate('/admin/settings/integrations/smtp', { replace: true });
+    }
+  }, [location.pathname, navigate]);
 
   // При смене таба наполняем соответствующую форму данными, когда она уже смонтирована
   useEffect(() => {
     if (!settingsMap) return;
-    if (activeTab === 'smtp' && smtpForm && typeof smtpForm.setFieldsValue === 'function') {
+    if (activeIntegrationTab === 'smtp' && smtpForm && typeof smtpForm.setFieldsValue === 'function') {
       smtpForm.setFieldsValue(settingsMap);
     }
-    if (activeTab === 'dadata' && dadataForm && typeof dadataForm.setFieldsValue === 'function') {
+    if (activeIntegrationTab === 'dadata' && dadataForm && typeof dadataForm.setFieldsValue === 'function') {
       dadataForm.setFieldsValue(settingsMap);
+      // Сбрасываем статус токена при загрузке настроек
+      setDadataTokenStatus(null);
     }
-  }, [activeTab, settingsMap]);
+  }, [activeIntegrationTab, settingsMap]);
 
   const handleTabChange = (key) => {
     setActiveTab(key);
-    navigate(`/admin/settings/${key}`);
+    if (key === 'integrations') {
+      navigate(`/admin/settings/integrations/${activeIntegrationTab}`);
+    } else {
+      navigate(`/admin/settings/${key}`);
+    }
+  };
+
+  const handleIntegrationTabChange = (key) => {
+    setActiveIntegrationTab(key);
+    navigate(`/admin/settings/integrations/${key}`);
   };
 
   const fetchSettings = async () => {
@@ -278,7 +321,17 @@ const AdminSystemSettings = () => {
           <Switch 
             checkedChildren="Включено" 
             unCheckedChildren="Отключено"
+            disabled={dadataTokenStatus !== 'valid'}
           />
+          {dadataTokenStatus !== 'valid' && (
+            <div style={{ 
+              marginTop: '8px', 
+              fontSize: '12px',
+              color: isDark ? '#ff7875' : '#ff4d4f'
+            }}>
+              Для включения необходимо сначала добавить и проверить API токен
+            </div>
+          )}
         </Form.Item>
         <Form.Item
           name="dadata_token"
@@ -293,11 +346,24 @@ const AdminSystemSettings = () => {
             style={inputStyle}
             placeholder="Введите API токен от DaData.ru"
             prefix={<SettingOutlined />}
+            onChange={(e) => {
+              // При изменении токена сбрасываем статус валидности
+              if (dadataTokenStatus === 'valid') {
+                setDadataTokenStatus(null);
+                // Выключаем тумблер при изменении токена
+                dadataForm.setFieldsValue({ dadata_enabled: false });
+              }
+            }}
             addonAfter={<Button size="small" loading={dadataTokenLoading} onClick={async () => {
               setDadataTokenStatus(null);
               setDadataTokenLoading(true);
               try {
                 const token = dadataForm.getFieldValue('dadata_token');
+                if (!token || token.trim().length < 10) {
+                  setDadataTokenStatus('error');
+                  setDadataTokenLoading(false);
+                  return;
+                }
                 const resp = await fetch('https://suggestions.dadata.ru/suggestions/api/4_1/rs/suggest/address', {
                   method: 'POST',
                   headers: {
@@ -309,11 +375,16 @@ const AdminSystemSettings = () => {
                 });
                 if (resp.status === 200) {
                   setDadataTokenStatus('valid');
+                  // Если токен валиден, можно включить автодополнение автоматически (опционально)
                 } else {
                   setDadataTokenStatus('error');
+                  // Если токен невалиден, выключаем автодополнение
+                  dadataForm.setFieldsValue({ dadata_enabled: false });
                 }
               } catch (e) {
                 setDadataTokenStatus('error');
+                // При ошибке также выключаем автодополнение
+                dadataForm.setFieldsValue({ dadata_enabled: false });
               } finally {
                 setDadataTokenLoading(false);
               }
@@ -1144,18 +1215,100 @@ const AdminSystemSettings = () => {
         </Form.Item>
       </ProCard>
 
-      <ProCard size="small" title="Настройки Telegram" style={{ marginTop: 16 }}>
+      <div style={{ textAlign: 'center', marginTop: '24px' }}>
+        <Space size="middle">
+          <Button 
+            type="primary" 
+            htmlType="submit"
+            loading={loading}
+            icon={<SaveOutlined />}
+            size="large"
+          >
+            Сохранить настройки уведомлений
+          </Button>
+        </Space>
+      </div>
+    </Form>
+  );
+
+  const renderIntegrationsTab = () => (
+    <div>
+      <Tabs
+        activeKey={activeIntegrationTab}
+        onChange={handleIntegrationTabChange}
+        style={{
+          color: isDark ? '#ffffff' : '#000000'
+        }}
+        items={[
+          {
+            key: 'smtp',
+            label: (
+              <span style={{ color: isDark ? '#ffffff' : '#000000' }}>
+                <MailOutlined />
+                SMTP
+              </span>
+            ),
+            children: renderSmtpTab(),
+          },
+          {
+            key: 'telegram',
+            label: (
+              <span style={{ color: isDark ? '#ffffff' : '#000000' }}>
+                <NotificationOutlined />
+                Telegram
+              </span>
+            ),
+            children: renderTelegramTab(),
+          },
+          {
+            key: 'dadata',
+            label: (
+              <span style={{ color: isDark ? '#ffffff' : '#000000' }}>
+                <SettingOutlined />
+                DaData
+              </span>
+            ),
+            children: renderDadataTab(),
+          },
+        ]}
+      />
+    </div>
+  );
+
+  const renderTelegramTab = () => (
+    <Form
+      form={form}
+      layout="vertical"
+      onFinish={handleSave}
+    >
+      <ProCard 
+        size="small" 
+        title={
+          <span style={{ color: isDark ? '#ffffff' : '#000000' }}>
+            Настройки Telegram бота
+          </span>
+        }
+        style={{
+          backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+          border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+        }}
+      >
         <Alert
           message="Интеграция с Telegram"
           description="Настройте отправку уведомлений через Telegram бота."
           type="info"
           showIcon
-          style={{ marginBottom: 16 }}
+          style={{ 
+            marginBottom: 16,
+            backgroundColor: isDark ? '#2f2f2f' : '#f6ffed',
+            border: isDark ? '1px solid #404040' : '1px solid #b7eb8f',
+            color: isDark ? '#ffffff' : '#000000'
+          }}
         />
         
         <Form.Item
           name="telegram_enabled"
-          label="Включить Telegram уведомления"
+          label={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Включить Telegram уведомления</span>}
           valuePropName="checked"
         >
           <Switch />
@@ -1163,7 +1316,7 @@ const AdminSystemSettings = () => {
 
         <Form.Item
           name="telegram_bot_token"
-          label="Токен Telegram бота"
+          label={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Токен Telegram бота</span>}
         >
           <Input.Password
             style={inputStyle}
@@ -1174,7 +1327,7 @@ const AdminSystemSettings = () => {
 
         <Form.Item
           name="telegram_chat_id"
-          label="ID чата для уведомлений"
+          label={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>ID чата для уведомлений</span>}
         >
           <Input
             style={inputStyle}
@@ -1193,7 +1346,7 @@ const AdminSystemSettings = () => {
             icon={<SaveOutlined />}
             size="large"
           >
-            Сохранить настройки уведомлений
+            Сохранить настройки Telegram
           </Button>
         </Space>
       </div>
@@ -1621,14 +1774,14 @@ const AdminSystemSettings = () => {
               children: renderColorsTab(),
             },
             {
-              key: 'smtp',
+              key: 'integrations',
               label: (
                 <span style={{ color: isDark ? '#ffffff' : '#000000' }}>
-                  <MailOutlined />
-                  SMTP
+                  <GlobalOutlined />
+                  Интеграции
                 </span>
               ),
-              children: renderSmtpTab(),
+              children: renderIntegrationsTab(),
             },
             {
               key: 'security',
@@ -1649,16 +1802,6 @@ const AdminSystemSettings = () => {
                 </span>
               ),
               children: renderNotificationsTab(),
-            },
-            {
-              key: 'dadata',
-              label: (
-                <span style={{ color: isDark ? '#ffffff' : '#000000' }}>
-                  <SettingOutlined />
-                  DaData
-                </span>
-              ),
-              children: renderDadataTab(),
             },
             {
               key: 'system',

@@ -1,6 +1,6 @@
 {
   "name": "anonymous-santa",
-  "version": "0.1.24",
+  "version": "0.1.25",
   "private": true,
   "dependencies": {
     "@ant-design/pro-components": "^2.6.43",

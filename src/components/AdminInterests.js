@@ -171,22 +171,20 @@ const AdminInterests = () => {
       key: 'actions',
       render: (_, record) => (
         <Space>
-          <Button 
-            type="text" 
-            icon={<EditOutlined />} 
-            onClick={() => handleEditInterest(record)}
-          >
-            Редактировать
-          </Button>
+          <Tooltip title="Редактировать">
+            <Button 
+              type="text" 
+              icon={<EditOutlined />} 
+              onClick={() => handleEditInterest(record)}
+            />
+          </Tooltip>
           <Tooltip title={record.is_blocked ? 'Разблокировать' : 'Заблокировать'}>
             <Button 
               type="text" 
               icon={<StopOutlined />}
               danger={!record.is_blocked}
               onClick={() => handleToggleBlocked(record)}
-            >
-              {record.is_blocked ? 'Разблокировать' : 'Заблокировать'}
-            </Button>
+            />
           </Tooltip>
           <Popconfirm
             title="Удалить интерес?"
@@ -195,9 +193,9 @@ const AdminInterests = () => {
             okText="Да"
             cancelText="Нет"
           >
-            <Button type="text" danger icon={<DeleteOutlined />}>
-              Удалить
-            </Button>
+            <Tooltip title="Удалить">
+              <Button type="text" danger icon={<DeleteOutlined />} />
+            </Tooltip>
           </Popconfirm>
         </Space>
       ),
@@ -222,20 +220,20 @@ const AdminInterests = () => {
         <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Title level={4}>Список интересов</Title>
           <Space>
-            <Button 
-              icon={<ReloadOutlined />} 
-              onClick={fetchInterests}
-              loading={loading}
-            >
-              Обновить
-            </Button>
-            <Button 
-              type="primary" 
-              icon={<PlusOutlined />} 
-              onClick={handleAddInterest}
-            >
-              Добавить интерес
-            </Button>
+            <Tooltip title="Обновить">
+              <Button 
+                icon={<ReloadOutlined />} 
+                onClick={fetchInterests}
+                loading={loading}
+              />
+            </Tooltip>
+            <Tooltip title="Добавить интерес">
+              <Button 
+                type="primary" 
+                icon={<PlusOutlined />} 
+                onClick={handleAddInterest}
+              />
+            </Tooltip>
           </Space>
         </div>
 

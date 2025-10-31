@@ -35,9 +35,10 @@ const EventsPage = () => {
       
       try {
         const currentEventResponse = await axios.get('/events/current');
+        // Backend возвращает null если нет активных мероприятий (вместо 404)
         setCurrentEvent(currentEventResponse.data || null);
       } catch (err) {
-        console.error('EventsPage: Error fetching current event:', err);
+        // Если все же произошла ошибка (старый API или другая проблема), просто игнорируем
         setCurrentEvent(null);
       }
       
