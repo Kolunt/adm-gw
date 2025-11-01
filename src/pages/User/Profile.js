@@ -314,6 +314,21 @@ const UserProfile = () => {
                   ) : <Text style={{ color: '#ffffff' }}>Не указан</Text>,
                 },
                 {
+                  key: 'full_name',
+                  label: 'Полное имя (ФИО)',
+                  children: <Text style={{ color: '#ffffff' }}>{user.full_name || 'Не указано'}</Text>,
+                },
+                {
+                  key: 'address',
+                  label: 'Адрес для отправки подарков',
+                  children: <Text style={{ color: '#ffffff' }}>{user.address || 'Не указан'}</Text>,
+                },
+                {
+                  key: 'interests',
+                  label: 'Интересы',
+                  children: <Text style={{ color: '#ffffff' }}>{user.interests || 'Не указаны'}</Text>,
+                },
+                {
                   key: 'role',
                   label: 'Роль',
                   children: (
@@ -344,19 +359,6 @@ const UserProfile = () => {
               ]}
             />
           </ProCard>
-
-          {/* Interests */}
-          {user.interests && user.interests.length > 0 && (
-            <ProCard title="Интересы" style={{ marginBottom: '24px' }}>
-              <Space wrap>
-                {user.interests.map((interest, index) => (
-                  <Tag key={index} color="green">
-                    {interest}
-                  </Tag>
-                ))}
-              </Space>
-            </ProCard>
-          )}
 
           {/* Bio */}
           {user.bio && (

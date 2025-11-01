@@ -41,7 +41,7 @@ const RegisterPage = () => {
         : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
       padding: '16px'
     }}>
-      <Card className={`register-card ${theme}`} style={{ 
+      <Card className={`register-card ${isDark ? 'dark-theme' : 'light-theme'}`} style={{ 
         width: '400px', 
         maxWidth: '100%', 
         boxShadow: isDark 
@@ -52,8 +52,8 @@ const RegisterPage = () => {
       }}>
         <div style={{ textAlign: 'center', marginBottom: '24px' }}>
           <div style={{ fontSize: '48px', marginBottom: '16px' }}>🎅</div>
-          <Title level={2}>Анонимный Дед Мороз</Title>
-          <Text type="secondary">Создайте аккаунт</Text>
+          <Title level={2} style={{ color: isDark ? '#ffffff' : '#000000' }}>Анонимный Дед Мороз</Title>
+          <Text type="secondary" style={{ color: isDark ? '#bfbfbf' : '#8c8c8c' }}>Создайте аккаунт</Text>
         </div>
 
         {error && (
@@ -61,7 +61,12 @@ const RegisterPage = () => {
             message="Ошибка регистрации"
             description={error}
             type="error"
-            style={{ marginBottom: '16px' }}
+            style={{
+              marginBottom: '16px',
+              backgroundColor: isDark ? '#2f2f2f' : '#fff2f0',
+              border: isDark ? '1px solid #404040' : '1px solid #ffccc7',
+              color: isDark ? '#ffffff' : '#000000'
+            }}
             showIcon
           />
         )}
@@ -95,6 +100,11 @@ const RegisterPage = () => {
               prefix={<MailOutlined />}
               placeholder="Email"
               size="large"
+              style={{
+                backgroundColor: isDark ? '#2f2f2f' : '#ffffff',
+                color: isDark ? '#ffffff' : '#000000',
+                border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+              }}
             />
           </ProForm.Item>
 
@@ -109,6 +119,11 @@ const RegisterPage = () => {
               prefix={<LockOutlined />}
               placeholder="Пароль"
               size="large"
+              style={{
+                backgroundColor: isDark ? '#2f2f2f' : '#ffffff',
+                color: isDark ? '#ffffff' : '#000000',
+                border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+              }}
             />
           </ProForm.Item>
 
@@ -130,16 +145,21 @@ const RegisterPage = () => {
               prefix={<LockOutlined />}
               placeholder="Подтвердите пароль"
               size="large"
+              style={{
+                backgroundColor: isDark ? '#2f2f2f' : '#ffffff',
+                color: isDark ? '#ffffff' : '#000000',
+                border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+              }}
             />
           </ProForm.Item>
         </ProForm>
 
-        <Divider />
+        <Divider style={{ borderColor: isDark ? '#404040' : '#f0f0f0' }} />
 
         <div style={{ textAlign: 'center' }}>
-          <Text type="secondary">
+          <Text type="secondary" style={{ color: isDark ? '#bfbfbf' : '#8c8c8c' }}>
             Уже есть аккаунт?{' '}
-            <Link href="/login" strong>
+            <Link href="/login" strong style={{ color: isDark ? '#52c41a' : '#1890ff' }}>
               Войти
             </Link>
           </Text>

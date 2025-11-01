@@ -55,6 +55,11 @@ const FAQPage = () => {
   const renderFAQItems = () => (
     <Collapse
       size="large"
+      expandIcon={({ isActive }) => (
+        <span style={{ color: '#ffffff', fontSize: '12px' }}>
+          {isActive ? '▼' : '▶'}
+        </span>
+      )}
       items={faqData.map((item) => ({
         key: item.id,
         label: (

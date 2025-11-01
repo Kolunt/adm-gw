@@ -90,8 +90,9 @@ const UserProfile = () => {
   const canViewPersonalData = () => {
     if (!profileData) return false;
     // Личные данные видны только владельцу профиля или администратору
-    // Гости и обычные пользователи видят одинаковые данные (только публичные)
+    // Гости и обычные авторизованные пользователи (при просмотре чужого профиля) видят одинаковые данные (только публичные)
     if (!user) return false; // Гости не видят личные данные
+    // Авторизованные пользователи видят личные данные только в своем профиле или если они администраторы
     return isViewingOwnProfile || user.role === 'admin';
   };
 
@@ -131,8 +132,10 @@ const UserProfile = () => {
       setLoading(true);
       console.log('Fetching user profile for ID:', userId);
       
-      // Используем публичный эндпоинт для гостей, приватный для авторизованных пользователей
-      const endpoint = user ? `/users/${userId}` : `/users/${userId}/public`;
+      // Используем публичный эндпоинт для гостей и для авторизованных пользователей при просмотре чужого профиля
+      // Приватный эндпоинт используется только для администраторов
+      const isAdminViewing = user && user.role === 'admin';
+      const endpoint = isAdminViewing ? `/users/${userId}` : `/users/${userId}/public`;
       const response = await axios.get(endpoint);
       console.log('User profile response:', response.data);
       setProfileData(response.data);
@@ -420,11 +423,23 @@ const UserProfile = () => {
                         label: 'Telegram',
                         children: profileData.telegram_username || 'Не указан',
                       },
+                    {
+                      key: 'created_at',
+                      label: 'Дата регистрации',
+                      children: new Date(profileData.created_at).toLocaleDateString('ru-RU'),
+                    },
+                    ...(canViewPersonalData() ? [
                       {
-                        key: 'created_at',
-                        label: 'Дата регистрации',
-                        children: new Date(profileData.created_at).toLocaleDateString('ru-RU'),
+                        key: 'address',
+                        label: 'Адрес для отправки подарков',
+                        children: profileData.address || <Text type="secondary">Не указан</Text>,
                       },
+                      {
+                        key: 'interests',
+                        label: 'Интересы',
+                        children: profileData.interests || <Text type="secondary">Не указаны</Text>,
+                      },
+                    ] : []),
                     ] : [
                       {
                         key: 'privacy_notice',
@@ -476,20 +491,6 @@ const UserProfile = () => {
                   ]}
                 />
               </div>
-
-              {profileData.interests && (
-                <div>
-                  <Title level={4}>Интересы</Title>
-                  <Text>{profileData.interests}</Text>
-                </div>
-              )}
-
-              {profileData.address && (
-                <div>
-                  <Title level={4}>Адрес</Title>
-                  <Text>{profileData.address}</Text>
-                </div>
-              )}
             </Space>
           </Col>
         </Row>

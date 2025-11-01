@@ -764,22 +764,38 @@ const ProfileCompletion = ({ onComplete }) => {
         
       case 1:
         return (
-          <Card>
-            <Title level={4}>Шаг 2: Личная информация</Title>
-            <Text type="secondary">Укажите ваши данные для отправки подарков</Text>
+          <Card
+            style={{
+              backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+              border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+            }}
+          >
+            <Title level={4} style={{ color: isDark ? '#ffffff' : '#000000' }}>
+              Шаг 2: Личная информация
+            </Title>
+            <Text type="secondary" style={{ color: isDark ? '#bfbfbf' : '#8c8c8c' }}>
+              Укажите ваши данные для отправки подарков
+            </Text>
             
             <Form form={form} layout="vertical" style={{ marginTop: '24px' }}>
               <Form.Item
                 name="full_name"
-                label="ФИО"
+                label={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>ФИО</span>}
                 rules={[{ required: true, message: 'Введите ФИО' }]}
               >
-                <Input placeholder="Иванов Иван Иванович" />
+                <Input
+                  placeholder="Иванов Иван Иванович"
+                  style={{
+                    backgroundColor: isDark ? '#2f2f2f' : '#ffffff',
+                    color: isDark ? '#ffffff' : '#000000',
+                    border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+                  }}
+                />
               </Form.Item>
               
               <Form.Item
                 name="address"
-                label="Адрес для отправки подарков"
+                label={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Адрес для отправки подарков</span>}
                 rules={[{ required: true, message: 'Введите адрес' }]}
               >
                 <AutoComplete
@@ -789,10 +805,30 @@ const ProfileCompletion = ({ onComplete }) => {
                     addressSearchDelayRef.current = setTimeout(() => fetchAddressSuggestions(val), 300);
                   }}
                   onSelect={(val) => form.setFieldsValue({ address: val })}
-                  style={{ width: '100%' }}
+                  style={{
+                    width: '100%',
+                    backgroundColor: isDark ? '#2f2f2f' : '#ffffff',
+                    color: isDark ? '#ffffff' : '#000000',
+                    border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+                  }}
                   notFoundContent={addressLoading ? 'Загрузка…' : 'Нет подсказок'}
+                  styles={{
+                    popup: {
+                      root: {
+                        backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+                        border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+                      }
+                    }
+                  }}
                 >
-                  <Input placeholder="Начните вводить адрес" />
+                  <Input
+                    placeholder="Начните вводить адрес"
+                    style={{
+                      backgroundColor: isDark ? '#2f2f2f' : '#ffffff',
+                      color: isDark ? '#ffffff' : '#000000',
+                      border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+                    }}
+                  />
                 </AutoComplete>
               </Form.Item>
             </Form>
@@ -858,9 +894,13 @@ const ProfileCompletion = ({ onComplete }) => {
                   loading={interestsLoading}
                   filterOption={false}
                   notFoundContent={interestsLoading ? 'Загрузка...' : 'Введите новый интерес и нажмите Enter'}
-                  dropdownStyle={{
-                    backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
-                    border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+                  styles={{
+                    popup: {
+                      root: {
+                        backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+                        border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+                      }
+                    }
                   }}
                 />
               </Form.Item>

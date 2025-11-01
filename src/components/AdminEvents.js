@@ -4,11 +4,13 @@ import { CalendarOutlined, PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlin
 import ProCard from '@ant-design/pro-card';
 import axios from '../utils/axiosConfig';
 import dayjs from 'dayjs';
+import { useTheme } from '../contexts/ThemeContext';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
 
 const AdminEvents = () => {
+  const { isDark } = useTheme();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -293,49 +295,93 @@ const AdminEvents = () => {
 
           <Form.Item
             name="preregistration_start"
-            label="Дата начала предварительной регистрации"
+            label={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Дата начала предварительной регистрации</span>}
             rules={[{ required: true, message: 'Пожалуйста, выберите дату' }]}
           >
             <DatePicker
               showTime
-              style={{ width: '100%' }}
+              style={{
+                width: '100%',
+                backgroundColor: isDark ? '#2f2f2f' : '#ffffff',
+                color: isDark ? '#ffffff' : '#000000',
+                border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+              }}
               placeholder="Выберите дату начала предварительной регистрации"
+              styles={{
+                popup: {
+                  backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+                  border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+                }
+              }}
             />
           </Form.Item>
 
           <Form.Item
             name="registration_start"
-            label="Дата начала основной регистрации"
+            label={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Дата начала основной регистрации</span>}
             rules={[{ required: true, message: 'Пожалуйста, выберите дату' }]}
           >
             <DatePicker
               showTime
-              style={{ width: '100%' }}
+              style={{
+                width: '100%',
+                backgroundColor: isDark ? '#2f2f2f' : '#ffffff',
+                color: isDark ? '#ffffff' : '#000000',
+                border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+              }}
               placeholder="Выберите дату начала основной регистрации"
+              styles={{
+                popup: {
+                  backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+                  border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+                }
+              }}
             />
           </Form.Item>
 
           <Form.Item
             name="registration_end"
-            label="Дата окончания регистрации"
+            label={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Дата окончания регистрации</span>}
             rules={[{ required: true, message: 'Пожалуйста, выберите дату' }]}
           >
             <DatePicker
               showTime
-              style={{ width: '100%' }}
+              style={{
+                width: '100%',
+                backgroundColor: isDark ? '#2f2f2f' : '#ffffff',
+                color: isDark ? '#ffffff' : '#000000',
+                border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+              }}
               placeholder="Выберите дату окончания регистрации"
+              styles={{
+                popup: {
+                  backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+                  border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+                }
+              }}
             />
           </Form.Item>
 
           <Form.Item
             name="event_start"
-            label="Дата и время события"
+            label={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Дата и время события</span>}
             rules={[{ required: true, message: 'Пожалуйста, выберите дату и время события' }]}
           >
             <DatePicker
               showTime
-              style={{ width: '100%' }}
+              style={{
+                width: '100%',
+                backgroundColor: isDark ? '#2f2f2f' : '#ffffff',
+                color: isDark ? '#ffffff' : '#000000',
+                border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+              }}
               placeholder="Выберите дату и время события"
+              styles={{
+                popup: {
+                  backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+                  border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+                }
+              }}
             />
           </Form.Item>
 
