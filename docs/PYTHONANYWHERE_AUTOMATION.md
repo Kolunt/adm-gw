@@ -1,0 +1,305 @@
+# Автоматизация деплоя на PythonAnywhere
+
+## 🔧 Возможности автоматизации
+
+К сожалению, я не могу напрямую подключиться к PythonAnywhere (нет SSH доступа и API ключей), но можно настроить **полуавтоматический деплой** через скрипты.
+
+## 📋 Варианты автоматизации
+
+### Вариант 1: Git + Bash скрипт (Рекомендуется)
+
+Создайте скрипт на PythonAnywhere, который будет автоматически обновлять код из Git:
+
+#### 1. Создайте скрипт на PythonAnywhere
+
+В консоли PythonAnywhere выполните:
+
+```bash
+cd ~
+nano deploy.sh
+```
+
+Вставьте следующий код:
+
+```bash
+#!/bin/bash
+# Скрипт автоматического деплоя на PythonAnywhere
+
+echo "=== Деплой проекта Анонимный Дед Мороз ==="
+echo ""
+
+# Переходим в папку проекта
+cd ~/adm-gw
+
+# Обновляем код из Git
+echo "1. Обновление кода из Git..."
+git pull origin master
+
+# Проверяем наличие изменений
+if [ $? -eq 0 ]; then
+    echo "✅ Код обновлен"
+else
+    echo "❌ Ошибка обновления кода"
+    exit 1
+fi
+
+# Устанавливаем/обновляем зависимости
+echo ""
+echo "2. Проверка зависимостей..."
+cd ~/adm-gw/backend
+pip3.10 install --user -r requirements.txt --quiet
+
+# Перезапускаем веб-приложение
+echo ""
+echo "3. Перезапуск приложения..."
+echo "⚠️  ВАЖНО: Перейдите в Web → Reload для применения изменений!"
+
+echo ""
+echo "✅ Деплой завершен!"
+echo "Не забудьте нажать Reload в панели Web!"
+```
+
+Сохраните файл (Ctrl+O, Enter, Ctrl+X) и сделайте его исполняемым:
+
+```bash
+chmod +x ~/deploy.sh
+```
+
+#### 2. Использование скрипта
+
+Теперь для деплоя достаточно выполнить:
+
+```bash
+~/deploy.sh
+```
+
+И затем нажать **Reload** в панели Web на PythonAnywhere.
+
+---
+
+### Вариант 2: Scheduled Task (Автоматическое обновление)
+
+Можно настроить автоматическое обновление через Scheduled Tasks:
+
+#### 1. Создайте скрипт для автообновления
+
+```bash
+cd ~
+nano auto_update.sh
+```
+
+```bash
+#!/bin/bash
+cd ~/adm-gw
+git pull origin master > /dev/null 2>&1
+# Автоматический перезапуск через API (если доступен)
+```
+
+#### 2. Настройте Scheduled Task
+
+1. В панели PythonAnywhere откройте **Tasks**
+2. Добавьте новую задачу:
+   - **Command:** `bash ~/auto_update.sh`
+   - **Schedule:** ежедневно или еженедельно
+
+⚠️ **Внимание:** Автоматический перезапуск веб-приложения требует использования API, который доступен только на платных планах.
+
+---
+
+### Вариант 3: PythonAnywhere API (Только платные планы)
+
+Для полной автоматизации можно использовать PythonAnywhere API:
+
+#### 1. Получите API токен
+
+1. Откройте https://www.pythonanywhere.com/api_token/
+2. Скопируйте ваш API токен
+
+#### 2. Создайте скрипт деплоя локально
+
+Создайте файл `deploy_to_pythonanywhere.py`:
+
+```python
+#!/usr/bin/env python3
+"""
+Скрипт для автоматического деплоя на PythonAnywhere через API
+"""
+import requests
+import subprocess
+import sys
+
+# Настройки
+PYTHONANYWHERE_USERNAME = "ваш_username"
+API_TOKEN = "ваш_api_token"
+WEB_APP_ID = "ваш_web_app_id"  # Обычно ваш_username.pythonanywhere.com
+
+def push_to_github():
+    """Пушит изменения в GitHub"""
+    print("1. Отправка изменений в GitHub...")
+    try:
+        subprocess.run(["git", "add", "."], check=True)
+        subprocess.run(["git", "commit", "-m", "Auto deploy"], check=True)
+        subprocess.run(["git", "push", "origin", "master"], check=True)
+        print("✅ Изменения отправлены в GitHub")
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"❌ Ошибка: {e}")
+        return False
+
+def trigger_pythonanywhere_update():
+    """Триггерит обновление на PythonAnywhere через API"""
+    print("2. Запуск деплоя на PythonAnywhere...")
+    
+    # Выполняем команду на PythonAnywhere через API
+    url = f"https://www.pythonanywhere.com/api/v0/user/{PYTHONANYWHERE_USERNAME}/consoles/"
+    
+    headers = {
+        "Authorization": f"Token {API_TOKEN}"
+    }
+    
+    # Создаем консоль и выполняем команду деплоя
+    data = {
+        "executable": "bash",
+        "arguments": "-c 'cd ~/adm-gw && git pull && cd backend && pip3.10 install --user -r requirements.txt'"
+    }
+    
+    try:
+        response = requests.post(url, headers=headers, json=data)
+        if response.status_code == 201:
+            print("✅ Команда деплоя запущена")
+            
+            # Перезапускаем веб-приложение
+            reload_url = f"https://www.pythonanywhere.com/api/v0/user/{PYTHONANYWHERE_USERNAME}/webapps/{WEB_APP_ID}/reload/"
+            reload_response = requests.post(reload_url, headers=headers)
+            
+            if reload_response.status_code == 200:
+                print("✅ Веб-приложение перезапущено")
+                return True
+            else:
+                print(f"⚠️  Не удалось перезапустить (код {reload_response.status_code})")
+                return True  # Все равно успех, просто нужно перезапустить вручную
+        else:
+            print(f"❌ Ошибка API: {response.status_code}")
+            return False
+    except Exception as e:
+        print(f"❌ Ошибка: {e}")
+        return False
+
+def main():
+    print("=== Автоматический деплой на PythonAnywhere ===\n")
+    
+    if not push_to_github():
+        sys.exit(1)
+    
+    if not trigger_pythonanywhere_update():
+        print("\n⚠️  Деплой через API не удался.")
+        print("Выполните вручную на PythonAnywhere:")
+        print("  cd ~/adm-gw && git pull && cd backend && pip3.10 install --user -r requirements.txt")
+        print("Затем нажмите Reload в панели Web")
+        sys.exit(1)
+    
+    print("\n✅ Деплой завершен успешно!")
+
+if __name__ == "__main__":
+    main()
+```
+
+#### 3. Использование
+
+```bash
+python deploy_to_pythonanywhere.py
+```
+
+---
+
+### Вариант 4: GitHub Actions (Автоматический деплой)
+
+Можно настроить автоматический деплой через GitHub Actions:
+
+#### 1. Создайте `.github/workflows/deploy-pythonanywhere.yml`:
+
+```yaml
+name: Deploy to PythonAnywhere
+
+on:
+  push:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      
+    - name: Deploy to PythonAnywhere
+      env:
+        PYTHONANYWHERE_TOKEN: ${{ secrets.PYTHONANYWHERE_TOKEN }}
+        PYTHONANYWHERE_USERNAME: ${{ secrets.PYTHONANYWHERE_USERNAME }}
+        WEB_APP_ID: ${{ secrets.WEB_APP_ID }}
+      run: |
+        # Отправляем команду на PythonAnywhere через API
+        curl -X POST \
+          -H "Authorization: Token $PYTHONANYWHERE_TOKEN" \
+          -d "command=cd ~/adm-gw && git pull && cd backend && pip3.10 install --user -r requirements.txt" \
+          https://www.pythonanywhere.com/api/v0/user/$PYTHONANYWHERE_USERNAME/consoles/
+        
+        # Перезапускаем веб-приложение
+        curl -X POST \
+          -H "Authorization: Token $PYTHONANYWHERE_TOKEN" \
+          https://www.pythonanywhere.com/api/v0/user/$PYTHONANYWHERE_USERNAME/webapps/$WEB_APP_ID/reload/
+```
+
+#### 2. Добавьте secrets в GitHub:
+
+1. Откройте Settings → Secrets → Actions в вашем репозитории
+2. Добавьте:
+   - `PYTHONANYWHERE_TOKEN` - ваш API токен
+   - `PYTHONANYWHERE_USERNAME` - ваш username
+   - `WEB_APP_ID` - ID вашего веб-приложения
+
+---
+
+## 🎯 Рекомендация
+
+Для большинства случаев **Вариант 1 (Git + Bash скрипт)** — самый простой и надежный:
+
+1. Создайте `~/deploy.sh` на PythonAnywhere
+2. При необходимости обновления выполните: `~/deploy.sh`
+3. Нажмите **Reload** в панели Web
+
+Это занимает ~30 секунд и не требует настройки API или дополнительных инструментов.
+
+---
+
+## 📝 Быстрая команда деплоя
+
+Если вы часто обновляете проект, можно добавить алиас:
+
+```bash
+echo 'alias deploy="cd ~/adm-gw && git pull && cd backend && pip3.10 install --user -r requirements.txt && echo \"Обновите код. Нажмите Reload в Web!\""' >> ~/.bashrc
+source ~/.bashrc
+```
+
+Теперь для деплоя достаточно:
+
+```bash
+deploy
+```
+
+---
+
+## ⚠️ Ограничения
+
+1. **API доступен только на платных планах** PythonAnywhere (Hacker, Web Developer, etc.)
+2. **Бесплатный план** не поддерживает автоматический перезапуск через API
+3. **SSH доступ** недоступен на бесплатном плане
+
+## ✅ Итого
+
+- **Я не могу напрямую подключиться** к PythonAnywhere
+- Но можно **автоматизировать деплой** через скрипты
+- **Рекомендуется Вариант 1** — простой bash скрипт с Git
+
