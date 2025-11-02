@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gwadm-app
+    ports:
+      - "8006:8006"
+    volumes:
+      # Монтируем базу данных для сохранения данных
+      - ./backend/santa.db:/app/backend/santa.db
+      # Монтируем uploads для сохранения загруженных файлов
+      - ./backend/uploads:/app/backend/uploads
+    environment:
+      - PYTHONUNBUFFERED=1
+      - NODE_ENV=production
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8006/docs"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+

@@ -1,0 +1,54 @@
+# Git
+.git
+.gitignore
+
+# Node
+node_modules
+npm-debug.log
+package-lock.json
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+ENV/
+*.db
+*.sqlite
+*.sqlite3
+
+# Build artifacts
+build/
+dist/
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Test files
+test_*.py
+check_*.py
+create_*.py
+*_REPORT.md
+
+# Temporary files
+*.bat
+*.ps1
+cleanup_*.py
+optimize_*.py
+
