@@ -15,6 +15,12 @@ venv.bak/
 build/
 dist/
 
+# Installers
+*.exe
+*.msi
+*.dmg
+*.pkg
+
 # Database
 *.db
 *.sqlite
