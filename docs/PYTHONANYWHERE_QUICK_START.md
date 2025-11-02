@@ -65,17 +65,9 @@ npm run build
 
 ### 5. Настройка Backend для раздачи Frontend
 
-Убедитесь, что в `backend/main.py` есть монтирование статических файлов. Проверьте наличие (должно быть в конце файла):
+Код для раздачи фронтенда уже есть в `backend/main.py`. Он автоматически найдет папку `build/` или `dist/` в разных местах и раздаст статические файлы.
 
-```python
-# Mount static files for React app (build folder)
-if os.path.exists("../build"):
-    app.mount("/", StaticFiles(directory="../build", html=True), name="static")
-elif os.path.exists("build"):
-    app.mount("/", StaticFiles(directory="build", html=True), name="static")
-```
-
-Если этого кода нет, добавьте его в конец `backend/main.py` перед строкой `if __name__ == "__main__":`.
+**Важно:** Убедитесь, что папка `build/` находится в корне проекта (`~/gwadm/build/`), а не в `backend/`.
 
 ### 6. Создание Web App
 1. В панели: **Web** → **Add a new web app**
