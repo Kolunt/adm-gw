@@ -9,14 +9,20 @@
 ### 2. Загрузка кода
 ```bash
 cd ~
-git clone https://github.com/Kolunt/adm-gw.git
-cd adm-gw/backend
+git clone https://github.com/Kolunt/gwadm.git
+cd gwadm/backend
 ```
 
 ### 3. Установка зависимостей
 ```bash
+# requirements.txt должен быть в папке backend/
 pip3.10 install --user -r requirements.txt
 ```
+
+**Если возникла ошибка "No such file or directory":**
+- Убедитесь, что вы находитесь в папке `backend/`: `pwd` должно показать путь с `/backend`
+- Проверьте наличие файла: `ls requirements.txt`
+- Если файла нет, скопируйте его из корня: `cp ../requirements.txt .`
 
 ### 4. Создание Web App
 1. В панели: **Web** → **Add a new web app**
@@ -29,7 +35,7 @@ pip3.10 install --user -r requirements.txt
 import sys
 import os
 
-path = '/home/ВАШ_USERNAME/adm-gw/backend'
+path = '/home/ВАШ_USERNAME/gwadm/backend'
 if path not in sys.path:
     sys.path.insert(0, path)
 
@@ -44,7 +50,7 @@ application = app
 ### 6. Настройка Static Files
 В **Web** → **Static files** добавьте:
 - URL: `/uploads/`
-- Directory: `/home/ВАШ_USERNAME/adm-gw/backend/uploads`
+- Directory: `/home/ВАШ_USERNAME/gwadm/backend/uploads`
 
 ### 7. Перезапуск
 Нажмите зеленую кнопку **Reload** в разделе **Web**

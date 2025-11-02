@@ -144,7 +144,7 @@ const AdminDocumentation = () => {
           <ul style={{ color: isDark ? '#ffffff' : '#000000' }}>
             <li>Email поддержки: support@gwars.io</li>
             <li>Telegram: @gwars_support</li>
-            <li>GitHub: github.com/Kolunt/adm-gw</li>
+            <li>GitHub: github.com/Kolunt/gwadm</li>
           </ul>
         </div>
       )

@@ -52,8 +52,8 @@ backend/
 1. В консоли PythonAnywhere:
 ```bash
 cd ~
-git clone https://github.com/Kolunt/adm-gw.git
-cd adm-gw
+git clone https://github.com/Kolunt/gwadm.git
+cd gwadm
 ```
 
 #### Вариант B: Через загрузку файлов
@@ -67,9 +67,13 @@ cd adm-gw
 В консоли PythonAnywhere:
 
 ```bash
-cd ~/adm-gw/backend  # или куда вы загрузили файлы
+cd ~/gwadm/backend  # или куда вы загрузили файлы
 pip3.10 install --user -r requirements.txt
 ```
+
+**Важно:** 
+- Если вы клонировали репозиторий через Git, файл `requirements.txt` уже находится в папке `backend/`
+- Если вы загрузили файлы вручную, убедитесь, что `requirements.txt` находится в той же папке, где `main.py`
 
 **Примечание:** PythonAnywhere использует Python 3.10 по умолчанию. Используйте `pip3.10` или `pip3.9` в зависимости от вашей версии.
 
@@ -78,7 +82,7 @@ pip3.10 install --user -r requirements.txt
 База данных создастся автоматически при первом запуске, но можно создать вручную:
 
 ```bash
-cd ~/adm-gw/backend
+cd ~/gwadm/backend
 python3.10 main.py
 # Нажмите Ctrl+C после создания БД
 ```
@@ -110,7 +114,7 @@ import sys
 import os
 
 # Добавляем путь к проекту
-path = '/home/yourusername/adm-gw/backend'
+path = '/home/yourusername/gwadm/backend'
 if path not in sys.path:
     sys.path.insert(0, path)
 
@@ -131,12 +135,12 @@ application = app
 В разделе **Web** → **Static files** добавьте:
 
 - **URL:** `/static/`
-- **Directory:** `/home/yourusername/adm-gw/backend/static` (если есть)
+- **Directory:** `/home/yourusername/gwadm/backend/static` (если есть)
 
 Для загруженных файлов (uploads):
 
 - **URL:** `/uploads/`
-- **Directory:** `/home/yourusername/adm-gw/backend/uploads`
+- **Directory:** `/home/yourusername/gwadm/backend/uploads`
 
 ### Шаг 8: Обновление CORS настроек
 
@@ -222,7 +226,7 @@ https://yourusername.pythonanywhere.com
 
 1. Откройте **Tasks**
 2. Добавьте новую задачу:
-   - **Command:** `python3.10 /home/yourusername/adm-gw/backend/telegram_bot.py`
+   - **Command:** `python3.10 /home/yourusername/gwadm/backend/telegram_bot.py`
    - **Schedule:** ежедневно, еженедельно и т.д.
 
 ### MySQL/PostgreSQL (для платных планов)
@@ -250,7 +254,7 @@ https://yourusername.pythonanywhere.com
 ### Через Git:
 
 ```bash
-cd ~/adm-gw
+cd ~/gwadm
 git pull origin master
 ```
 

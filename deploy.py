@@ -80,7 +80,7 @@ def main():
             return False
         
         # Добавляем remote origin
-        success, stdout, stderr = run_command("git remote add origin https://github.com/Kolunt/adm-gw.git")
+        success, stdout, stderr = run_command("git remote add origin https://github.com/Kolunt/gwadm.git")
         if not success:
             print(f"Ошибка добавления remote: {stderr}")
             return False
@@ -93,7 +93,7 @@ def main():
     # Коммитим и пушим
     if commit_and_push():
         print("Деплой завершен успешно!")
-        print("Репозиторий: https://github.com/Kolunt/adm-gw")
+        print("Репозиторий: https://github.com/Kolunt/gwadm")
     else:
         print("Ошибка при деплое")
         sys.exit(1)

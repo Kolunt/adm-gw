@@ -8,7 +8,7 @@ import sys
 import os
 
 # Добавляем путь к проекту (ЗАМЕНИТЕ yourusername на ваш username!)
-path = '/home/yourusername/adm-gw/backend'
+path = '/home/yourusername/gwadm/backend'
 if path not in sys.path:
     sys.path.insert(0, path)
 

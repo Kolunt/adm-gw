@@ -29,7 +29,7 @@ echo "=== Деплой проекта Анонимный Дед Мороз ==="
 echo ""
 
 # Переходим в папку проекта
-cd ~/adm-gw
+cd ~/gwadm
 
 # Обновляем код из Git
 echo "1. Обновление кода из Git..."
@@ -46,7 +46,7 @@ fi
 # Устанавливаем/обновляем зависимости
 echo ""
 echo "2. Проверка зависимостей..."
-cd ~/adm-gw/backend
+cd ~/gwadm/backend
 pip3.10 install --user -r requirements.txt --quiet
 
 # Перезапускаем веб-приложение
@@ -90,7 +90,7 @@ nano auto_update.sh
 
 ```bash
 #!/bin/bash
-cd ~/adm-gw
+cd ~/gwadm
 git pull origin master > /dev/null 2>&1
 # Автоматический перезапуск через API (если доступен)
 ```
@@ -160,7 +160,7 @@ def trigger_pythonanywhere_update():
     # Создаем консоль и выполняем команду деплоя
     data = {
         "executable": "bash",
-        "arguments": "-c 'cd ~/adm-gw && git pull && cd backend && pip3.10 install --user -r requirements.txt'"
+        "arguments": "-c 'cd ~/gwadm && git pull && cd backend && pip3.10 install --user -r requirements.txt'"
     }
     
     try:
@@ -194,7 +194,7 @@ def main():
     if not trigger_pythonanywhere_update():
         print("\n⚠️  Деплой через API не удался.")
         print("Выполните вручную на PythonAnywhere:")
-        print("  cd ~/adm-gw && git pull && cd backend && pip3.10 install --user -r requirements.txt")
+        print("  cd ~/gwadm && git pull && cd backend && pip3.10 install --user -r requirements.txt")
         print("Затем нажмите Reload в панели Web")
         sys.exit(1)
     
@@ -243,7 +243,7 @@ jobs:
         # Отправляем команду на PythonAnywhere через API
         curl -X POST \
           -H "Authorization: Token $PYTHONANYWHERE_TOKEN" \
-          -d "command=cd ~/adm-gw && git pull && cd backend && pip3.10 install --user -r requirements.txt" \
+          -d "command=cd ~/gwadm && git pull && cd backend && pip3.10 install --user -r requirements.txt" \
           https://www.pythonanywhere.com/api/v0/user/$PYTHONANYWHERE_USERNAME/consoles/
         
         # Перезапускаем веб-приложение
@@ -279,7 +279,7 @@ jobs:
 Если вы часто обновляете проект, можно добавить алиас:
 
 ```bash
-echo 'alias deploy="cd ~/adm-gw && git pull && cd backend && pip3.10 install --user -r requirements.txt && echo \"Обновите код. Нажмите Reload в Web!\""' >> ~/.bashrc
+echo 'alias deploy="cd ~/gwadm && git pull && cd backend && pip3.10 install --user -r requirements.txt && echo \"Обновите код. Нажмите Reload в Web!\""' >> ~/.bashrc
 source ~/.bashrc
 ```
 

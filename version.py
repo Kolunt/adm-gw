@@ -84,7 +84,7 @@ def main():
             result = subprocess.run([sys.executable, "deploy.py"], capture_output=True, text=True)
             if result.returncode == 0:
                 print("Деплой в GitHub завершен успешно!")
-                print("Репозиторий: https://github.com/Kolunt/adm-gw")
+                print("Репозиторий: https://github.com/Kolunt/gwadm")
             else:
                 print(f"⚠️ Деплой завершен с предупреждениями: {result.stderr}")
         except Exception as e:

@@ -79,7 +79,7 @@ const ContactsPage = () => {
                 <GithubOutlined style={{ marginRight: '8px', color: isDark ? '#ffffff' : '#333' }} />
                 <Text strong style={{ color: isDark ? '#ffffff' : '#000000' }}>GitHub репозиторий</Text>
                 <br />
-                <Text type="secondary" style={{ color: isDark ? '#bfbfbf' : '#8c8c8c' }}>github.com/Kolunt/adm-gw</Text>
+                <Text type="secondary" style={{ color: isDark ? '#bfbfbf' : '#8c8c8c' }}>github.com/Kolunt/gwadm</Text>
                 <br />
                 <Button type="link" size="small" style={{ color: isDark ? '#52c41a' : '#1890ff' }}>
                   Открыть репозиторий

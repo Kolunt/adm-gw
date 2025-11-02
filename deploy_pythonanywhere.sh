@@ -8,13 +8,13 @@ echo "=== Деплой проекта Анонимный Дед Мороз ==="
 echo ""
 
 # Получаем путь к проекту
-PROJECT_DIR="$HOME/adm-gw"
+PROJECT_DIR="$HOME/gwadm"
 BACKEND_DIR="$PROJECT_DIR/backend"
 
 # Проверяем существование проекта
 if [ ! -d "$PROJECT_DIR" ]; then
     echo "❌ Папка проекта не найдена: $PROJECT_DIR"
-    echo "Выполните сначала: git clone https://github.com/Kolunt/adm-gw.git"
+    echo "Выполните сначала: git clone https://github.com/Kolunt/gwadm.git"
     exit 1
 fi
 

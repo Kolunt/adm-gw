@@ -13,7 +13,7 @@ IS_PYTHONANYWHERE = 'PYTHONANYWHERE_DOMAIN' in os.environ or 'pythonanywhere.com
 # База данных
 if IS_PYTHONANYWHERE:
     # Используем абсолютный путь на PythonAnywhere
-    DB_PATH = os.path.join(os.path.expanduser('~'), 'adm-gw', 'backend', 'santa.db')
+    DB_PATH = os.path.join(os.path.expanduser('~'), 'gwadm', 'backend', 'santa.db')
     SQLALCHEMY_DATABASE_URL = f"sqlite:///{DB_PATH}"
 else:
     # Локальная разработка
@@ -21,7 +21,7 @@ else:
 
 # Пути для загрузки файлов
 if IS_PYTHONANYWHERE:
-    UPLOAD_DIR = os.path.join(os.path.expanduser('~'), 'adm-gw', 'backend', 'uploads')
+    UPLOAD_DIR = os.path.join(os.path.expanduser('~'), 'gwadm', 'backend', 'uploads')
     ICON_DIR = os.path.join(UPLOAD_DIR, 'icons')
 else:
     UPLOAD_DIR = "uploads"

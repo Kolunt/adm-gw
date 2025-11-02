@@ -12,7 +12,7 @@ const AdminContacts = () => {
   const [contactsData, setContactsData] = useState({
     supportEmail: 'support@gwars.io',
     telegram: '@gwars_support',
-    github: 'github.com/Kolunt/adm-gw',
+    github: 'github.com/Kolunt/gwadm',
     phone: '+7 (XXX) XXX-XX-XX',
     workHours: 'Рабочие дни: 9:00 - 18:00',
     officialSite: 'gwars.io',
