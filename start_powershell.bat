@@ -1,3 +1,0 @@
-@echo off
-echo Запуск через PowerShell...
-powershell -ExecutionPolicy Bypass -File start_all.ps1

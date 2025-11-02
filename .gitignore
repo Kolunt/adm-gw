@@ -80,6 +80,7 @@ check_*.py
 create_*.py
 copy_*.py
 debug_*.py
+add_*.py
 *_REPORT.md
 !README.md
 !CHANGELOG.md
@@ -87,6 +88,14 @@ debug_*.py
 
 # Temporary files
 analyze_size.py
+cleanup_repo.py
+remove_from_git.py
+cleanup_project.py
 *.bat
 !install_deps.bat
+!install_deps.ps1
 !start_all.bat
+simple_frontend.html
+
+# Deployment documentation (moved to docs/)
+DEPLOYMENT_STATUS.md
