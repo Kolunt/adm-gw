@@ -794,16 +794,24 @@ class GiftAssignmentApproval(BaseModel):
 # FastAPI app
 app = FastAPI(title="Анонимный Дед Мороз", version="0.1.24")
 
-# CORS middleware
+# CORS middleware - Поддержка PythonAnywhere и GitHub Pages
+# Получаем список разрешенных origins из переменной окружения или используем дефолтные
+allowed_origins = os.getenv(
+    "CORS_ORIGINS", 
+    "http://localhost:3000,http://127.0.0.1:3000,https://kolunt.github.io"
+).split(",")
+# Убираем пробелы и пустые строки
+allowed_origins = [origin.strip() for origin in allowed_origins if origin.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["Authorization", "Content-Type", "Accept", "X-Requested-With"],
 )
 
-ALLOWED_ORIGINS = {"http://localhost:3000", "http://127.0.0.1:3000"}
+ALLOWED_ORIGINS = set(allowed_origins)
 
 @app.middleware("http")
 async def ensure_cors_headers(request: Request, call_next):
