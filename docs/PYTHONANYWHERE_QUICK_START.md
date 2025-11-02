@@ -10,13 +10,52 @@
 ```bash
 cd ~
 git clone https://github.com/Kolunt/gwadm.git
-cd gwadm/backend
+cd gwadm
 ```
 
-### 3. Установка зависимостей
+### 3. Установка зависимостей Backend
 ```bash
+cd ~/gwadm/backend
 # requirements.txt должен быть в папке backend/
 pip3.10 install --user -r requirements.txt
+```
+
+### 4. Сборка Frontend (React)
+
+**Вариант A: Сборка локально (рекомендуется)**
+
+На вашем компьютере:
+
+```bash
+cd C:\Users\TBG\Documents\adm-gw  # или путь к проекту
+npm install
+npm run build
+```
+
+Затем скопируйте папку `build/` на PythonAnywhere через Files или:
+
+```bash
+# На PythonAnywhere
+cd ~/gwadm
+mkdir -p build
+# Загрузите содержимое папки build с вашего компьютера в ~/gwadm/build/
+```
+
+**Вариант B: Сборка на PythonAnywhere**
+
+На PythonAnywhere установите Node.js и соберите фронтенд:
+
+```bash
+cd ~/gwadm
+# Установите Node.js через bash console (нужен платный план или используйте nvm)
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+source ~/.bashrc
+nvm install 18
+nvm use 18
+
+# Установите зависимости и соберите
+npm install
+npm run build
 ```
 
 **Если возникла ошибка "No such file or directory":**
@@ -24,11 +63,25 @@ pip3.10 install --user -r requirements.txt
 - Проверьте наличие файла: `ls requirements.txt`
 - Если файла нет, скопируйте его из корня: `cp ../requirements.txt .`
 
-### 4. Создание Web App
+### 5. Настройка Backend для раздачи Frontend
+
+Убедитесь, что в `backend/main.py` есть монтирование статических файлов. Проверьте наличие (должно быть в конце файла):
+
+```python
+# Mount static files for React app (build folder)
+if os.path.exists("../build"):
+    app.mount("/", StaticFiles(directory="../build", html=True), name="static")
+elif os.path.exists("build"):
+    app.mount("/", StaticFiles(directory="build", html=True), name="static")
+```
+
+Если этого кода нет, добавьте его в конец `backend/main.py` перед строкой `if __name__ == "__main__":`.
+
+### 6. Создание Web App
 1. В панели: **Web** → **Add a new web app**
 2. Выберите: **Manual configuration** → **Python 3.10**
 
-### 5. Настройка WSGI
+### 7. Настройка WSGI
 В разделе **Web** → **WSGI configuration file** замените содержимое:
 
 ```python
@@ -47,30 +100,34 @@ application = app
 
 **⚠️ Замените `ВАШ_USERNAME` на ваш username!**
 
-### 6. Настройка Static Files
-В **Web** → **Static files** добавьте:
+### 8. Настройка Static Files (опционально)
+В **Web** → **Static files** добавьте для загрузок:
 - URL: `/uploads/`
 - Directory: `/home/ВАШ_USERNAME/gwadm/backend/uploads`
 
-### 7. Перезапуск
+**Примечание:** Frontend раздается через FastAPI, поэтому отдельная настройка для него не нужна.
+
+### 9. Перезапуск
 Нажмите зеленую кнопку **Reload** в разделе **Web**
 
 ## ✅ Проверка
-Откройте: `https://ВАШ_USERNAME.pythonanywhere.com/docs`
 
-Должна открыться Swagger документация API.
+1. **Проверка API:** Откройте `https://ВАШ_USERNAME.pythonanywhere.com/docs`
+   - Должна открыться Swagger документация API
+
+2. **Проверка Frontend:** Откройте `https://ВАШ_USERNAME.pythonanywhere.com`
+   - Должна открыться главная страница React приложения
+
+## 🔄 Обновление Frontend
+
+После изменений во фронтенде:
+
+1. Соберите локально: `npm run build`
+2. Загрузите папку `build/` на PythonAnywhere в `~/gwadm/build/`
+3. Нажмите **Reload** в панели Web
+
+Или используйте скрипт `deploy_pythonanywhere.sh` (он также проверяет наличие build).
 
 ## 📝 Полная инструкция
 Смотрите файл `PYTHONANYWHERE_DEPLOYMENT.md`
-
-## 🔗 Интеграция с Frontend
-После деплоя обновите `src/utils/axiosConfig.js`:
-
-```javascript
-axios.defaults.baseURL = process.env.NODE_ENV === 'production' 
-  ? 'https://ВАШ_USERNAME.pythonanywhere.com' 
-  : 'http://localhost:8006';
-```
-
-Затем пересоберите и задеплойте frontend на GitHub Pages.
 

@@ -3994,8 +3994,20 @@ async def get_test_users(current_user: User = Depends(get_current_admin_user)):
 
 
 # Mount static files for React app
-if os.path.exists("dist"):
-    app.mount("/", StaticFiles(directory="dist", html=True), name="static")
+# Проверяем разные возможные пути к собранному фронтенду
+frontend_dirs = [
+    "../build",  # Build в корне проекта (для PythonAnywhere)
+    "build",     # Build в папке backend
+    "dist",      # Старый путь
+    "../dist"    # Dist в корне проекта
+]
+
+frontend_served = False
+for frontend_dir in frontend_dirs:
+    if os.path.exists(frontend_dir):
+        app.mount("/", StaticFiles(directory=frontend_dir, html=True), name="static")
+        frontend_served = True
+        break
 
 # Mount uploads directory for serving uploaded files
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
