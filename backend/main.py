@@ -52,7 +52,6 @@ class User(Base):
     __tablename__ = "users"
     
     id = Column(Integer, primary_key=True, index=True)
-    username = Column(String, unique=True, index=True)
     email = Column(String, unique=True, index=True)
     hashed_password = Column(String)
     name = Column(String, index=True)
@@ -251,6 +250,9 @@ try:
     with engine.begin() as conn:  # begin() гарантирует commit/rollback
         cols = conn.execute(text("PRAGMA table_info(users)")).fetchall()
         col_names = {row[1] for row in cols}
+        # Примечание: SQLite не поддерживает DROP COLUMN напрямую, колонка username будет игнорироваться
+        if 'username' in col_names:
+            print("Примечание: Колонка 'username' существует, но будет игнорироваться в коде")
         if 'gwars_verification_token' not in col_names:
             conn.execute(text("ALTER TABLE users ADD COLUMN gwars_verification_token TEXT"))
             print("Добавлен столбец users.gwars_verification_token")
@@ -297,10 +299,9 @@ def create_default_admin():
     db = SessionLocal()
     try:
         # Check if admin already exists
-        admin_user = db.query(User).filter(User.username == "admin").first()
+        admin_user = db.query(User).filter(User.email == "admin@example.com").first()
         if not admin_user:
             admin_user = User(
-                username="admin",
                 email="admin@example.com",
                 hashed_password=get_password_hash("admin123"),
                 name="Администратор",
@@ -490,7 +491,6 @@ class UserLogin(BaseModel):
 
 class UserResponse(BaseModel):
     id: int
-    username: str
     email: str
     name: str
     wishlist: str
@@ -792,7 +792,7 @@ class GiftAssignmentApproval(BaseModel):
 
 
 # FastAPI app
-app = FastAPI(title="Анонимный Дед Мороз", version="0.1.22")
+app = FastAPI(title="Анонимный Дед Мороз", version="0.1.24")
 
 # CORS middleware
 app.add_middleware(
@@ -841,6 +841,49 @@ def get_db():
         yield db
     finally:
         db.close()
+
+def mask_email(email: str) -> str:
+    """Маскирует email: показывает только первую букву учетной записи, последнюю букву домена и полностью доменную зону.
+    
+    Примеры:
+    - test@test.de -> t*@*t.de
+    - admin@example.com -> a*@*e.com
+    """
+    if not email or '@' not in email:
+        return email
+    
+    try:
+        local_part, domain = email.rsplit('@', 1)
+        
+        # Маскируем локальную часть (до @): оставляем первую букву, остальное заменяем на одну звездочку
+        if len(local_part) > 1:
+            masked_local = local_part[0] + '*'
+        else:
+            masked_local = local_part[0] if local_part else '*'
+        
+        # Разделяем домен на основную часть и зону
+        if '.' in domain:
+            domain_parts = domain.rsplit('.', 1)
+            domain_name = domain_parts[0]
+            domain_zone = '.' + domain_parts[1]
+            
+            # Маскируем домен: оставляем последнюю букву перед точкой, остальное заменяем на одну звездочку
+            if len(domain_name) > 1:
+                masked_domain = '*' + domain_name[-1]
+            else:
+                masked_domain = domain_name
+            
+            return f"{masked_local}@{masked_domain}{domain_zone}"
+        else:
+            # Если нет точки в домене (маловероятно, но на всякий случай)
+            if len(domain) > 1:
+                masked_domain = '*' + domain[-1]
+            else:
+                masked_domain = domain
+            return f"{masked_local}@{masked_domain}"
+    except Exception:
+        # В случае ошибки возвращаем исходный email
+        return email
 
 # JWT dependency
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
@@ -897,21 +940,13 @@ async def register_user(user: UserCreate, db: Session = Depends(get_db)):
     if db_user:
         raise HTTPException(status_code=400, detail="Email already registered")
     
-    # Generate username from email
-    username = user.email.split('@')[0]
-    
-    # Check if username already exists, if so add a number
-    original_username = username
-    counter = 1
-    while db.query(User).filter(User.username == username).first():
-        username = f"{original_username}{counter}"
-        counter += 1
+    # Generate name from email prefix
+    name_from_email = user.email.split('@')[0]
     
     db_user = User(
-        username=username,
         email=user.email,
         hashed_password=get_password_hash(user.password),
-        name=username,  # Use email prefix as name
+        name=name_from_email,  # Use email prefix as name
         wishlist="",
         role="user",
         profile_completed=False,  # Профиль не заполнен
@@ -922,7 +957,7 @@ async def register_user(user: UserCreate, db: Session = Depends(get_db)):
         interests=None,
         gwars_verification_token=None,
         gwars_verified=False,
-        avatar_seed=f"{username}_{user.email}_{datetime.utcnow().timestamp()}"  # Уникальный seed для аватарки
+        avatar_seed=f"{name_from_email}_{user.email}_{datetime.utcnow().timestamp()}"  # Уникальный seed для аватарки
     )
     db.add(db_user)
     db.commit()
@@ -1011,8 +1046,54 @@ def parse_gwars_profile(profile_url: str) -> dict:
         
         content = response.text
         
-        # Извлекаем никнейм персонажа из реальной структуры GWars
+        # Проверяем, существует ли персонаж на странице
+        # Страница без персонажа содержит текст об ошибке
+        character_not_found_indicators = [
+            'персонаж не найден',
+            'персонаж не найден',
+            'ошибка, персонаж',
+            'character not found',
+            'персонажа нет',
+            'не существует'
+        ]
+        
+        content_lower = content.lower()
+        character_not_found = any(indicator in content_lower for indicator in character_not_found_indicators)
+        
+        # Импортируем re для регулярных выражений
         import re
+        
+        # Также проверяем наличие характерных элементов для существующего персонажа
+        # Если нет основных элементов профиля (никнейм, уровень и т.д.), вероятно персонажа нет
+        has_profile_elements = any([
+            'alt="Male"' in content or 'alt="Female"' in content,  # Аватар персонажа
+            '[1064 / 1064]' in content or bool(re.search(r'\[\d+ / \d+\]', content)),  # Уровень персонажа
+            '**' in content and len(re.findall(r'\*\*([^*]+)\*\*', content)) > 0,  # Никнейм в формате **никнейм**
+        ])
+        
+        if character_not_found or not has_profile_elements:
+            # Дополнительная проверка: ищем явное сообщение об ошибке в структуре страницы
+            error_patterns = [
+                r'ошибка[,\s]*персонаж[^<]*не[^<]*найден',
+                r'персонаж[^<]*не[^<]*найден',
+                r'character[^<]*not[^<]*found',
+            ]
+            
+            found_error_message = False
+            for pattern in error_patterns:
+                if re.search(pattern, content, re.IGNORECASE):
+                    found_error_message = True
+                    break
+            
+            if found_error_message or (character_not_found and not has_profile_elements):
+                return {
+                    "success": False,
+                    "error": "Персонаж не найден на указанной странице. Пожалуйста, введите ссылку на существующего персонажа.",
+                    "profile_exists": False,
+                    "character_not_found": True
+                }
+        
+        # Извлекаем никнейм персонажа из реальной структуры GWars
         
         # Специальный парсер для GWars профилей
         # Ищем никнейм в строке с аватаром и уровнем
@@ -1092,6 +1173,37 @@ def parse_gwars_profile(profile_url: str) -> dict:
             "profile_exists": False
         }
 
+@app.post("/profile/check-gwars-url")
+async def check_gwars_url_unique(
+    url_data: dict,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Проверяет уникальность ссылки на GWars профиль"""
+    profile_url = url_data.get("profile_url")
+    
+    if not profile_url:
+        raise HTTPException(status_code=400, detail="Необходимо указать ссылку на профиль")
+    
+    # Проверяем уникальность ссылки на игровой профиль
+    # Исключаем текущего пользователя из проверки
+    existing_user = db.query(User).filter(
+        User.gwars_profile_url == profile_url,
+        User.id != current_user.id
+    ).first()
+    
+    if existing_user:
+        masked_email = mask_email(existing_user.email)
+        return {
+            "unique": False,
+            "message": f"Игровой персонаж с такой ссылкой уже зарегистрирован в системе. Пользователь: {masked_email}"
+        }
+    
+    return {
+        "unique": True,
+        "message": "Ссылка на игровой профиль уникальна"
+    }
+
 @app.post("/profile/parse-gwars")
 async def parse_gwars_profile_endpoint(
     gwars_data: dict,
@@ -1107,6 +1219,20 @@ async def parse_gwars_profile_endpoint(
     # Проверяем URL
     if not validate_gwars_url(profile_url):
         raise HTTPException(status_code=400, detail="Ссылка должна вести на gwars.io")
+    
+    # Проверяем уникальность ссылки на игровой профиль
+    # Исключаем текущего пользователя из проверки
+    existing_user = db.query(User).filter(
+        User.gwars_profile_url == profile_url,
+        User.id != current_user.id
+    ).first()
+    
+    if existing_user:
+        masked_email = mask_email(existing_user.email)
+        raise HTTPException(
+            status_code=400,
+            detail=f"Игровой персонаж с такой ссылкой уже зарегистрирован в системе. Пользователь: {masked_email}"
+        )
     
     # Парсим профиль
     result = parse_gwars_profile(profile_url)
@@ -1157,6 +1283,21 @@ async def verify_gwars_profile(
         
         if not validate_gwars_url(profile_url):
             return JSONResponse(status_code=400, content={"detail": "Ссылка должна вести на gwars.io"}, headers=cors_headers)
+        
+        # Проверяем уникальность ссылки на игровой профиль
+        # Исключаем текущего пользователя из проверки
+        existing_user = db.query(User).filter(
+            User.gwars_profile_url == profile_url,
+            User.id != current_user.id
+        ).first()
+        
+        if existing_user:
+            masked_email = mask_email(existing_user.email)
+            return JSONResponse(
+                status_code=400,
+                content={"detail": f"Игровой персонаж с такой ссылкой уже зарегистрирован в системе. Пользователь: {masked_email}"},
+                headers=cors_headers
+            )
         
         current_user.gwars_profile_url = profile_url
         if nickname:
@@ -1481,7 +1622,23 @@ async def update_profile_step1(
     db: Session = Depends(get_db)
 ):
     """Шаг 1: Обновление ссылки на профиль GWars"""
-    current_user.gwars_profile_url = step1_data.gwars_profile_url
+    profile_url = step1_data.gwars_profile_url
+    
+    # Проверяем уникальность ссылки на игровой профиль
+    # Исключаем текущего пользователя из проверки
+    existing_user = db.query(User).filter(
+        User.gwars_profile_url == profile_url,
+        User.id != current_user.id
+    ).first()
+    
+    if existing_user:
+        masked_email = mask_email(existing_user.email)
+        raise HTTPException(
+            status_code=400,
+            detail=f"Игровой персонаж с такой ссылкой уже зарегистрирован в системе. Пользователь: {masked_email}"
+        )
+    
+    current_user.gwars_profile_url = profile_url
     db.commit()
     return {"message": "Шаг 1 профиля обновлен", "step": 1}
 
@@ -2019,6 +2176,33 @@ async def unblock_user(
     db.refresh(user)
     return {"message": "User unblocked successfully", "user": user}
 
+@app.delete("/admin/users/{user_id}")
+async def delete_user(
+    user_id: int,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """Удаление конкретного пользователя администратором"""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    if user.id == current_admin.id:
+        raise HTTPException(status_code=400, detail="Нельзя удалить самого себя")
+    
+    # Удаляем связанные данные (регистрации на мероприятия, подарки и т.д.)
+    db.query(EventRegistration).filter(EventRegistration.user_id == user.id).delete()
+    db.query(GiftAssignment).filter(GiftAssignment.giver_id == user.id).delete()
+    db.query(GiftAssignment).filter(GiftAssignment.receiver_id == user.id).delete()
+    
+    # Удаляем связанные токены верификации (используем raw SQL, так как нет модели)
+    db.execute(text("DELETE FROM verification_tokens WHERE user_id = :uid"), {"uid": user.id})
+    
+    # Удаляем самого пользователя
+    db.delete(user)
+    db.commit()
+    return {"message": "User deleted successfully"}
+
 @app.delete("/admin/users/test/delete-all")
 async def delete_all_test_users(
     current_admin: User = Depends(get_current_admin),
@@ -2038,6 +2222,9 @@ async def delete_all_test_users(
         db.query(EventRegistration).filter(EventRegistration.user_id == user.id).delete()
         db.query(GiftAssignment).filter(GiftAssignment.giver_id == user.id).delete()
         db.query(GiftAssignment).filter(GiftAssignment.receiver_id == user.id).delete()
+        
+        # Удаляем связанные токены верификации (используем raw SQL, так как нет модели)
+        db.execute(text("DELETE FROM verification_tokens WHERE user_id = :uid"), {"uid": user.id})
         
         # Удаляем самого пользователя
         db.delete(user)
@@ -2059,6 +2246,18 @@ async def update_user_profile(
     if profile_data.email is not None:
         current_user.email = profile_data.email
     if profile_data.gwars_profile_url is not None:
+        # Проверяем уникальность ссылки на игровой профиль
+        existing_user = db.query(User).filter(
+            User.gwars_profile_url == profile_data.gwars_profile_url,
+            User.id != current_user.id
+        ).first()
+        
+        if existing_user:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Игровой персонаж с такой ссылкой уже зарегистрирован в системе. Пользователь: {mask_email(existing_user.email)}"
+            )
+        
         current_user.gwars_profile_url = profile_data.gwars_profile_url
     if profile_data.full_name is not None:
         current_user.full_name = profile_data.full_name
@@ -2103,6 +2302,19 @@ async def generate_verification_token(
     if not profile_url:
         raise HTTPException(status_code=400, detail="URL профиля не указан")
     
+    # Проверяем уникальность ссылки на игровой профиль
+    existing_user = db.query(User).filter(
+        User.gwars_profile_url == profile_url,
+        User.id != current_user.id
+    ).first()
+    
+    if existing_user:
+        masked_email = mask_email(existing_user.email)
+        raise HTTPException(
+            status_code=400,
+            detail=f"Игровой персонаж с такой ссылкой уже зарегистрирован в системе. Пользователь: {masked_email}"
+        )
+    
     # Генерируем уникальный токен из 20 символов
     alphabet = string.ascii_letters + string.digits
     token = ''.join(secrets.choice(alphabet) for _ in range(20))
@@ -2141,6 +2353,18 @@ async def verify_gwars_token(
         
         # Ищем токен в тексте страницы
         if verification_token in response.text:
+            # Проверяем уникальность ссылки на игровой профиль
+            existing_user = db.query(User).filter(
+                User.gwars_profile_url == profile_url,
+                User.id != current_user.id
+            ).first()
+            
+            if existing_user:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Игровой персонаж с такой ссылкой уже зарегистрирован в системе. Пользователь: {mask_email(existing_user.email)}"
+                )
+            
             # Токен найден - профиль верифицирован
             current_user.gwars_verified = True
             current_user.gwars_profile_url = profile_url
@@ -3397,8 +3621,8 @@ async def get_dashboard_stats(current_user: User = Depends(get_current_admin)):
                 "users": [
                     {
                         "id": user.id,
-                        "username": user.username,
                         "email": user.email,
+                        "name": user.name,
                         "role": user.role,
                         "created_at": user.created_at.isoformat(),
                         "gwars_verified": user.gwars_verified
@@ -3649,7 +3873,6 @@ async def generate_test_users(
             avatar_seed = f"test_user_{i+1}"
             
             new_user = User(
-                username=f"test_user_{i+1}",
                 email=f"test_user_{i+1}@test.com",
                 hashed_password=hashed_password,
                 name=f"Тестовый пользователь {i+1}",
@@ -3683,8 +3906,7 @@ async def generate_test_users(
                 {
                     "id": user.id,
                     "email": user.email,
-                    "name": user.name,
-                    "username": user.username
+                    "name": user.name
                 }
                 for user in generated_users
             ]
@@ -3748,7 +3970,6 @@ async def get_test_users(current_user: User = Depends(get_current_admin_user)):
                     "id": user.id,
                     "email": user.email,
                     "name": user.name,
-                    "username": user.username,
                     "gwars_nickname": user.gwars_nickname,
                     "is_active": user.is_active,
                     "is_test": user.is_test,

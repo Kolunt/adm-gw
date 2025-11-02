@@ -404,11 +404,6 @@ const UserProfile = () => {
                         children: profileData.email,
                       },
                       {
-                        key: 'name',
-                        label: 'Имя пользователя',
-                        children: profileData.name,
-                      },
-                      {
                         key: 'full_name',
                         label: 'Полное имя',
                         children: profileData.full_name,
@@ -423,10 +418,29 @@ const UserProfile = () => {
                         label: 'Telegram',
                         children: profileData.telegram_username || 'Не указан',
                       },
+                    ] : []),
                     {
                       key: 'created_at',
                       label: 'Дата регистрации',
                       children: new Date(profileData.created_at).toLocaleDateString('ru-RU'),
+                    },
+                    {
+                      key: 'is_active',
+                      label: 'Статус',
+                      children: profileData.is_active ? (
+                        <Tag color="green">Активен</Tag>
+                      ) : (
+                        <div>
+                          <Tag color="red" style={{ marginBottom: '8px' }}>Заблокирован</Tag>
+                          {profileData.block_reason && (
+                            <div style={{ marginTop: '8px' }}>
+                              <Text type="secondary" style={{ fontSize: '12px', display: 'block' }}>
+                                Причина: {profileData.block_reason}
+                              </Text>
+                            </div>
+                          )}
+                        </div>
+                      ),
                     },
                     ...(canViewPersonalData() ? [
                       {
@@ -439,7 +453,6 @@ const UserProfile = () => {
                         label: 'Интересы',
                         children: profileData.interests || <Text type="secondary">Не указаны</Text>,
                       },
-                    ] : []),
                     ] : [
                       {
                         key: 'privacy_notice',
@@ -563,27 +576,12 @@ const UserProfile = () => {
             </Form.Item>
           )}
           
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                name="name"
-                label="Имя пользователя"
-                rules={[
-                  { required: true, message: 'Введите имя пользователя' }
-                ]}
-              >
-                <Input placeholder="Введите имя пользователя" />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                name="full_name"
-                label="Полное имя"
-              >
-                <Input placeholder="Введите полное имя" />
-              </Form.Item>
-            </Col>
-          </Row>
+          <Form.Item
+            name="full_name"
+            label="Полное имя"
+          >
+            <Input placeholder="Введите полное имя" />
+          </Form.Item>
 
           <Row gutter={16}>
             <Col span={12}>

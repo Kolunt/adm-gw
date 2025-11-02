@@ -19,6 +19,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from '../utils/axiosConfig';
 import { getUserAvatar } from '../utils/avatarUtils';
 import { useAuth } from '../services/AuthService';
+import { useTheme } from '../contexts/ThemeContext';
 
 const { Title, Text } = Typography;
 const { useApp } = App;
@@ -26,6 +27,7 @@ const { useApp } = App;
 const AdminUsers = () => {
   const { message } = useApp();
   const { user: currentUser } = useAuth();
+  const { isDark } = useTheme();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -51,8 +53,8 @@ const AdminUsers = () => {
 
   const handleDeleteUser = async (userId) => {
     Modal.confirm({
-      title: 'Удалить пользователя',
-      content: 'Вы уверены, что хотите удалить этого пользователя?',
+      title: <span style={{ color: isDark ? '#ffffff' : '#000000' }}>Удалить пользователя</span>,
+      content: <div style={{ color: isDark ? '#ffffff' : '#000000' }}>Вы уверены, что хотите удалить этого пользователя?</div>,
       okText: 'Удалить',
       okType: 'danger',
       cancelText: 'Отмена',
@@ -75,8 +77,8 @@ const AdminUsers = () => {
 
   const handlePromoteToAdmin = async (user) => {
     Modal.confirm({
-      title: 'Назначить администратором',
-      content: `Вы уверены, что хотите назначить пользователя "${user.name || user.email}" администратором?`,
+      title: <span style={{ color: isDark ? '#ffffff' : '#000000' }}>Назначить администратором</span>,
+      content: <div style={{ color: isDark ? '#ffffff' : '#000000' }}>Вы уверены, что хотите назначить пользователя "{user.name || user.email}" администратором?</div>,
       okText: 'Назначить',
       okType: 'danger',
       cancelText: 'Отмена',
@@ -95,8 +97,8 @@ const AdminUsers = () => {
 
   const handleDemoteFromAdmin = async (user) => {
     Modal.confirm({
-      title: 'Снять статус администратора',
-      content: `Вы уверены, что хотите снять статус администратора у пользователя "${user.name || user.email}"?`,
+      title: <span style={{ color: isDark ? '#ffffff' : '#000000' }}>Снять статус администратора</span>,
+      content: <div style={{ color: isDark ? '#ffffff' : '#000000' }}>Вы уверены, что хотите снять статус администратора у пользователя "{user.name || user.email}"?</div>,
       okText: 'Снять',
       okType: 'danger',
       cancelText: 'Отмена',
@@ -117,13 +119,18 @@ const AdminUsers = () => {
     let blockReason = '';
     
     Modal.confirm({
-      title: <span style={{ color: '#ffffff' }}>Заблокировать пользователя</span>,
+      title: <span style={{ color: isDark ? '#ffffff' : '#000000' }}>Заблокировать пользователя</span>,
       content: (
-        <div style={{ color: '#ffffff' }}>
+        <div style={{ color: isDark ? '#ffffff' : '#000000' }}>
           <p>Вы уверены, что хотите заблокировать пользователя "{user.name || user.email}"?</p>
           <p>Заблокированные пользователи не смогут войти в систему.</p>
           <div style={{ marginTop: '16px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+            <label style={{ 
+              display: 'block', 
+              marginBottom: '8px', 
+              fontWeight: 'bold',
+              color: isDark ? '#ffffff' : '#000000'
+            }}>
               Причина блокировки:
             </label>
             <textarea
@@ -132,10 +139,10 @@ const AdminUsers = () => {
                 width: '100%',
                 minHeight: '80px',
                 padding: '8px',
-                border: '1px solid #d9d9d9',
+                border: isDark ? '1px solid #404040' : '1px solid #d9d9d9',
                 borderRadius: '4px',
-                backgroundColor: '#ffffff',
-                color: '#000000',
+                backgroundColor: isDark ? '#2f2f2f' : '#ffffff',
+                color: isDark ? '#ffffff' : '#000000',
                 resize: 'vertical'
               }}
               onChange={(e) => {
@@ -170,9 +177,9 @@ const AdminUsers = () => {
 
   const handleUnblockUser = async (user) => {
     Modal.confirm({
-      title: <span style={{ color: '#ffffff' }}>Разблокировать пользователя</span>,
+      title: <span style={{ color: isDark ? '#ffffff' : '#000000' }}>Разблокировать пользователя</span>,
       content: (
-        <div style={{ color: '#ffffff' }}>
+        <div style={{ color: isDark ? '#ffffff' : '#000000' }}>
           Вы уверены, что хотите разблокировать пользователя "{user.name || user.email}"?
         </div>
       ),
@@ -194,9 +201,9 @@ const AdminUsers = () => {
 
   const handleDeleteAllTestUsers = async () => {
     Modal.confirm({
-      title: <span style={{ color: '#ffffff' }}>Удалить всех тестовых пользователей</span>,
+      title: <span style={{ color: isDark ? '#ffffff' : '#000000' }}>Удалить всех тестовых пользователей</span>,
       content: (
-        <div style={{ color: '#ffffff' }}>
+        <div style={{ color: isDark ? '#ffffff' : '#000000' }}>
           <p>Это действие нельзя отменить. Будут удалены все пользователи с меткой 'тест' и их данные.</p>
           <p style={{ fontWeight: 'bold', color: '#ff4d4f' }}>
             ВНИМАНИЕ: Это действие необратимо!
@@ -234,13 +241,15 @@ const AdminUsers = () => {
       ),
     },
     {
-      title: 'Имя',
-      dataIndex: 'name',
-      key: 'name',
+      title: 'Никнейм персонажа',
+      dataIndex: 'gwars_nickname',
+      key: 'gwars_nickname',
       render: (text, record) => (
         <div>
-          <div style={{ fontWeight: 'bold' }}>{text || record.username}</div>
-          <div style={{ fontSize: '12px', color: '#666' }}>{record.email}</div>
+          <div style={{ fontWeight: 'bold', color: isDark ? '#ffffff' : '#000000' }}>
+            {text || 'Враг неизвестен'}
+          </div>
+          <div style={{ fontSize: '12px', color: isDark ? '#bfbfbf' : '#666' }}>{record.email}</div>
         </div>
       ),
     },
@@ -278,7 +287,11 @@ const AdminUsers = () => {
       title: 'Дата регистрации',
       dataIndex: 'created_at',
       key: 'created_at',
-      render: (date) => new Date(date).toLocaleDateString('ru-RU'),
+      render: (date) => (
+        <span style={{ color: isDark ? '#ffffff' : '#000000' }}>
+          {new Date(date).toLocaleDateString('ru-RU')}
+        </span>
+      ),
     },
     {
       title: 'Действия',
@@ -342,17 +355,21 @@ const AdminUsers = () => {
   ];
 
   return (
-    <div style={{ padding: '24px' }}>
-      <ProCard style={{ marginBottom: '24px' }}>
+    <div className={isDark ? 'dark-theme' : 'light-theme'} style={{ padding: '24px' }}>
+      <ProCard style={{ 
+        marginBottom: '24px',
+        backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+        border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+      }}>
         <Row gutter={[16, 16]} align="middle">
           <Col xs={24} md={16}>
-            <Title level={2}>
+            <Title level={2} style={{ color: isDark ? '#ffffff' : '#000000' }}>
               <Space>
                 <TeamOutlined />
                 Управление пользователями
               </Space>
             </Title>
-            <Text type="secondary">
+            <Text type="secondary" style={{ color: isDark ? '#bfbfbf' : '#8c8c8c' }}>
               Просмотр и управление пользователями системы
             </Text>
           </Col>
@@ -383,7 +400,10 @@ const AdminUsers = () => {
         </Row>
       </ProCard>
 
-      <ProCard>
+      <ProCard style={{
+        backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+        border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+      }}>
         <Table
           columns={columns}
           dataSource={users}
@@ -396,25 +416,48 @@ const AdminUsers = () => {
             showTotal: (total, range) => 
               `${range[0]}-${range[1]} из ${total} пользователей`,
           }}
+          style={{
+            backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+          }}
         />
       </ProCard>
 
       {/* Модальное окно просмотра пользователя */}
       <Modal
-        title="Информация о пользователе"
+        title={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Информация о пользователе</span>}
         open={userModalVisible}
         onCancel={() => setUserModalVisible(false)}
         footer={[
-          <Button key="close" onClick={() => setUserModalVisible(false)}>
+          <Button 
+            key="close" 
+            onClick={() => setUserModalVisible(false)}
+            style={{
+              backgroundColor: isDark ? '#2f2f2f' : '#ffffff',
+              borderColor: isDark ? '#404040' : '#d9d9d9',
+              color: isDark ? '#ffffff' : '#000000'
+            }}
+          >
             Закрыть
           </Button>,
         ]}
         width={800}
+        styles={{
+          content: {
+            backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+          },
+          header: {
+            backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+            borderBottom: isDark ? '1px solid #404040' : '1px solid #f0f0f0'
+          }
+        }}
       >
         {selectedUser && (
           <Descriptions
             column={2}
             bordered
+            style={{
+              backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+            }}
             items={[
               {
                 key: 'avatar',
@@ -428,19 +471,14 @@ const AdminUsers = () => {
                 ),
               },
               {
-                key: 'username',
-                label: 'Имя пользователя',
-                children: selectedUser.username,
-              },
-              {
                 key: 'email',
                 label: 'Email',
-                children: selectedUser.email,
+                children: <span style={{ color: isDark ? '#ffffff' : '#000000' }}>{selectedUser.email}</span>,
               },
               {
                 key: 'full_name',
                 label: 'Полное имя',
-                children: selectedUser.full_name,
+                children: <span style={{ color: isDark ? '#ffffff' : '#000000' }}>{selectedUser.full_name || 'Не указано'}</span>,
               },
               {
                 key: 'role',
@@ -463,29 +501,29 @@ const AdminUsers = () => {
               {
                 key: 'phone_number',
                 label: 'Телефон',
-                children: selectedUser.phone_number || 'Не указан',
+                children: <span style={{ color: isDark ? '#ffffff' : '#000000' }}>{selectedUser.phone_number || 'Не указан'}</span>,
               },
               {
                 key: 'telegram_username',
                 label: 'Telegram',
-                children: selectedUser.telegram_username || 'Не указан',
+                children: <span style={{ color: isDark ? '#ffffff' : '#000000' }}>{selectedUser.telegram_username || 'Не указан'}</span>,
               },
               {
                 key: 'address',
                 label: 'Адрес',
-                children: selectedUser.address || 'Не указан',
+                children: <span style={{ color: isDark ? '#ffffff' : '#000000' }}>{selectedUser.address || 'Не указан'}</span>,
                 span: 2,
               },
               {
                 key: 'interests',
                 label: 'Интересы',
-                children: selectedUser.interests || 'Не указаны',
+                children: <span style={{ color: isDark ? '#ffffff' : '#000000' }}>{selectedUser.interests || 'Не указаны'}</span>,
                 span: 2,
               },
               {
                 key: 'created_at',
                 label: 'Дата регистрации',
-                children: new Date(selectedUser.created_at).toLocaleString('ru-RU'),
+                children: <span style={{ color: isDark ? '#ffffff' : '#000000' }}>{new Date(selectedUser.created_at).toLocaleString('ru-RU')}</span>,
               },
             ]}
           />

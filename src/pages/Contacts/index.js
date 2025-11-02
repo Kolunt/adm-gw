@@ -2,48 +2,62 @@ import React from 'react';
 import { Card, Typography, Space, Row, Col, Button, Divider } from 'antd';
 import { ContactsOutlined, MailOutlined, PhoneOutlined, MessageOutlined, GithubOutlined } from '@ant-design/icons';
 import ProCard from '@ant-design/pro-card';
+import { useTheme } from '../../contexts/ThemeContext';
 
 const { Title, Text, Paragraph } = Typography;
 
 const ContactsPage = () => {
+  const { isDark } = useTheme();
+  
   return (
-    <div style={{ padding: '24px' }}>
-      <ProCard style={{ marginBottom: '24px' }}>
-        <Title level={2}>
+    <div className={isDark ? 'dark-theme' : 'light-theme'} style={{ padding: '24px' }}>
+      <ProCard style={{ 
+        marginBottom: '24px',
+        backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+        border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+      }}>
+        <Title level={2} style={{ color: isDark ? '#ffffff' : '#000000' }}>
           <Space>
             <ContactsOutlined />
             Контакты
           </Space>
         </Title>
-        <Text type="secondary">
+        <Text type="secondary" style={{ color: isDark ? '#bfbfbf' : '#8c8c8c' }}>
           Свяжитесь с нами для получения помощи или решения вопросов
         </Text>
       </ProCard>
 
       <Row gutter={[24, 24]}>
         <Col xs={24} md={12}>
-          <ProCard title="Техническая поддержка" style={{ height: '100%' }}>
+          <ProCard 
+            title={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Техническая поддержка</span>} 
+            style={{ 
+              height: '100%',
+              backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+              border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+            }}
+          >
             <Space direction="vertical" size="large" style={{ width: '100%' }}>
               <div>
-                <MailOutlined style={{ marginRight: '8px', color: '#2d5016' }} />
-                <Text strong>Email поддержки</Text>
+                <MailOutlined style={{ marginRight: '8px', color: isDark ? '#52c41a' : '#2d5016' }} />
+                <Text strong style={{ color: isDark ? '#ffffff' : '#000000' }}>Email поддержки</Text>
                 <br />
-                <Text type="secondary">support@gwars.io</Text>
+                <Text type="secondary" style={{ color: isDark ? '#bfbfbf' : '#8c8c8c' }}>support@gwars.io</Text>
                 <br />
-                <Button type="link" size="small">
+                <Button type="link" size="small" style={{ color: isDark ? '#52c41a' : '#1890ff' }}>
                   Написать письмо
                 </Button>
               </div>
               
-              <Divider />
+              <Divider style={{ borderColor: isDark ? '#404040' : '#f0f0f0' }} />
               
               <div>
-                <MessageOutlined style={{ marginRight: '8px', color: '#52c41a' }} />
-                <Text strong>Telegram</Text>
+                <MessageOutlined style={{ marginRight: '8px', color: isDark ? '#52c41a' : '#52c41a' }} />
+                <Text strong style={{ color: isDark ? '#ffffff' : '#000000' }}>Telegram</Text>
                 <br />
-                <Text type="secondary">@gwars_support</Text>
+                <Text type="secondary" style={{ color: isDark ? '#bfbfbf' : '#8c8c8c' }}>@gwars_support</Text>
                 <br />
-                <Button type="link" size="small">
+                <Button type="link" size="small" style={{ color: isDark ? '#52c41a' : '#1890ff' }}>
                   Перейти в Telegram
                 </Button>
               </div>
@@ -52,28 +66,35 @@ const ContactsPage = () => {
         </Col>
 
         <Col xs={24} md={12}>
-          <ProCard title="Разработка" style={{ height: '100%' }}>
+          <ProCard 
+            title={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Разработка</span>} 
+            style={{ 
+              height: '100%',
+              backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+              border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+            }}
+          >
             <Space direction="vertical" size="large" style={{ width: '100%' }}>
               <div>
-                <GithubOutlined style={{ marginRight: '8px', color: '#333' }} />
-                <Text strong>GitHub репозиторий</Text>
+                <GithubOutlined style={{ marginRight: '8px', color: isDark ? '#ffffff' : '#333' }} />
+                <Text strong style={{ color: isDark ? '#ffffff' : '#000000' }}>GitHub репозиторий</Text>
                 <br />
-                <Text type="secondary">github.com/Kolunt/adm-gw</Text>
+                <Text type="secondary" style={{ color: isDark ? '#bfbfbf' : '#8c8c8c' }}>github.com/Kolunt/adm-gw</Text>
                 <br />
-                <Button type="link" size="small">
+                <Button type="link" size="small" style={{ color: isDark ? '#52c41a' : '#1890ff' }}>
                   Открыть репозиторий
                 </Button>
               </div>
               
-              <Divider />
+              <Divider style={{ borderColor: isDark ? '#404040' : '#f0f0f0' }} />
               
               <div>
-                <PhoneOutlined style={{ marginRight: '8px', color: '#faad14' }} />
-                <Text strong>Телефон</Text>
+                <PhoneOutlined style={{ marginRight: '8px', color: isDark ? '#faad14' : '#faad14' }} />
+                <Text strong style={{ color: isDark ? '#ffffff' : '#000000' }}>Телефон</Text>
                 <br />
-                <Text type="secondary">+7 (XXX) XXX-XX-XX</Text>
+                <Text type="secondary" style={{ color: isDark ? '#bfbfbf' : '#8c8c8c' }}>+7 (XXX) XXX-XX-XX</Text>
                 <br />
-                <Text type="secondary" style={{ fontSize: '12px' }}>
+                <Text type="secondary" style={{ fontSize: '12px', color: isDark ? '#8c8c8c' : '#8c8c8c' }}>
                   Рабочие дни: 9:00 - 18:00
                 </Text>
               </div>
@@ -82,63 +103,84 @@ const ContactsPage = () => {
         </Col>
       </Row>
 
-      <ProCard title="Часы работы поддержки" style={{ marginTop: '24px' }}>
+      <ProCard 
+        title={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Часы работы поддержки</span>} 
+        style={{ 
+          marginTop: '24px',
+          backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+          border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+        }}
+      >
         <Row gutter={[24, 24]}>
           <Col xs={24} md={8}>
             <div style={{ textAlign: 'center' }}>
-              <Title level={4}>Email поддержка</Title>
-              <Text type="secondary">24/7</Text>
+              <Title level={4} style={{ color: isDark ? '#ffffff' : '#000000' }}>Email поддержка</Title>
+              <Text type="secondary" style={{ color: isDark ? '#bfbfbf' : '#8c8c8c' }}>24/7</Text>
               <br />
-              <Text type="secondary">Ответ в течение 24 часов</Text>
+              <Text type="secondary" style={{ color: isDark ? '#bfbfbf' : '#8c8c8c' }}>Ответ в течение 24 часов</Text>
             </div>
           </Col>
           <Col xs={24} md={8}>
             <div style={{ textAlign: 'center' }}>
-              <Title level={4}>Telegram</Title>
-              <Text type="secondary">9:00 - 22:00</Text>
+              <Title level={4} style={{ color: isDark ? '#ffffff' : '#000000' }}>Telegram</Title>
+              <Text type="secondary" style={{ color: isDark ? '#bfbfbf' : '#8c8c8c' }}>9:00 - 22:00</Text>
               <br />
-              <Text type="secondary">Ответ в течение 2 часов</Text>
+              <Text type="secondary" style={{ color: isDark ? '#bfbfbf' : '#8c8c8c' }}>Ответ в течение 2 часов</Text>
             </div>
           </Col>
           <Col xs={24} md={8}>
             <div style={{ textAlign: 'center' }}>
-              <Title level={4}>Телефон</Title>
-              <Text type="secondary">9:00 - 18:00</Text>
+              <Title level={4} style={{ color: isDark ? '#ffffff' : '#000000' }}>Телефон</Title>
+              <Text type="secondary" style={{ color: isDark ? '#bfbfbf' : '#8c8c8c' }}>9:00 - 18:00</Text>
               <br />
-              <Text type="secondary">Пн-Пт, рабочие дни</Text>
+              <Text type="secondary" style={{ color: isDark ? '#bfbfbf' : '#8c8c8c' }}>Пн-Пт, рабочие дни</Text>
             </div>
           </Col>
         </Row>
       </ProCard>
 
-      <ProCard title="Часто задаваемые вопросы" style={{ marginTop: '24px' }}>
-        <Paragraph>
+      <ProCard 
+        title={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Часто задаваемые вопросы</span>} 
+        style={{ 
+          marginTop: '24px',
+          backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+          border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+        }}
+      >
+        <Paragraph style={{ color: isDark ? '#ffffff' : '#000000' }}>
           Перед обращением в поддержку рекомендуем ознакомиться с разделом 
-          <Button type="link" href="/faq">FAQ</Button>, 
+          <Button type="link" href="/faq" style={{ color: isDark ? '#52c41a' : '#1890ff' }}>FAQ</Button>, 
           где собраны ответы на самые популярные вопросы.
         </Paragraph>
-        <Paragraph>
+        <Paragraph style={{ color: isDark ? '#ffffff' : '#000000' }}>
           Если вы не нашли ответ на свой вопрос, не стесняйтесь обращаться к нам любым удобным способом.
         </Paragraph>
       </ProCard>
 
-      <ProCard title="Сообщество GWars.io" style={{ marginTop: '24px' }}>
+      <ProCard 
+        title={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Сообщество GWars.io</span>} 
+        style={{ 
+          marginTop: '24px',
+          backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+          border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+        }}
+      >
         <Row gutter={[16, 16]}>
           <Col xs={24} md={12}>
-            <Text strong>Официальный сайт:</Text>
+            <Text strong style={{ color: isDark ? '#ffffff' : '#000000' }}>Официальный сайт:</Text>
             <br />
-            <Text type="secondary">gwars.io</Text>
+            <Text type="secondary" style={{ color: isDark ? '#bfbfbf' : '#8c8c8c' }}>gwars.io</Text>
             <br />
-            <Button type="link" size="small">
+            <Button type="link" size="small" style={{ color: isDark ? '#52c41a' : '#1890ff' }}>
               Перейти на сайт
             </Button>
           </Col>
           <Col xs={24} md={12}>
-            <Text strong>Форум сообщества:</Text>
+            <Text strong style={{ color: isDark ? '#ffffff' : '#000000' }}>Форум сообщества:</Text>
             <br />
-            <Text type="secondary">forum.gwars.io</Text>
+            <Text type="secondary" style={{ color: isDark ? '#bfbfbf' : '#8c8c8c' }}>forum.gwars.io</Text>
             <br />
-            <Button type="link" size="small">
+            <Button type="link" size="small" style={{ color: isDark ? '#52c41a' : '#1890ff' }}>
               Открыть форум
             </Button>
           </Col>

@@ -94,11 +94,11 @@ export const getUserAvatar = (user, size = 64) => {
   if (user.avatar_type && AVATAR_LIBRARY.find(avatar => avatar.value === user.avatar_type)) {
     const avatarConfig = AVATAR_LIBRARY.find(avatar => avatar.value === user.avatar_type);
     // Используем сохраненный avatar_seed, если он есть, иначе email или id
-    const seed = user.avatar_seed || user.email || user.id || user.username || 'default';
+    const seed = user.avatar_seed || user.email || user.id || 'default';
     return `${avatarConfig.url}${seed}`;
   }
 
   // Старая логика: если avatar_type не указан, используем generateAvatar
-  const seed = user.avatar_seed || `${user.username || ''}_${user.email || ''}_${user.id || ''}` || 'default';
+  const seed = user.avatar_seed || `${user.email || ''}_${user.id || ''}` || 'default';
   return generateAvatar(seed, size);
 };

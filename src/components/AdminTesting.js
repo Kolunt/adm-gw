@@ -3,10 +3,12 @@ import { Card, Typography, Space, Button, Table, Tag, InputNumber, Input, messag
 import { ExperimentOutlined, BugOutlined, UserAddOutlined, DeleteOutlined, ReloadOutlined, TeamOutlined, CheckCircleOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import ProCard from '@ant-design/pro-card';
 import axios from '../utils/axiosConfig';
+import { useTheme } from '../contexts/ThemeContext';
 
 const { Title, Text } = Typography;
 
 const AdminTesting = () => {
+  const { isDark } = useTheme();
   const [testUsers, setTestUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -77,31 +79,25 @@ const AdminTesting = () => {
       dataIndex: 'id',
       key: 'id',
       width: 80,
-      render: (id) => <Text code style={{ color: '#ffffff' }}>{id}</Text>,
+      render: (id) => <Text code style={{ color: isDark ? '#ffffff' : '#000000' }}>{id}</Text>,
     },
     {
       title: 'Имя',
       dataIndex: 'name',
       key: 'name',
-      render: (text) => <Text style={{ color: '#ffffff' }}>{text}</Text>,
+      render: (text) => <Text style={{ color: isDark ? '#ffffff' : '#000000' }}>{text}</Text>,
     },
     {
       title: 'Email',
       dataIndex: 'email',
       key: 'email',
-      render: (text) => <Text style={{ color: '#ffffff' }}>{text}</Text>,
-    },
-    {
-      title: 'Username',
-      dataIndex: 'username',
-      key: 'username',
-      render: (text) => <Text style={{ color: '#ffffff' }}>{text}</Text>,
+      render: (text) => <Text style={{ color: isDark ? '#ffffff' : '#000000' }}>{text}</Text>,
     },
     {
       title: 'GWars',
       dataIndex: 'gwars_nickname',
       key: 'gwars_nickname',
-      render: (text) => text ? <Tag color="green">{text}</Tag> : <Text style={{ color: '#ffffff' }}>Не указан</Text>,
+      render: (text) => text ? <Tag color="green">{text}</Tag> : <Text style={{ color: isDark ? '#ffffff' : '#000000' }}>Не указан</Text>,
     },
     {
       title: 'Статус',
@@ -127,20 +123,30 @@ const AdminTesting = () => {
       title: 'Дата создания',
       dataIndex: 'created_at',
       key: 'created_at',
-      render: (date) => <Text style={{ color: '#ffffff' }}>{new Date(date).toLocaleDateString('ru-RU')}</Text>,
+      render: (date) => <Text style={{ color: isDark ? '#ffffff' : '#000000' }}>{new Date(date).toLocaleDateString('ru-RU')}</Text>,
     },
   ];
 
+  const inputStyle = {
+    backgroundColor: isDark ? '#2f2f2f' : '#ffffff',
+    color: isDark ? '#ffffff' : '#000000',
+    border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+  };
+
   return (
-    <div style={{ padding: '24px' }}>
-      <ProCard style={{ marginBottom: '24px' }}>
-        <Title level={2}>
+    <div className={isDark ? 'dark-theme' : 'light-theme'} style={{ padding: '24px' }}>
+      <ProCard style={{ 
+        marginBottom: '24px',
+        backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+        border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+      }}>
+        <Title level={2} style={{ color: isDark ? '#ffffff' : '#000000' }}>
           <Space>
             <ExperimentOutlined />
             Тестирование пользователей
           </Space>
         </Title>
-        <Text type="secondary" style={{ color: '#ffffff' }}>
+        <Text type="secondary" style={{ color: isDark ? '#bfbfbf' : '#8c8c8c' }}>
           Создание и управление тестовыми пользователями для отладки системы
         </Text>
       </ProCard>
@@ -148,19 +154,25 @@ const AdminTesting = () => {
       {/* Статистика */}
       <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
         <Col xs={24} sm={8}>
-          <ProCard>
+          <ProCard style={{
+            backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+            border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+          }}>
             <Statistic
-              title="Всего тестовых пользователей"
+              title={<span style={{ color: isDark ? '#bfbfbf' : '#8c8c8c' }}>Всего тестовых пользователей</span>}
               value={Array.isArray(testUsers) ? testUsers.length : 0}
               prefix={<TeamOutlined />}
-              valueStyle={{ color: '#ffffff' }}
+              valueStyle={{ color: '#52c41a' }}
             />
           </ProCard>
         </Col>
         <Col xs={24} sm={8}>
-          <ProCard>
+          <ProCard style={{
+            backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+            border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+          }}>
             <Statistic
-              title="Активных тестовых"
+              title={<span style={{ color: isDark ? '#bfbfbf' : '#8c8c8c' }}>Активных тестовых</span>}
               value={Array.isArray(testUsers) ? testUsers.filter(user => user.is_active).length : 0}
               prefix={<CheckCircleOutlined />}
               valueStyle={{ color: '#52c41a' }}
@@ -168,9 +180,12 @@ const AdminTesting = () => {
           </ProCard>
         </Col>
         <Col xs={24} sm={8}>
-          <ProCard>
+          <ProCard style={{
+            backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+            border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+          }}>
             <Statistic
-              title="С GWars профилем"
+              title={<span style={{ color: isDark ? '#bfbfbf' : '#8c8c8c' }}>С GWars профилем</span>}
               value={Array.isArray(testUsers) ? testUsers.filter(user => user.gwars_nickname).length : 0}
               prefix={<BugOutlined />}
               valueStyle={{ color: '#faad14' }}
@@ -180,32 +195,44 @@ const AdminTesting = () => {
       </Row>
 
       {/* Управление тестовыми пользователями */}
-      <ProCard title="Управление тестовыми пользователями" style={{ marginBottom: '24px' }}>
+      <ProCard 
+        title={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Управление тестовыми пользователями</span>} 
+        style={{ 
+          marginBottom: '24px',
+          backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+          border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+        }}
+      >
         <Alert
           message="Тестовые пользователи"
           description="Создавайте тестовых пользователей с меткой 'тест' для отладки системы. Все тестовые пользователи имеют единый пароль и заполненные профили."
           type="info"
           showIcon
-          style={{ marginBottom: '16px' }}
+          style={{ 
+            marginBottom: '16px',
+            backgroundColor: isDark ? '#2f2f2f' : '#e6f7ff',
+            border: isDark ? '1px solid #404040' : '1px solid #91d5ff',
+            color: isDark ? '#ffffff' : '#000000'
+          }}
         />
 
         <Row gutter={[16, 16]} align="middle">
           <Col xs={24} md={6}>
-            <Text strong style={{ color: '#ffffff' }}>Количество пользователей:</Text>
+            <Text strong style={{ color: isDark ? '#ffffff' : '#000000' }}>Количество пользователей:</Text>
             <InputNumber
               min={1}
               max={100}
               value={userCount}
               onChange={setUserCount}
-              style={{ width: '100%', marginTop: '8px' }}
+              style={{ width: '100%', marginTop: '8px', ...inputStyle }}
             />
           </Col>
           <Col xs={24} md={6}>
-            <Text strong style={{ color: '#ffffff' }}>Пароль для всех:</Text>
+            <Text strong style={{ color: isDark ? '#ffffff' : '#000000' }}>Пароль для всех:</Text>
             <Input
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              style={{ marginTop: '8px' }}
+              style={{ marginTop: '8px', ...inputStyle }}
             />
           </Col>
           <Col xs={24} md={12}>
@@ -224,8 +251,8 @@ const AdminTesting = () => {
                 Создать тестовых пользователей
               </Button>
               <Popconfirm
-                title={<span style={{ color: '#ffffff' }}>Удалить всех тестовых пользователей?</span>}
-                description={<span style={{ color: '#ffffff' }}>Это действие нельзя отменить. Будут удалены все пользователи с меткой 'тест' и их данные.</span>}
+                title={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Удалить всех тестовых пользователей?</span>}
+                description={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Это действие нельзя отменить. Будут удалены все пользователи с меткой 'тест' и их данные.</span>}
                 onConfirm={deleteTestUsers}
                 okText="Да, удалить"
                 cancelText="Отмена"
@@ -244,6 +271,11 @@ const AdminTesting = () => {
                 icon={<ReloadOutlined />}
                 onClick={fetchTestUsers}
                 loading={loading}
+                style={{
+                  backgroundColor: isDark ? '#2f2f2f' : '#ffffff',
+                  borderColor: isDark ? '#404040' : '#d9d9d9',
+                  color: isDark ? '#ffffff' : '#000000'
+                }}
               >
                 Обновить
               </Button>
@@ -253,12 +285,21 @@ const AdminTesting = () => {
       </ProCard>
 
       {/* Список тестовых пользователей */}
-      <ProCard title="Список тестовых пользователей">
+      <ProCard 
+        title={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Список тестовых пользователей</span>}
+        style={{
+          backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+          border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+        }}
+      >
         <Table
           dataSource={testUsers}
           columns={columns}
           rowKey="id"
           loading={loading}
+          style={{
+            backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+          }}
           pagination={{
             pageSize: 10,
             showSizeChanger: true,

@@ -5,6 +5,7 @@ import ProCard from '@ant-design/pro-card';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from '../../utils/axiosConfig';
 import { useAuth } from '../../services/AuthService';
+import { useTheme } from '../../contexts/ThemeContext';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -12,6 +13,7 @@ const EventDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { isDark } = useTheme();
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -78,12 +80,17 @@ const EventDetail = () => {
 
   if (error) {
     return (
-      <div style={{ padding: '24px' }}>
+      <div className={isDark ? 'dark-theme' : 'light-theme'} style={{ padding: '24px' }}>
         <Alert
           message="Ошибка"
           description={error}
           type="error"
           showIcon
+          style={{
+            backgroundColor: isDark ? '#2f2f2f' : '#fff2f0',
+            border: isDark ? '1px solid #404040' : '1px solid #ffccc7',
+            color: isDark ? '#ffffff' : '#000000'
+          }}
           action={
             <Button size="small" onClick={handleBack}>
               Вернуться к списку
@@ -96,12 +103,17 @@ const EventDetail = () => {
 
   if (!event) {
     return (
-      <div style={{ padding: '24px' }}>
+      <div className={isDark ? 'dark-theme' : 'light-theme'} style={{ padding: '24px' }}>
         <Alert
           message="Мероприятие не найдено"
           description="Запрашиваемое мероприятие не существует или было удалено"
           type="warning"
           showIcon
+          style={{
+            backgroundColor: isDark ? '#2f2f2f' : '#fffbe6',
+            border: isDark ? '1px solid #404040' : '1px solid #ffe58f',
+            color: isDark ? '#ffffff' : '#000000'
+          }}
           action={
             <Button size="small" onClick={handleBack}>
               Вернуться к списку
@@ -115,9 +127,13 @@ const EventDetail = () => {
   const eventStatus = getEventStatus(event);
 
   return (
-    <div style={{ padding: '24px' }}>
+    <div className={isDark ? 'dark-theme' : 'light-theme'} style={{ padding: '24px' }}>
       {/* Header */}
-      <ProCard style={{ marginBottom: '24px' }}>
+      <ProCard style={{ 
+        marginBottom: '24px',
+        backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+        border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+      }}>
         <Row gutter={[16, 16]} align="middle">
           <Col xs={24} md={20}>
             <Space size="large">
@@ -125,17 +141,18 @@ const EventDetail = () => {
                 icon={<ArrowLeftOutlined />} 
                 onClick={handleBack}
                 type="text"
+                style={{ color: isDark ? '#ffffff' : '#000000' }}
               >
                 Назад к списку
               </Button>
               <div>
-                <Title level={2} style={{ margin: 0 }}>
+                <Title level={2} style={{ margin: 0, color: isDark ? '#ffffff' : '#000000' }}>
                   <Space>
                     <GiftOutlined />
                     {event.name}
                   </Space>
                 </Title>
-                <Text type="secondary">
+                <Text type="secondary" style={{ color: isDark ? '#bfbfbf' : '#8c8c8c' }}>
                   Подробная информация о мероприятии
                 </Text>
               </div>
@@ -150,9 +167,13 @@ const EventDetail = () => {
       </ProCard>
 
       {/* Event Description */}
-      <ProCard style={{ marginBottom: '24px' }}>
-        <Title level={3}>Описание мероприятия</Title>
-        <Paragraph style={{ fontSize: '16px', lineHeight: '1.6' }}>
+      <ProCard style={{ 
+        marginBottom: '24px',
+        backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+        border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+      }}>
+        <Title level={3} style={{ color: isDark ? '#ffffff' : '#000000' }}>Описание мероприятия</Title>
+        <Paragraph style={{ fontSize: '16px', lineHeight: '1.6', color: isDark ? '#ffffff' : '#000000' }}>
           {event.description}
         </Paragraph>
       </ProCard>
@@ -160,15 +181,25 @@ const EventDetail = () => {
       {/* Event Details */}
       <Row gutter={[24, 24]}>
         <Col xs={24} lg={16}>
-          <ProCard title="Информация о мероприятии" style={{ marginBottom: '24px' }}>
+          <ProCard 
+            title={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Информация о мероприятии</span>} 
+            style={{ 
+              marginBottom: '24px',
+              backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+              border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+            }}
+          >
             <Descriptions
               column={1}
               bordered
               size="middle"
+              style={{
+                backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+              }}
               items={[
                 {
                   key: 'status',
-                  label: 'Статус',
+                  label: <span style={{ color: isDark ? '#bfbfbf' : '#000000' }}>Статус</span>,
                   children: (
                     <Tag color={eventStatus.color}>
                       {eventStatus.text}
@@ -177,17 +208,17 @@ const EventDetail = () => {
                 },
                 {
                   key: 'participants',
-                  label: 'Количество участников',
+                  label: <span style={{ color: isDark ? '#bfbfbf' : '#000000' }}>Количество участников</span>,
                   children: (
                     <Space>
-                      <TeamOutlined />
-                      {event.participants_count || 0}
+                      <TeamOutlined style={{ color: isDark ? '#ffffff' : '#000000' }} />
+                      <span style={{ color: isDark ? '#ffffff' : '#000000' }}>{event.participants_count || 0}</span>
                     </Space>
                   ),
                 },
                 {
                   key: 'is_active',
-                  label: 'Активность',
+                  label: <span style={{ color: isDark ? '#bfbfbf' : '#000000' }}>Активность</span>,
                   children: event.is_active ? (
                     <Tag color="green">Активно</Tag>
                   ) : (
@@ -196,11 +227,11 @@ const EventDetail = () => {
                 },
                 {
                   key: 'created_at',
-                  label: 'Дата создания',
+                  label: <span style={{ color: isDark ? '#bfbfbf' : '#000000' }}>Дата создания</span>,
                   children: (
                     <Space>
-                      <CalendarOutlined />
-                      {new Date(event.created_at).toLocaleString('ru-RU')}
+                      <CalendarOutlined style={{ color: isDark ? '#ffffff' : '#000000' }} />
+                      <span style={{ color: isDark ? '#ffffff' : '#000000' }}>{new Date(event.created_at).toLocaleString('ru-RU')}</span>
                     </Space>
                   ),
                 },
@@ -210,8 +241,15 @@ const EventDetail = () => {
 
           {/* Rules */}
           {event.rules && (
-            <ProCard title="Правила мероприятия" style={{ marginBottom: '24px' }}>
-              <Paragraph style={{ whiteSpace: 'pre-wrap', fontSize: '16px', lineHeight: '1.6' }}>
+            <ProCard 
+              title={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Правила мероприятия</span>} 
+              style={{ 
+                marginBottom: '24px',
+                backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+                border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+              }}
+            >
+              <Paragraph style={{ whiteSpace: 'pre-wrap', fontSize: '16px', lineHeight: '1.6', color: isDark ? '#ffffff' : '#000000' }}>
                 {event.rules}
               </Paragraph>
             </ProCard>
@@ -219,8 +257,14 @@ const EventDetail = () => {
 
           {/* Prize Info */}
           {event.prize_info && (
-            <ProCard title="Информация о призах">
-              <Paragraph style={{ whiteSpace: 'pre-wrap', fontSize: '16px', lineHeight: '1.6' }}>
+            <ProCard 
+              title={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Информация о призах</span>}
+              style={{
+                backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+                border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+              }}
+            >
+              <Paragraph style={{ whiteSpace: 'pre-wrap', fontSize: '16px', lineHeight: '1.6', color: isDark ? '#ffffff' : '#000000' }}>
                 {event.prize_info}
               </Paragraph>
             </ProCard>
@@ -229,36 +273,52 @@ const EventDetail = () => {
 
         <Col xs={24} lg={8}>
           {/* Timeline */}
-          <ProCard title="Временная шкала" style={{ marginBottom: '24px' }}>
+          <ProCard 
+            title={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Временная шкала</span>} 
+            style={{ 
+              marginBottom: '24px',
+              backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+              border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+            }}
+          >
             <Space direction="vertical" size="large" style={{ width: '100%' }}>
-              <Card size="small">
+              <Card size="small" style={{
+                backgroundColor: isDark ? '#2f2f2f' : '#ffffff',
+                border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+              }}>
                 <Space direction="vertical" size="small" style={{ width: '100%' }}>
-                  <Text strong>
+                  <Text strong style={{ color: isDark ? '#ffffff' : '#000000' }}>
                     <ClockCircleOutlined /> Предварительная регистрация
                   </Text>
-                  <Text type="secondary">
+                  <Text type="secondary" style={{ color: isDark ? '#bfbfbf' : '#8c8c8c' }}>
                     {new Date(event.preregistration_start).toLocaleString('ru-RU')}
                   </Text>
                 </Space>
               </Card>
               
-              <Card size="small">
+              <Card size="small" style={{
+                backgroundColor: isDark ? '#2f2f2f' : '#ffffff',
+                border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+              }}>
                 <Space direction="vertical" size="small" style={{ width: '100%' }}>
-                  <Text strong>
+                  <Text strong style={{ color: isDark ? '#ffffff' : '#000000' }}>
                     <ClockCircleOutlined /> Основная регистрация
                   </Text>
-                  <Text type="secondary">
+                  <Text type="secondary" style={{ color: isDark ? '#bfbfbf' : '#8c8c8c' }}>
                     {new Date(event.registration_start).toLocaleString('ru-RU')}
                   </Text>
                 </Space>
               </Card>
               
-              <Card size="small">
+              <Card size="small" style={{
+                backgroundColor: isDark ? '#2f2f2f' : '#ffffff',
+                border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+              }}>
                 <Space direction="vertical" size="small" style={{ width: '100%' }}>
-                  <Text strong>
+                  <Text strong style={{ color: isDark ? '#ffffff' : '#000000' }}>
                     <ClockCircleOutlined /> Окончание регистрации
                   </Text>
-                  <Text type="secondary">
+                  <Text type="secondary" style={{ color: isDark ? '#bfbfbf' : '#8c8c8c' }}>
                     {new Date(event.registration_end).toLocaleString('ru-RU')}
                   </Text>
                 </Space>
@@ -267,7 +327,13 @@ const EventDetail = () => {
           </ProCard>
 
           {/* Actions */}
-          <ProCard title="Действия">
+          <ProCard 
+            title={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Действия</span>}
+            style={{
+              backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+              border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+            }}
+          >
             <Space direction="vertical" style={{ width: '100%' }}>
               <Button 
                 type="primary" 
@@ -284,6 +350,11 @@ const EventDetail = () => {
               <Button 
                 block
                 onClick={handleBack}
+                style={{
+                  backgroundColor: isDark ? '#2f2f2f' : '#ffffff',
+                  borderColor: isDark ? '#404040' : '#d9d9d9',
+                  color: isDark ? '#ffffff' : '#000000'
+                }}
               >
                 Вернуться к списку мероприятий
               </Button>

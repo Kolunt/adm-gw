@@ -253,10 +253,30 @@ const ProfileCompletion = ({ onComplete }) => {
     }
   };
 
+  const checkProfileUrlUnique = async (profileUrl) => {
+    try {
+      const response = await axios.post('/profile/check-gwars-url', {
+        profile_url: profileUrl
+      });
+      return { unique: response.data.unique, message: response.data.message };
+    } catch (error) {
+      // Если эндпоинт не существует или произошла ошибка, продолжаем
+      return { unique: true, message: null };
+    }
+  };
+
   const handleParseProfile = async (values) => {
     setLoading(true);
     setVerificationError(null); // Очищаем предыдущие ошибки
     try {
+      // Сначала проверяем уникальность URL
+      const uniquenessCheck = await checkProfileUrlUnique(values.gwars_profile_url);
+      if (!uniquenessCheck.unique) {
+        message.error(uniquenessCheck.message || 'Этот игровой персонаж уже зарегистрирован в системе');
+        setLoading(false);
+        return;
+      }
+
       const response = await axios.post('/profile/parse-gwars', {
         profile_url: values.gwars_profile_url
       });
@@ -268,10 +288,23 @@ const ProfileCompletion = ({ onComplete }) => {
         setVerificationToken(null); // Очищаем токен до подтверждения
         message.success(response.data.message);
       } else {
-        message.error(response.data.error);
+        // Если персонаж не найден, показываем специальное сообщение
+        if (response.data.character_not_found) {
+          message.error(response.data.error || 'Персонаж не найден на указанной странице. Пожалуйста, введите ссылку на существующего персонажа.');
+          // Очищаем форму, чтобы пользователь мог ввести новую ссылку
+          form.setFieldsValue({ gwars_profile_url: '' });
+        } else {
+          message.error(response.data.error || 'Ошибка парсинга GWars профиля');
+        }
       }
     } catch (error) {
-      message.error(error.response?.data?.detail || 'Ошибка парсинга GWars профиля');
+      const errorMessage = error.response?.data?.detail || 'Ошибка парсинга GWars профиля';
+      // Если ошибка связана с дубликатом URL, показываем специальное сообщение
+      if (errorMessage.includes('уже зарегистрирован') || error.response?.status === 400) {
+        message.error(errorMessage);
+      } else {
+        message.error(errorMessage);
+      }
     } finally {
       setLoading(false);
     }

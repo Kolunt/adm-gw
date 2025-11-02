@@ -1,6 +1,6 @@
 {
   "name": "anonymous-santa",
-  "version": "0.1.25",
+  "version": "0.1.24",
   "private": true,
   "dependencies": {
     "@ant-design/pro-components": "^2.6.43",
@@ -52,5 +52,5 @@
       "last 1 safari version"
     ]
   },
-  "homepage": "."
+  "homepage": "https://kolunt.github.io/adm-gw"
 }

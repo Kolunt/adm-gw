@@ -26,11 +26,13 @@ import {
 } from '@ant-design/icons';
 import ProCard from '@ant-design/pro-card';
 import axios from '../utils/axiosConfig';
+import { useTheme } from '../contexts/ThemeContext';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 
 const AdminGiftAssignments = () => {
+  const { isDark } = useTheme();
   const [assignments, setAssignments] = useState([]);
   const [events, setEvents] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -209,8 +211,8 @@ const AdminGiftAssignments = () => {
       key: 'giver',
       render: (_, record) => (
         <Space>
-          <UserOutlined />
-          <Text strong>{record.giver_name}</Text>
+          <UserOutlined style={{ color: isDark ? '#ffffff' : '#000000' }} />
+          <Text strong style={{ color: isDark ? '#ffffff' : '#000000' }}>{record.giver_name}</Text>
         </Space>
       ),
     },
@@ -219,8 +221,8 @@ const AdminGiftAssignments = () => {
       key: 'receiver',
       render: (_, record) => (
         <Space>
-          <UserOutlined />
-          <Text strong>{record.receiver_name}</Text>
+          <UserOutlined style={{ color: isDark ? '#ffffff' : '#000000' }} />
+          <Text strong style={{ color: isDark ? '#ffffff' : '#000000' }}>{record.receiver_name}</Text>
         </Space>
       ),
     },
@@ -246,7 +248,7 @@ const AdminGiftAssignments = () => {
             disabled={record.status === 'approved'}
           />
           <Popconfirm
-            title="Удалить назначение?"
+            title={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Удалить назначение?</span>}
             onConfirm={() => handleDeleteAssignment(record.id)}
             disabled={record.status === 'approved'}
           >
@@ -265,28 +267,50 @@ const AdminGiftAssignments = () => {
   const isAllApproved = assignments.length > 0 && assignments.every(a => a.status === 'approved');
   const hasDraftAssignments = assignments.some(a => a.status === 'draft');
 
+  const inputStyle = {
+    backgroundColor: isDark ? '#2f2f2f' : '#ffffff',
+    color: isDark ? '#ffffff' : '#000000',
+    border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+  };
+
   return (
-    <div style={{ padding: '24px' }}>
-      <ProCard style={{ marginBottom: '24px' }}>
-        <Title level={2}>
+    <div className={isDark ? 'dark-theme' : 'light-theme'} style={{ padding: '24px' }}>
+      <ProCard style={{ 
+        marginBottom: '24px',
+        backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+        border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+      }}>
+        <Title level={2} style={{ color: isDark ? '#ffffff' : '#000000' }}>
           <Space>
             <GiftOutlined />
             Назначения подарков
           </Space>
         </Title>
-        <Text type="secondary">
+        <Text type="secondary" style={{ color: isDark ? '#bfbfbf' : '#8c8c8c' }}>
           Генерация и управление назначениями подарков между участниками мероприятия
         </Text>
       </ProCard>
 
       {/* Выбор мероприятия */}
-      <ProCard style={{ marginBottom: '24px' }}>
-        <Title level={4}>Выберите мероприятие</Title>
+      <ProCard style={{ 
+        marginBottom: '24px',
+        backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+        border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+      }}>
+        <Title level={4} style={{ color: isDark ? '#ffffff' : '#000000' }}>Выберите мероприятие</Title>
         <Select
           placeholder="Выберите мероприятие"
-          style={{ width: '100%', marginBottom: '16px' }}
+          style={{ width: '100%', marginBottom: '16px', ...inputStyle }}
           onChange={handleEventSelect}
           loading={loading}
+          styles={{
+            popup: {
+              root: {
+                backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+                border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+              }
+            }
+          }}
         >
           {events.map(event => {
             const eventDate = event.start_date ? new Date(event.start_date) : null;
@@ -311,6 +335,11 @@ const AdminGiftAssignments = () => {
             })()} | Участников: ${eventParticipants.length}`}
             type="info"
             showIcon
+            style={{
+              backgroundColor: isDark ? '#2f2f2f' : '#e6f7ff',
+              border: isDark ? '1px solid #404040' : '1px solid #91d5ff',
+              color: isDark ? '#ffffff' : '#000000'
+            }}
           />
         )}
       </ProCard>
@@ -320,9 +349,12 @@ const AdminGiftAssignments = () => {
           {/* Статистика */}
           <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
             <Col xs={24} sm={8}>
-              <ProCard>
+              <ProCard style={{
+                backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+                border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+              }}>
                 <Statistic
-                  title="Участников"
+                  title={<span style={{ color: isDark ? '#bfbfbf' : '#8c8c8c' }}>Участников</span>}
                   value={eventParticipants.length}
                   prefix={<UserOutlined />}
                   valueStyle={{ color: '#1890ff' }}
@@ -330,9 +362,12 @@ const AdminGiftAssignments = () => {
               </ProCard>
             </Col>
             <Col xs={24} sm={8}>
-              <ProCard>
+              <ProCard style={{
+                backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+                border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+              }}>
                 <Statistic
-                  title="Назначений"
+                  title={<span style={{ color: isDark ? '#bfbfbf' : '#8c8c8c' }}>Назначений</span>}
                   value={assignments.length}
                   prefix={<GiftOutlined />}
                   valueStyle={{ color: '#52c41a' }}
@@ -340,9 +375,12 @@ const AdminGiftAssignments = () => {
               </ProCard>
             </Col>
             <Col xs={24} sm={8}>
-              <ProCard>
+              <ProCard style={{
+                backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+                border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+              }}>
                 <Statistic
-                  title="Статус"
+                  title={<span style={{ color: isDark ? '#bfbfbf' : '#8c8c8c' }}>Статус</span>}
                   value={isAllApproved ? 'Утверждено' : 'Черновик'}
                   prefix={<CheckOutlined />}
                   valueStyle={{ color: isAllApproved ? '#52c41a' : '#faad14' }}
@@ -352,7 +390,11 @@ const AdminGiftAssignments = () => {
           </Row>
 
           {/* Управление */}
-          <ProCard style={{ marginBottom: '24px' }}>
+          <ProCard style={{ 
+            marginBottom: '24px',
+            backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+            border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+          }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
               <Space>
                 <Button 
@@ -367,6 +409,11 @@ const AdminGiftAssignments = () => {
                 <Button 
                   icon={<ReloadOutlined />} 
                   onClick={() => fetchAssignments(selectedEvent.id)}
+                  style={{
+                    backgroundColor: isDark ? '#2f2f2f' : '#ffffff',
+                    borderColor: isDark ? '#404040' : '#d9d9d9',
+                    color: isDark ? '#ffffff' : '#000000'
+                  }}
                 >
                   Обновить
                 </Button>
@@ -374,8 +421,8 @@ const AdminGiftAssignments = () => {
               
               {hasDraftAssignments && (
                 <Popconfirm
-                  title="Утвердить список назначений?"
-                  description="После утверждения изменения будут невозможны"
+                  title={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Утвердить список назначений?</span>}
+                  description={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>После утверждения изменения будут невозможны</span>}
                   onConfirm={approveAssignments}
                   okText="Утвердить"
                   cancelText="Отмена"
@@ -393,9 +440,12 @@ const AdminGiftAssignments = () => {
           </ProCard>
 
           {/* Таблица назначений */}
-          <ProCard>
+          <ProCard style={{
+            backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+            border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+          }}>
             <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Title level={4}>Список назначений</Title>
+              <Title level={4} style={{ color: isDark ? '#ffffff' : '#000000' }}>Список назначений</Title>
               {assignments.length > 0 && (
                 <Tag color={isAllApproved ? 'green' : 'orange'}>
                   {isAllApproved ? 'Список утвержден' : 'Черновик'}
@@ -405,9 +455,9 @@ const AdminGiftAssignments = () => {
 
             {assignments.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '40px' }}>
-                <GiftOutlined style={{ fontSize: '48px', color: '#d9d9d9', marginBottom: '16px' }} />
-                <Title level={4}>Назначения не созданы</Title>
-                <Text type="secondary">
+                <GiftOutlined style={{ fontSize: '48px', color: isDark ? '#666666' : '#d9d9d9', marginBottom: '16px' }} />
+                <Title level={4} style={{ color: isDark ? '#ffffff' : '#000000' }}>Назначения не созданы</Title>
+                <Text type="secondary" style={{ color: isDark ? '#bfbfbf' : '#8c8c8c' }}>
                   Нажмите "Сгенерировать список" для создания назначений
                 </Text>
               </div>
@@ -417,6 +467,9 @@ const AdminGiftAssignments = () => {
                 dataSource={assignments}
                 loading={loading}
                 rowKey="id"
+                style={{
+                  backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+                }}
                 pagination={{
                   pageSize: 10,
                   showSizeChanger: true,
@@ -432,7 +485,7 @@ const AdminGiftAssignments = () => {
 
       {/* Модальное окно для редактирования назначения */}
       <Modal
-        title="Редактировать назначение"
+        title={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Редактировать назначение</span>}
         open={modalVisible}
         onCancel={() => {
           setModalVisible(false);
@@ -441,6 +494,15 @@ const AdminGiftAssignments = () => {
         }}
         footer={null}
         width={600}
+        styles={{
+          content: {
+            backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+          },
+          header: {
+            backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+            borderBottom: isDark ? '1px solid #404040' : '1px solid #f0f0f0'
+          }
+        }}
       >
         <Form
           form={form}
@@ -449,10 +511,21 @@ const AdminGiftAssignments = () => {
         >
           <Form.Item
             name="giver_id"
-            label="Даритель (Дед Мороз)"
+            label={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Даритель (Дед Мороз)</span>}
             rules={[{ required: true, message: 'Выберите дарителя' }]}
           >
-            <Select placeholder="Выберите дарителя">
+            <Select 
+              placeholder="Выберите дарителя"
+              style={inputStyle}
+              styles={{
+                popup: {
+                  root: {
+                    backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+                    border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+                  }
+                }
+              }}
+            >
               {eventParticipants.map(participant => (
                 <Option key={participant.id} value={participant.id}>
                   {participant.name || participant.email || `Участник ${participant.id}`}
@@ -463,10 +536,21 @@ const AdminGiftAssignments = () => {
 
           <Form.Item
             name="receiver_id"
-            label="Получатель (Внучок)"
+            label={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Получатель (Внучок)</span>}
             rules={[{ required: true, message: 'Выберите получателя' }]}
           >
-            <Select placeholder="Выберите получателя">
+            <Select 
+              placeholder="Выберите получателя"
+              style={inputStyle}
+              styles={{
+                popup: {
+                  root: {
+                    backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+                    border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+                  }
+                }
+              }}
+            >
               {eventParticipants.map(participant => (
                 <Option key={participant.id} value={participant.id}>
                   {participant.name || participant.email || `Участник ${participant.id}`}
@@ -477,11 +561,18 @@ const AdminGiftAssignments = () => {
 
           <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>
             <Space>
-              <Button onClick={() => {
-                setModalVisible(false);
-                setEditingAssignment(null);
-                form.resetFields();
-              }}>
+              <Button 
+                onClick={() => {
+                  setModalVisible(false);
+                  setEditingAssignment(null);
+                  form.resetFields();
+                }}
+                style={{
+                  backgroundColor: isDark ? '#2f2f2f' : '#ffffff',
+                  borderColor: isDark ? '#404040' : '#d9d9d9',
+                  color: isDark ? '#ffffff' : '#000000'
+                }}
+              >
                 Отмена
               </Button>
               <Button type="primary" htmlType="submit">

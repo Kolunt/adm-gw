@@ -78,7 +78,6 @@ const UserProfile = () => {
     if (!canEditProfile()) return;
     
     form.setFieldsValue({
-      name: user.name,
       phone_number: user.phone_number,
       telegram_username: user.telegram_username,
       bio: user.bio,
@@ -282,11 +281,6 @@ const UserProfile = () => {
                   ),
                 },
                 {
-                  key: 'name',
-                  label: 'Имя',
-                  children: <Text style={{ color: '#ffffff' }}>{user.name || 'Не указано'}</Text>,
-                },
-                {
                   key: 'email',
                   label: 'Email',
                   children: (
@@ -353,7 +347,16 @@ const UserProfile = () => {
                   children: user.is_active ? (
                     <Tag color="green">Активен</Tag>
                   ) : (
-                    <Tag color="red">Заблокирован</Tag>
+                    <div>
+                      <Tag color="red" style={{ marginBottom: '8px' }}>Заблокирован</Tag>
+                      {user.block_reason && (
+                        <div style={{ marginTop: '8px' }}>
+                          <Text type="secondary" style={{ fontSize: '12px', display: 'block', color: '#ffffff' }}>
+                            Причина: {user.block_reason}
+                          </Text>
+                        </div>
+                      )}
+                    </div>
                   ),
                 },
               ]}
@@ -386,7 +389,7 @@ const UserProfile = () => {
               />
               <div style={{ marginTop: '16px' }}>
                 <Text strong style={{ fontSize: '18px', color: '#ffffff' }}>
-                  {user.name || user.email}
+                  {user.full_name || user.email}
                 </Text>
               </div>
               {canEditProfile() && (
@@ -454,17 +457,6 @@ const UserProfile = () => {
           layout="vertical"
           onFinish={handleSaveProfile}
         >
-          <Form.Item
-            name="name"
-            label="Имя"
-            rules={[
-              { required: true, message: 'Пожалуйста, введите имя' },
-              { min: 2, message: 'Имя должно содержать минимум 2 символа' }
-            ]}
-          >
-            <Input placeholder="Введите имя" />
-          </Form.Item>
-          
           <Form.Item
             name="phone_number"
             label="Телефон"
