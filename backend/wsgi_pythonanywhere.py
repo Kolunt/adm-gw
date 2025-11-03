@@ -160,6 +160,8 @@ try:
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             try:
+                # Логируем запрос для отладки
+                print(f"WSGI REQUEST: {method} {path}")
                 loop.run_until_complete(app(scope, receive, send))
             except Exception as e:
                 # Логируем ошибку для диагностики
