@@ -159,13 +159,28 @@ try:
                     if not message.get('more_body', False):
                         print(f"WSGI RESPONSE BODY: {sum(len(p) for p in response_body_parts)} bytes")
             
-            # Запускаем ASGI приложение
+            # Запускаем ASGI приложение с таймаутом
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             try:
                 # Логируем запрос для отладки
                 print(f"WSGI REQUEST: {method} {path}")
-                loop.run_until_complete(app(scope, receive, send))
+                
+                # Запускаем с таймаутом, чтобы избежать HARAKIRI
+                async def run_app():
+                    await app(scope, receive, send)
+                
+                # Таймаут 25 секунд (меньше чем HARAKIRI 30 секунд)
+                try:
+                    loop.run_until_complete(asyncio.wait_for(run_app(), timeout=25.0))
+                except asyncio.TimeoutError:
+                    print(f"WSGI TIMEOUT: Request {method} {path} took too long (>25s)")
+                    if not message_received:
+                        # Если даже start message не получен, это критично
+                        raise RuntimeError(f"Request timeout for {method} {path} - no response")
+                    else:
+                        # Если start получен, но body не пришел, возвращаем что есть
+                        print(f"WSGI WARNING: Timeout but got start message, returning partial response")
             except Exception as e:
                 # Логируем ошибку для диагностики
                 import traceback
