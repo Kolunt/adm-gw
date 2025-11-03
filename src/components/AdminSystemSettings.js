@@ -116,6 +116,10 @@ const AdminSystemSettings = () => {
     if (!settingsMap) return;
     if (activeIntegrationTab === 'smtp' && smtpForm && typeof smtpForm.setFieldsValue === 'function') {
       smtpForm.setFieldsValue(settingsMap);
+      // Если SMTP уже включен, но не проверен, сбрасываем статус проверки
+      if (settingsMap.smtp_enabled === true || settingsMap.smtp_enabled === 'true') {
+        setSmtpTestStatus(null);
+      }
     }
     if (activeIntegrationTab === 'dadata' && dadataForm && typeof dadataForm.setFieldsValue === 'function') {
       dadataForm.setFieldsValue(settingsMap);
