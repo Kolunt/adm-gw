@@ -817,29 +817,51 @@ class GiftAssignmentApproval(BaseModel):
 app = FastAPI(title="Анонимный Дед Мороз", version="0.1.24")
 
 # Автоматическая инициализация при первом запуске
+# Флаг для отслеживания инициализации
+_db_initialized = False
+
 @app.on_event("startup")
 async def startup_event():
     """Инициализация базы данных и настроек при запуске приложения"""
+    global _db_initialized
+    if _db_initialized:
+        return  # Уже инициализировано
+    
     try:
-        # Создаем таблицы, если их еще нет
-        from sqlalchemy import inspect
-        inspector = inspect(engine)
-        existing_tables = inspector.get_table_names()
+        # Используем отдельный поток для блокирующих операций
+        import asyncio
+        from concurrent.futures import ThreadPoolExecutor
         
-        if not existing_tables:
-            print("🔄 База данных пуста, создаем таблицы...")
-            Base.metadata.create_all(bind=engine)
-            print("✅ Таблицы созданы")
+        executor = ThreadPoolExecutor(max_workers=1)
+        loop = asyncio.get_event_loop()
         
-        # Создаем настройки по умолчанию
-        create_default_settings()
+        def init_db():
+            """Синхронная инициализация БД в отдельном потоке"""
+            from sqlalchemy import inspect
+            inspector = inspect(engine)
+            existing_tables = inspector.get_table_names()
+            
+            if not existing_tables:
+                print("🔄 База данных пуста, создаем таблицы...")
+                Base.metadata.create_all(bind=engine)
+                print("✅ Таблицы созданы")
+            
+            # Создаем настройки по умолчанию
+            create_default_settings()
+            
+            # Создаем дефолтного администратора
+            create_default_admin()
+            
+            return True
         
-        # Создаем дефолтного администратора
-        create_default_admin()
-        
+        # Выполняем инициализацию асинхронно, чтобы не блокировать startup
+        await loop.run_in_executor(executor, init_db)
+        _db_initialized = True
         print("✅ Инициализация завершена")
     except Exception as e:
         print(f"⚠️ Ошибка при инициализации: {e}")
+        import traceback
+        traceback.print_exc()
         # Не прерываем запуск, приложение должно работать даже если инициализация не удалась
 
 # CORS middleware - Автоматическая конфигурация для локальной и production среды
