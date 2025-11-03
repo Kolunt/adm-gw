@@ -469,12 +469,9 @@ def create_default_settings():
         print("Настройки системы инициализированы")
     except Exception as e:
         print(f"Ошибка при инициализации настроек: {e}")
+        db.rollback()
     finally:
         db.close()
-
-# Create default admin and settings on startup
-create_default_admin()
-create_default_settings()
 
 # Pydantic models
 class UserCreate(BaseModel):
