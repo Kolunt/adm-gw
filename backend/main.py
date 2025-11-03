@@ -4317,37 +4317,89 @@ if frontend_dir:
         Catch-all роут для SPA - возвращает index.html для всех маршрутов,
         которые не являются API endpoints или статическими файлами
         """
-        # Список префиксов, которые обрабатываются API
-        # Важно: проверяем точное совпадение или начало пути
-        api_prefixes = [
-            "api", "auth", "admin", "events", "users", "profile", "uploads", 
-            "docs", "openapi.json", "redoc"
-        ]
-        
-        # Разбиваем путь на части
+        try:
+            # Список префиксов, которые обрабатываются API
+            # Важно: проверяем точное совпадение или начало пути
+            api_prefixes = [
+                "api", "auth", "admin", "events", "users", "profile", "uploads", 
+                "docs", "openapi.json", "redoc"
+            ]
+            
+            # Разбиваем путь на части
+            path_parts = full_path.strip('/').split('/')
+            first_part = path_parts[0] if path_parts else ''
+            
+            # Проверяем, не является ли это API запросом
+            # Проверяем первый сегмент пути или полное совпадение
+            if any(first_part == prefix or full_path.startswith(f'/{prefix}/') or full_path == f'/{prefix}' for prefix in api_prefixes):
+                raise HTTPException(status_code=404, detail="Not found")
+            
+            # Проверяем, не является ли это статическим файлом
+            # Если путь содержит точку и не является известным роутом, возможно это файл
+            if '.' in full_path.split('/')[-1] and not full_path.endswith('.html'):
+                file_path = os.path.join(frontend_dir, full_path)
+                if os.path.exists(file_path) and os.path.isfile(file_path):
+                    from fastapi.responses import FileResponse
+                    return FileResponse(file_path)
+            
+            # Для всех остальных запросов возвращаем index.html (SPA роутинг)
+            index_path = os.path.join(frontend_dir, "index.html")
+            if os.path.exists(index_path):
+                from fastapi.responses import FileResponse
+                return FileResponse(index_path)
+            else:
+                # Если index.html не найден, возвращаем информативное сообщение
+                error_msg = f"Frontend not found. Build directory: {frontend_dir}, exists: {os.path.exists(frontend_dir)}"
+                print(f"ERROR: {error_msg}")
+                return JSONResponse(
+                    status_code=500,
+                    content={
+                        "error": "Frontend not found",
+                        "message": "Please build the frontend and ensure build/ directory is in the project root",
+                        "build_dir": frontend_dir,
+                        "build_dir_exists": os.path.exists(frontend_dir)
+                    }
+                )
+        except HTTPException:
+            raise
+        except Exception as e:
+            # Логируем ошибку для отладки
+            error_msg = f"Error in serve_frontend: {str(e)}"
+            print(f"ERROR: {error_msg}")
+            import traceback
+            traceback.print_exc()
+            return JSONResponse(
+                status_code=500,
+                content={
+                    "error": "Internal server error",
+                    "message": str(e),
+                    "path": full_path,
+                    "frontend_dir": frontend_dir
+                }
+            )
+else:
+    # Если frontend_dir не найден, добавляем catch-all роут, который вернет ошибку
+    @app.get("/{full_path:path}")
+    async def serve_frontend_missing(full_path: str, request: Request):
+        """Обработчик для случая, когда frontend не собран"""
+        # Проверяем, не является ли это API запросом
+        api_prefixes = ["api", "auth", "admin", "events", "users", "profile", "uploads", "docs", "openapi.json", "redoc"]
         path_parts = full_path.strip('/').split('/')
         first_part = path_parts[0] if path_parts else ''
         
-        # Проверяем, не является ли это API запросом
-        # Проверяем первый сегмент пути или полное совпадение
         if any(first_part == prefix or full_path.startswith(f'/{prefix}/') or full_path == f'/{prefix}' for prefix in api_prefixes):
             raise HTTPException(status_code=404, detail="Not found")
         
-        # Проверяем, не является ли это статическим файлом
-        # Если путь содержит точку и не является известным роутом, возможно это файл
-        if '.' in full_path.split('/')[-1] and not full_path.endswith('.html'):
-            file_path = os.path.join(frontend_dir, full_path)
-            if os.path.exists(file_path) and os.path.isfile(file_path):
-                from fastapi.responses import FileResponse
-                return FileResponse(file_path)
-        
-        # Для всех остальных запросов возвращаем index.html (SPA роутинг)
-        index_path = os.path.join(frontend_dir, "index.html")
-        if os.path.exists(index_path):
-            from fastapi.responses import FileResponse
-            return FileResponse(index_path)
-        else:
-            raise HTTPException(status_code=404, detail="Frontend not found. Please build the frontend.")
+        # Если это не API запрос, возвращаем ошибку о отсутствии фронтенда
+        return JSONResponse(
+            status_code=500,
+            content={
+                "error": "Frontend not found",
+                "message": "Frontend build directory not found. Please build the frontend: npm run build",
+                "searched_paths": ["../build", "build", "dist", "../dist"],
+                "hint": "Make sure build/ directory exists in the project root"
+            }
+        )
 
 def generate_unique_verification_token(db: Session, user: User) -> str:
     # Деактивируем прошлые токены пользователя (в одной транзакции)
