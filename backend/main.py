@@ -22,15 +22,38 @@ from starlette.requests import Request
 from secrets import token_urlsafe, token_hex
 import hashlib
 
+# Environment detection
+IS_PYTHONANYWHERE = (
+    'PYTHONANYWHERE_DOMAIN' in os.environ or 
+    'pythonanywhere.com' in os.environ.get('HTTP_HOST', '') or
+    'pythonanywhere.com' in os.environ.get('SERVER_NAME', '')
+)
+
 # Database setup
-SQLALCHEMY_DATABASE_URL = "sqlite:///./santa.db"
+if IS_PYTHONANYWHERE:
+    # Production на PythonAnywhere
+    DB_PATH = os.path.join(os.path.expanduser('~'), 'gwadm', 'backend', 'santa.db')
+    SQLALCHEMY_DATABASE_URL = f"sqlite:///{DB_PATH}"
+    # Создаем директорию если не существует
+    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+else:
+    # Локальная разработка
+    SQLALCHEMY_DATABASE_URL = "sqlite:///./santa.db"
+
 engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 # File upload settings
-UPLOAD_DIR = "uploads"
-ICON_DIR = os.path.join(UPLOAD_DIR, "icons")
+if IS_PYTHONANYWHERE:
+    # Production на PythonAnywhere
+    UPLOAD_DIR = os.path.join(os.path.expanduser('~'), 'gwadm', 'backend', 'uploads')
+    ICON_DIR = os.path.join(UPLOAD_DIR, 'icons')
+else:
+    # Локальная разработка
+    UPLOAD_DIR = "uploads"
+    ICON_DIR = os.path.join(UPLOAD_DIR, "icons")
+
 os.makedirs(ICON_DIR, exist_ok=True)
 
 # Allowed file types for icons
@@ -796,12 +819,28 @@ class GiftAssignmentApproval(BaseModel):
 # FastAPI app
 app = FastAPI(title="Анонимный Дед Мороз", version="0.1.24")
 
-# CORS middleware - Поддержка PythonAnywhere
+# CORS middleware - Автоматическая конфигурация для локальной и production среды
+if IS_PYTHONANYWHERE:
+    # Production на PythonAnywhere
+    default_origins = [
+        "https://gwadm.pythonanywhere.com",
+        "http://localhost:3000",  # Для локальной разработки фронтенда
+        "http://127.0.0.1:3000"
+    ]
+else:
+    # Локальная разработка
+    default_origins = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "https://gwadm.pythonanywhere.com"  # Для тестирования с production
+    ]
+
 # Получаем список разрешенных origins из переменной окружения или используем дефолтные
-allowed_origins = os.getenv(
-    "CORS_ORIGINS", 
-    "http://localhost:3000,http://127.0.0.1:3000"
-).split(",")
+cors_origins_env = os.getenv("CORS_ORIGINS", "")
+if cors_origins_env:
+    allowed_origins = [origin.strip() for origin in cors_origins_env.split(",") if origin.strip()]
+else:
+    allowed_origins = default_origins
 # Убираем пробелы и пустые строки
 allowed_origins = [origin.strip() for origin in allowed_origins if origin.strip()]
 

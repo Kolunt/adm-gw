@@ -8,7 +8,14 @@
 import os
 
 # PythonAnywhere определяет себя через переменную окружения
-IS_PYTHONANYWHERE = 'PYTHONANYWHERE_DOMAIN' in os.environ or 'pythonanywhere.com' in os.environ.get('HTTP_HOST', '')
+IS_PYTHONANYWHERE = (
+    'PYTHONANYWHERE_DOMAIN' in os.environ or 
+    'pythonanywhere.com' in os.environ.get('HTTP_HOST', '') or
+    'pythonanywhere.com' in os.environ.get('SERVER_NAME', '')
+)
+
+# Конкретный домен для этого проекта
+PRODUCTION_DOMAIN = "https://gwadm.pythonanywhere.com"
 
 # База данных
 if IS_PYTHONANYWHERE:
@@ -29,14 +36,10 @@ else:
 
 # CORS origins для PythonAnywhere
 PYTHONANYWHERE_ORIGINS = [
-    "http://localhost:3000",
+    "https://gwadm.pythonanywhere.com",  # Production домен
+    "http://localhost:3000",  # Локальная разработка
     "http://127.0.0.1:3000",
 ]
-
-# Добавляем домен PythonAnywhere если известен
-if IS_PYTHONANYWHERE:
-    username = os.environ.get('USER', 'yourusername')
-    PYTHONANYWHERE_ORIGINS.append(f"https://{username}.pythonanywhere.com")
 
 # Экспорт настроек
 __all__ = [
