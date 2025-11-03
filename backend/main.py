@@ -4279,10 +4279,19 @@ frontend_dirs = [
 frontend_dir = None
 frontend_served = False
 for candidate_dir in frontend_dirs:
-    if os.path.exists(candidate_dir):
-        frontend_dir = candidate_dir
+    abs_path = os.path.abspath(candidate_dir)
+    if os.path.exists(abs_path):
+        frontend_dir = abs_path
         frontend_served = True
+        print(f"✅ Frontend directory found: {frontend_dir}")
         break
+
+if not frontend_dir:
+    print("⚠️ Frontend directory not found. Searched paths:")
+    for candidate_dir in frontend_dirs:
+        abs_path = os.path.abspath(candidate_dir)
+        exists = os.path.exists(abs_path)
+        print(f"  - {abs_path}: {'✅' if exists else '❌'}")
 
 # Mount static files (CSS, JS, images)
 if frontend_dir:
