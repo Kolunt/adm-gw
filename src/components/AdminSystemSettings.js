@@ -266,6 +266,76 @@ const AdminSystemSettings = () => {
           />
         </Form.Item>
       </ProCard>
+
+      <ProCard 
+        size="small" 
+        title={
+          <span style={{ color: isDark ? '#ffffff' : '#000000' }}>
+            Приветственное сообщение
+          </span>
+        }
+        style={{
+          backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+          border: isDark ? '1px solid #404040' : '1px solid #d9d9d9',
+          marginTop: '16px'
+        }}
+      >
+        <Alert
+          message="Настройки приветствия"
+          description="Настройте тексты приветственного сообщения, которые отображаются на главной странице."
+          type="info"
+          showIcon
+          style={{ 
+            marginBottom: 16,
+            backgroundColor: isDark ? '#2f2f2f' : '#f6ffed',
+            border: isDark ? '1px solid #404040' : '1px solid #b7eb8f',
+            color: isDark ? '#ffffff' : '#000000'
+          }}
+        />
+        <Form.Item
+          name="welcome_title"
+          label={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Заголовок приветствия</span>}
+          rules={[
+            { max: 100, message: 'Заголовок не должен превышать 100 символов' }
+          ]}
+        >
+          <Input
+            style={inputStyle}
+            placeholder="Например: 🎅 Анонимный Дед Мороз"
+            maxLength={100}
+            showCount
+          />
+        </Form.Item>
+        <Form.Item
+          name="welcome_subtitle"
+          label={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Подзаголовок приветствия</span>}
+          rules={[
+            { max: 200, message: 'Подзаголовок не должен превышать 200 символов' }
+          ]}
+        >
+          <Input
+            style={inputStyle}
+            placeholder="Например: Добро пожаловать в систему обмена подарками!"
+            maxLength={200}
+            showCount
+          />
+        </Form.Item>
+        <Form.Item
+          name="welcome_message"
+          label={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Приветственное сообщение</span>}
+          rules={[
+            { max: 500, message: 'Сообщение не должно превышать 500 символов' }
+          ]}
+        >
+          <TextArea
+            style={inputStyle}
+            placeholder="Персонализированное сообщение для пользователей (необязательно)"
+            rows={3}
+            maxLength={500}
+            showCount
+          />
+        </Form.Item>
+      </ProCard>
       <div style={{ textAlign: 'center', marginTop: '24px' }}>
         <Space size="middle">
           <Button 
