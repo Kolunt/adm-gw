@@ -144,7 +144,11 @@ from main import app
 application = app
 ```
 
-**Примечание:** Если получаете ошибку `ModuleNotFoundError: No module named 'main'`, используйте диагностический файл `backend/wsgi_debug.py` - см. `docs/WSGI_CONFIGURATION.md`
+**Вариант 3: С расширенной диагностикой (рекомендуется при ошибках)**
+
+Если получаете ошибку `ModuleNotFoundError: No module named 'main'`, скопируйте содержимое файла `backend/wsgi_pythonanywhere.py` в WSGI конфигурацию. Этот файл автоматически найдет правильный путь к проекту и выведет подробную диагностику.
+
+Подробная инструкция: см. `docs/WSGI_CONFIGURATION.md`
 
 ### 8. Настройка Static Files (опционально)
 
