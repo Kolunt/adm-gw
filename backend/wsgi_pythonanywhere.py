@@ -83,15 +83,30 @@ print(f"✅ main.py found at: {main_py_path}")
 try:
     print("Importing app from main...")
     from main import app
+    
+    # FastAPI - это ASGI приложение, а PythonAnywhere использует WSGI
+    # Нужен адаптер ASGI-to-WSGI
+    # Mangum - лучший вариант для FastAPI на WSGI серверах
+    try:
+        from mangum import Mangum
+        application = Mangum(app, lifespan="off")
+        print("✅ Using Mangum ASGI-to-WSGI adapter")
+    except ImportError:
+        print("❌ Mangum not found")
+        print("\nSOLUTION: Install Mangum:")
+        print("  pip3.10 install --user mangum")
+        print("\nThen reload the WSGI configuration.")
+        raise ImportError("Mangum is required for FastAPI on WSGI. Install: pip3.10 install --user mangum")
+    
     print("✅ Successfully imported app")
-    application = app
     print("✅ WSGI application configured successfully")
 except ImportError as e:
     print(f"❌ Import error: {e}")
     print("\nTroubleshooting:")
     print("1. Check main.py syntax: python3.10 -m py_compile main.py")
-    print("2. Check dependencies: pip3.10 list | grep fastapi")
-    print("3. Check error log for detailed traceback")
+    print("2. Install asgiref: pip3.10 install --user asgiref")
+    print("3. Check dependencies: pip3.10 list | grep fastapi")
+    print("4. Check error log for detailed traceback")
     raise
 except Exception as e:
     print(f"❌ Other error: {e}")
