@@ -155,6 +155,9 @@ try:
                     body_chunk = message.get('body', b'')
                     if body_chunk:
                         response_body_parts.append(body_chunk)
+                    # Проверяем, закончилось ли тело
+                    if not message.get('more_body', False):
+                        print(f"WSGI RESPONSE BODY: {sum(len(p) for p in response_body_parts)} bytes")
             
             # Запускаем ASGI приложение
             loop = asyncio.new_event_loop()
