@@ -42,6 +42,7 @@ import AdminAbout from './components/AdminAbout';
 import UserProfile from './pages/Profile';
 import LoginPage from './pages/Auth/Login';
 import RegisterPage from './pages/Auth/Register';
+import CrossServerLogin from './pages/Auth/CrossServerLogin';
 import EventsPage from './pages/Events';
 import EventDetail from './pages/Events/EventDetail';
 import UserListPage from './pages/User/List';
@@ -457,6 +458,8 @@ const AppContent = () => {
         <Route path="/profile-completion" element={<ProfileCompletion />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/cross-server-login" element={<CrossServerLogin />} />
+        <Route path="/my_login_page" element={<CrossServerLogin />} />
         <Route path="/admin" element={
           <ProtectedRoute requireAdmin={true}>
             <AdminDashboard />

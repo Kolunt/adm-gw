@@ -133,7 +133,7 @@ const AdminSystemSettings = () => {
     if (key === 'integrations') {
       navigate(`/admin/settings/integrations/${activeIntegrationTab}`);
     } else {
-      navigate(`/admin/settings/${key}`);
+    navigate(`/admin/settings/${key}`);
     }
   };
 
@@ -156,7 +156,7 @@ const AdminSystemSettings = () => {
       setSettingsMap(formData);
       setTimeout(() => {
         if (form && typeof form.setFieldsValue === 'function') {
-          form.setFieldsValue(formData);
+      form.setFieldsValue(formData);
         }
         // Не трогаем smtpForm и dadataForm здесь, чтобы избежать предупреждения
       }, 0);
@@ -238,7 +238,7 @@ const AdminSystemSettings = () => {
             maxLength={100}
             showCount
           />
-        </Form.Item>
+                </Form.Item>
         <Form.Item
           name="site_description"
           label={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Описание сайта</span>}
@@ -254,7 +254,7 @@ const AdminSystemSettings = () => {
             maxLength={500}
             showCount
           />
-        </Form.Item>
+                </Form.Item>
         <Form.Item
           name="contact_email"
           label={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Контактный email</span>}
@@ -311,7 +311,7 @@ const AdminSystemSettings = () => {
             maxLength={100}
             showCount
           />
-        </Form.Item>
+                </Form.Item>
         <Form.Item
           name="welcome_subtitle"
           label={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Подзаголовок приветствия</span>}
@@ -325,7 +325,7 @@ const AdminSystemSettings = () => {
             maxLength={200}
             showCount
           />
-        </Form.Item>
+                </Form.Item>
         <Form.Item
           name="welcome_message"
           label={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Приветственное сообщение</span>}
@@ -340,7 +340,7 @@ const AdminSystemSettings = () => {
             maxLength={500}
             showCount
           />
-        </Form.Item>
+                </Form.Item>
       </ProCard>
       <div style={{ textAlign: 'center', marginTop: '24px' }}>
         <Space size="middle">
@@ -408,7 +408,7 @@ const AdminSystemSettings = () => {
               Для включения необходимо сначала добавить и проверить API токен
             </div>
           )}
-        </Form.Item>
+                </Form.Item>
         <Form.Item
           name="dadata_token"
           label={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>API токен DaData</span>}
@@ -466,9 +466,25 @@ const AdminSystemSettings = () => {
               }
             }} type={isDark ? 'ghost' : 'default'} style={{backgroundColor: isDark ? '#232a3c' : undefined, color: isDark ? '#fff' : undefined, border: isDark ? '1px solid #404040' : undefined}}>Проверить токен</Button>}
           />
-        </Form.Item>
-        {dadataTokenStatus === 'valid' && <div style={{color:'green'}}>Токен валиден!</div>}
-        {dadataTokenStatus === 'error' && <div style={{color:'red'}}>Некорректный токен</div>}
+                </Form.Item>
+        {dadataTokenStatus === 'valid' && (
+          <div style={{ 
+            color: isDark ? '#73d13d' : '#52c41a', 
+            marginTop: '8px', 
+            fontSize: '12px' 
+          }}>
+            ✓ Токен валиден!
+          </div>
+        )}
+        {dadataTokenStatus === 'error' && (
+          <div style={{ 
+            color: isDark ? '#ff7875' : '#ff4d4f', 
+            marginTop: '8px', 
+            fontSize: '12px' 
+          }}>
+            ✗ Некорректный токен
+          </div>
+        )}
       </ProCard>
       <div style={{ textAlign: 'center', marginTop: '24px' }}>
         <Space size="middle">
@@ -987,18 +1003,30 @@ const AdminSystemSettings = () => {
       layout="vertical"
       onFinish={handleSave}
     >
-      <ProCard size="small" title="Настройки SMTP">
+      <ProCard 
+        size="small" 
+        title={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Настройки SMTP</span>}
+        style={{
+          backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
+          border: isDark ? '1px solid #404040' : '1px solid #d9d9d9'
+        }}
+      >
         <Alert
           message="Конфигурация почтового сервера"
           description="Настройте параметры SMTP для отправки уведомлений пользователям."
           type="info"
           showIcon
-          style={{ marginBottom: 16 }}
+          style={{
+            marginBottom: 16,
+            backgroundColor: isDark ? '#2f2f2f' : '#e6f7ff',
+            border: isDark ? '1px solid #404040' : '1px solid #91d5ff',
+            color: isDark ? '#ffffff' : '#000000'
+          }}
         />
         
         <Form.Item
           name="smtp_enabled"
-          label="Включить SMTP"
+          label={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Включить SMTP</span>}
           valuePropName="checked"
         >
           <Switch 
@@ -1019,11 +1047,11 @@ const AdminSystemSettings = () => {
               Для включения необходимо сначала проверить SMTP настройки
             </div>
           )}
-        </Form.Item>
+                </Form.Item>
 
         <Form.Item
           name="smtp_host"
-          label="Адрес SMTP сервера"
+          label={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Адрес SMTP сервера</span>}
           rules={[
             { required: true, message: 'Адрес SMTP сервера обязателен' }
           ]}
@@ -1040,11 +1068,11 @@ const AdminSystemSettings = () => {
               }
             }}
           />
-        </Form.Item>
+                </Form.Item>
 
         <Form.Item
           name="smtp_port"
-          label="Порт SMTP сервера"
+          label={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Порт SMTP сервера</span>}
           rules={[
             { required: true, message: 'Порт SMTP сервера обязателен' },
             { pattern: /^\d+$/, message: 'Порт должен быть числом' },
@@ -1069,20 +1097,21 @@ const AdminSystemSettings = () => {
               }
             }}
           />
-        </Form.Item>
+                </Form.Item>
 
         <Form.Item
           name="smtp_username"
-          label="Имя пользователя SMTP"
+          label={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Имя пользователя SMTP</span>}
           rules={[
             { required: true, message: 'Имя пользователя SMTP обязательно' },
             { type: 'email', message: 'Введите корректный email' }
           ]}
         >
           <Input
+            className={isDark ? 'dark-theme' : 'light-theme'}
             style={inputStyle}
             placeholder="your-email@gmail.com"
-            prefix={<UserOutlined />}
+            prefix={<UserOutlined style={{ color: isDark ? '#ffffff' : undefined }} />}
             onChange={(e) => {
               // При изменении имени пользователя сбрасываем статус проверки
               if (smtpTestStatus === 'valid') {
@@ -1091,19 +1120,20 @@ const AdminSystemSettings = () => {
               }
             }}
           />
-        </Form.Item>
+                </Form.Item>
 
         <Form.Item
           name="smtp_password"
-          label="Пароль SMTP"
+          label={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Пароль SMTP</span>}
           rules={[
             { required: true, message: 'Пароль SMTP обязателен' }
           ]}
         >
           <Input.Password
+            className={isDark ? 'dark-theme' : 'light-theme'}
             style={inputStyle}
             placeholder="Введите пароль"
-            prefix={<SettingOutlined />}
+            prefix={<SettingOutlined style={{ color: isDark ? '#ffffff' : undefined }} />}
             onChange={(e) => {
               // При изменении пароля сбрасываем статус проверки
               if (smtpTestStatus === 'valid') {
@@ -1168,20 +1198,28 @@ const AdminSystemSettings = () => {
             }
           />
           {smtpTestStatus === 'valid' && (
-            <div style={{ color: '#52c41a', marginTop: '8px', fontSize: '12px' }}>
+            <div style={{ 
+              color: isDark ? '#73d13d' : '#52c41a', 
+              marginTop: '8px', 
+              fontSize: '12px' 
+            }}>
               ✓ SMTP настройки проверены успешно
             </div>
           )}
           {smtpTestStatus === 'error' && (
-            <div style={{ color: '#ff4d4f', marginTop: '8px', fontSize: '12px' }}>
+            <div style={{ 
+              color: isDark ? '#ff7875' : '#ff4d4f', 
+              marginTop: '8px', 
+              fontSize: '12px' 
+            }}>
               ✗ Ошибка проверки SMTP
             </div>
           )}
-        </Form.Item>
+                </Form.Item>
 
         <Form.Item
           name="smtp_from_email"
-          label="Email отправителя"
+          label={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Email отправителя</span>}
           rules={[
             { required: true, message: 'Email отправителя обязателен' },
             { type: 'email', message: 'Введите корректный email' }
@@ -1199,11 +1237,11 @@ const AdminSystemSettings = () => {
               }
             }}
           />
-        </Form.Item>
+                </Form.Item>
 
         <Form.Item
           name="smtp_from_name"
-          label="Имя отправителя"
+          label={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Имя отправителя</span>}
         >
           <Input
             style={inputStyle}
@@ -1214,7 +1252,7 @@ const AdminSystemSettings = () => {
 
         <Form.Item
           name="smtp_use_tls"
-          label="Использовать TLS"
+          label={<span style={{ color: isDark ? '#ffffff' : '#000000' }}>Использовать TLS</span>}
           valuePropName="checked"
         >
           <Switch />
@@ -1450,10 +1488,11 @@ const AdminSystemSettings = () => {
   );
 
   const renderIntegrationsTab = () => (
-    <div>
+    <div className={isDark ? 'dark-theme' : 'light-theme'}>
       <Tabs
         activeKey={activeIntegrationTab}
         onChange={handleIntegrationTabChange}
+        className={isDark ? 'dark-theme' : 'light-theme'}
         style={{
           color: isDark ? '#ffffff' : '#000000'
         }}
@@ -1836,7 +1875,7 @@ const AdminSystemSettings = () => {
       }
     ];
 
-    return (
+  return (
       <div>
         <ProCard
           size="small"

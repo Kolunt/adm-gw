@@ -722,31 +722,237 @@ body {
 }
 
 .dark-theme .ant-input {
-  background: var(--input-bg);
-  border: 1px solid var(--input-border);
-  color: var(--text-color);
+  background: #2f2f2f !important;
+  border: 1px solid #404040 !important;
+  color: #ffffff !important;
 }
 
 .dark-theme .ant-input::placeholder {
-  color: var(--text-color-secondary) !important;
+  color: #bfbfbf !important;
 }
 
 .dark-theme .ant-input:focus {
-  background: var(--input-bg);
-  border-color: var(--button-bg);
-  color: var(--text-color);
+  background: #2f2f2f !important;
+  border-color: #52c41a !important;
+  color: #ffffff !important;
+}
+
+.dark-theme .ant-input:hover {
+  border-color: #404040 !important;
+}
+
+.dark-theme .ant-input:disabled {
+  background: #1f1f1f !important;
+  border-color: #404040 !important;
+  color: #888888 !important;
+}
+
+/* Стили для заполненных полей */
+.dark-theme .ant-input:not(:placeholder-shown),
+.dark-theme .ant-input[value]:not([value=""]),
+.dark-theme .ant-input[value],
+.dark-theme input.ant-input[value]:not([value=""]),
+.dark-theme input.ant-input:not(:placeholder-shown) {
+  background: #2f2f2f !important;
+  border: 1px solid #404040 !important;
+  color: #ffffff !important;
+}
+
+/* Стили для заполненных полей внутри affix-wrapper */
+.dark-theme .ant-input-affix-wrapper:has(input:not(:placeholder-shown)),
+.dark-theme .ant-input-affix-wrapper:has(input[value]:not([value=""])) {
+  background: #2f2f2f !important;
+  border: 1px solid #404040 !important;
+}
+
+.dark-theme .ant-input-affix-wrapper:has(input:not(:placeholder-shown)) .ant-input,
+.dark-theme .ant-input-affix-wrapper:has(input[value]:not([value=""])) .ant-input {
+  background: transparent !important;
+  border: none !important;
+  color: #ffffff !important;
 }
 
 .dark-theme .ant-input-password {
-  background: var(--input-bg);
-  border: 1px solid var(--input-border);
-  color: var(--text-color);
+  background: #2f2f2f !important;
+  border: 1px solid #404040 !important;
+  color: #ffffff !important;
 }
 
 .dark-theme .ant-input-password:focus {
-  background: var(--input-bg);
-  border-color: var(--button-bg);
-  color: var(--text-color);
+  background: #2f2f2f !important;
+  border-color: #52c41a !important;
+  color: #ffffff !important;
+}
+
+.dark-theme .ant-input-password:hover {
+  border-color: #404040 !important;
+}
+
+.dark-theme .ant-input-password .ant-input {
+  background: transparent !important;
+  border: none !important;
+  color: #ffffff !important;
+}
+
+.dark-theme .ant-input-password .ant-input::placeholder {
+  color: #bfbfbf !important;
+}
+
+/* Стили для заполненного пароля */
+.dark-theme .ant-input-password:has(input:not(:placeholder-shown)),
+.dark-theme .ant-input-password:has(input[value]:not([value=""])) {
+  background: #2f2f2f !important;
+  border: 1px solid #404040 !important;
+}
+
+.dark-theme .ant-input-password .ant-input:not(:placeholder-shown),
+.dark-theme .ant-input-password .ant-input[value]:not([value=""]),
+.dark-theme .ant-input-password input.ant-input:not(:placeholder-shown),
+.dark-theme .ant-input-password input.ant-input[value]:not([value=""]) {
+  background: transparent !important;
+  border: none !important;
+  color: #ffffff !important;
+}
+
+/* Специфичные стили для SMTP полей */
+.dark-theme input.ant-input[name="smtp_username"],
+.dark-theme input.ant-input[name*="smtp_username"] {
+  background: #2f2f2f !important;
+  border: 1px solid #404040 !important;
+  color: #ffffff !important;
+}
+
+.dark-theme .ant-input-password[name="smtp_password"],
+.dark-theme .ant-input-password[name*="smtp_password"],
+.dark-theme span.ant-input-password {
+  background: #2f2f2f !important;
+  border: 1px solid #404040 !important;
+  color: #ffffff !important;
+}
+
+.dark-theme .ant-input-password[name="smtp_password"] .ant-input,
+.dark-theme .ant-input-password[name*="smtp_password"] .ant-input,
+.dark-theme span.ant-input-password .ant-input {
+  background: transparent !important;
+  border: none !important;
+  color: #ffffff !important;
+}
+
+/* Более общие стили для всех Input внутри dark-theme контейнера */
+.dark-theme .ant-form-item .ant-input,
+.dark-theme .ant-form-item-control-input .ant-input,
+.dark-theme .ant-form-item .ant-input-affix-wrapper,
+.dark-theme .ant-form-item-control-input .ant-input-affix-wrapper {
+  background: #2f2f2f !important;
+  border: 1px solid #404040 !important;
+  color: #ffffff !important;
+}
+
+/* Заполненные поля внутри form-item */
+.dark-theme .ant-form-item input.ant-input:not(:placeholder-shown),
+.dark-theme .ant-form-item input.ant-input[value]:not([value=""]),
+.dark-theme .ant-form-item .ant-input-affix-wrapper:has(input:not(:placeholder-shown)),
+.dark-theme .ant-form-item .ant-input-affix-wrapper:has(input[value]:not([value=""])) {
+  background: #2f2f2f !important;
+  border: 1px solid #404040 !important;
+}
+
+.dark-theme .ant-form-item .ant-input-password,
+.dark-theme .ant-form-item-control-input .ant-input-password,
+.dark-theme .ant-form-item .ant-input-password .ant-input-affix-wrapper,
+.dark-theme .ant-form-item-control-input .ant-input-password .ant-input-affix-wrapper {
+  background: #2f2f2f !important;
+  border: 1px solid #404040 !important;
+  color: #ffffff !important;
+}
+
+/* Заполненные поля пароля */
+.dark-theme .ant-form-item .ant-input-password:has(input:not(:placeholder-shown)),
+.dark-theme .ant-form-item .ant-input-password:has(input[value]:not([value=""])) {
+  background: #2f2f2f !important;
+  border: 1px solid #404040 !important;
+}
+
+.dark-theme .ant-form-item .ant-input-password .ant-input,
+.dark-theme .ant-form-item-control-input .ant-input-password .ant-input,
+.dark-theme .ant-input-affix-wrapper .ant-input {
+  background: transparent !important;
+  border: none !important;
+  color: #ffffff !important;
+}
+
+/* Заполненный текст внутри пароля */
+.dark-theme .ant-form-item .ant-input-password input.ant-input:not(:placeholder-shown),
+.dark-theme .ant-form-item .ant-input-password input.ant-input[value]:not([value=""]) {
+  background: transparent !important;
+  border: none !important;
+  color: #ffffff !important;
+}
+
+/* Универсальные стили для всех input элементов в темной теме (работают независимо от заполненности) */
+.dark-theme input[type="text"],
+.dark-theme input[type="email"],
+.dark-theme input[type="password"],
+.dark-theme input[type="number"],
+.dark-theme input[type="tel"],
+.dark-theme input[type="url"],
+.dark-theme input:not([type]) {
+  background: #2f2f2f !important;
+  border: 1px solid #404040 !important;
+  color: #ffffff !important;
+}
+
+.dark-theme input[type="text"]:focus,
+.dark-theme input[type="email"]:focus,
+.dark-theme input[type="password"]:focus,
+.dark-theme input[type="number"]:focus,
+.dark-theme input[type="tel"]:focus,
+.dark-theme input[type="url"]:focus,
+.dark-theme input:not([type]):focus {
+  background: #2f2f2f !important;
+  border-color: #52c41a !important;
+  color: #ffffff !important;
+}
+
+/* Стили для заполненных значений (универсальные) */
+.dark-theme input[type="text"]:not(:placeholder-shown),
+.dark-theme input[type="email"]:not(:placeholder-shown),
+.dark-theme input[type="password"]:not(:placeholder-shown),
+.dark-theme input[type="number"]:not(:placeholder-shown),
+.dark-theme input[type="tel"]:not(:placeholder-shown),
+.dark-theme input[type="url"]:not(:placeholder-shown),
+.dark-theme input:not([type]):not(:placeholder-shown) {
+  background: #2f2f2f !important;
+  border: 1px solid #404040 !important;
+  color: #ffffff !important;
+}
+
+.dark-theme .ant-input-affix-wrapper {
+  background: #2f2f2f !important;
+  border: 1px solid #404040 !important;
+}
+
+.dark-theme .ant-input-affix-wrapper:hover {
+  border-color: #404040 !important;
+}
+
+.dark-theme .ant-input-affix-wrapper-focused {
+  border-color: #52c41a !important;
+  box-shadow: 0 0 0 2px rgba(82, 196, 26, 0.2) !important;
+}
+
+/* Стили для заполненного affix-wrapper */
+.dark-theme .ant-input-affix-wrapper:has(input:not(:placeholder-shown)),
+.dark-theme .ant-input-affix-wrapper:has(input[value]:not([value=""])) {
+  background: #2f2f2f !important;
+  border: 1px solid #404040 !important;
+}
+
+.dark-theme .ant-input-affix-wrapper:has(input:not(:placeholder-shown)) .ant-input,
+.dark-theme .ant-input-affix-wrapper:has(input[value]:not([value=""])) .ant-input {
+  background: transparent !important;
+  border: none !important;
+  color: #ffffff !important;
 }
 
 .dark-theme .ant-input-password-icon {
@@ -2511,4 +2717,29 @@ body {
 
 .light-theme .ant-tabs-tab-btn:active {
   color: #262626 !important;
+}
+
+/* Tabs Content and Container Styles */
+.dark-theme .ant-tabs-content-holder {
+  background-color: transparent !important;
+}
+
+.dark-theme .ant-tabs-content {
+  background-color: transparent !important;
+}
+
+.dark-theme .ant-tabs-tabpane {
+  background-color: transparent !important;
+}
+
+.dark-theme .ant-tabs-nav {
+  background-color: transparent !important;
+}
+
+.dark-theme .ant-tabs-nav::before {
+  border-bottom-color: #404040 !important;
+}
+
+.dark-theme .ant-tabs-ink-bar {
+  background: #52c41a !important;
 }

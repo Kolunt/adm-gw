@@ -20,6 +20,7 @@ import re
 import random
 from starlette.requests import Request
 from secrets import token_urlsafe, token_hex
+import hashlib
 
 # Database setup
 SQLALCHEMY_DATABASE_URL = "sqlite:///./santa.db"
@@ -63,6 +64,7 @@ class User(Base):
     # Профиль пользователя
     gwars_profile_url = Column(String)  # Ссылка на профиль в gwars.io
     gwars_nickname = Column(String)  # Никнейм из GWars профиля
+    gwars_user_id = Column(Integer, unique=True, index=True, nullable=True)  # ID пользователя из GWars
     gwars_verification_token = Column(String)  # Токен для верификации GWars
     gwars_verified = Column(Boolean, default=False)  # Верифицирован ли GWars профиль
     full_name = Column(String)  # ФИО
@@ -933,9 +935,7 @@ def get_current_admin(current_user: User = Depends(get_current_user)):
 get_current_admin_user = get_current_admin
 
 # API endpoints
-@app.get("/")
-async def root():
-    return {"message": "Анонимный Дед Мороз API"}
+# Главная страница обрабатывается catch-all роутом, если фронтенд развернут
 
 @app.post("/auth/register", response_model=UserResponse)
 async def register_user(user: UserCreate, db: Session = Depends(get_db)):
@@ -2460,6 +2460,133 @@ def verify_dadata_token(token: str) -> dict:
         return {"valid": False, "error": f"Ошибка подключения: {str(e)}"}
     except Exception as e:
         return {"valid": False, "error": f"Неожиданная ошибка: {str(e)}"}
+
+@app.post("/auth/cross-server-login")
+async def cross_server_login(
+    params: dict,
+    db: Session = Depends(get_db)
+):
+    """
+    Кросс-серверный логин через GWars.io
+    
+    Проверяет подписи sign, sign2, sign3, sign4 и авторизует пользователя.
+    Если пользователь не найден - создает нового.
+    """
+    # Пароль для подписи (должен совпадать с настройками на GWars.io)
+    CROSS_SERVER_PASSWORD = "deadmoroz"
+    
+    # Извлекаем параметры
+    sign = params.get("sign")
+    name = params.get("name")
+    user_id = params.get("user_id")  # ID пользователя из GWars
+    level = params.get("level")
+    synd = params.get("synd")
+    sign2 = params.get("sign2")
+    has_passport = params.get("has_passport", "0")
+    has_mobile = params.get("has_mobile", "0")
+    old_passport = params.get("old_passport", "0")
+    sign3 = params.get("sign3")
+    usersex = params.get("usersex")
+    sign4 = params.get("sign4")
+    
+    # Проверяем наличие обязательных параметров
+    if not all([sign, name, user_id, sign2, sign3, sign4]):
+        raise HTTPException(status_code=400, detail="Отсутствуют обязательные параметры")
+    
+    try:
+        # Преобразуем типы
+        user_id_int = int(user_id)
+        level_int = int(level) if level else 0
+        synd_int = int(float(synd)) if synd else 0
+        
+        # Проверка подписи sign (md5(pass + user_name + user_user_id))
+        expected_sign = hashlib.md5(f"{CROSS_SERVER_PASSWORD}{name}{user_id_int}".encode()).hexdigest()
+        if sign != expected_sign:
+            raise HTTPException(status_code=403, detail="Неверная подпись sign")
+        
+        # Проверка подписи sign2 (md5(pass + user_fighter_level + round(user_main_synd) + user_id))
+        expected_sign2 = hashlib.md5(f"{CROSS_SERVER_PASSWORD}{level_int}{synd_int}{user_id_int}".encode()).hexdigest()
+        if sign2 != expected_sign2:
+            raise HTTPException(status_code=403, detail="Неверная подпись sign2")
+        
+        # Проверка подписи sign3 (substr(md5(pass + user_name + user_id + has_passport + has_mobile + old_passport), 0, 10))
+        expected_sign3 = hashlib.md5(f"{CROSS_SERVER_PASSWORD}{name}{user_id_int}{has_passport}{has_mobile}{old_passport}".encode()).hexdigest()[:10]
+        if sign3 != expected_sign3:
+            raise HTTPException(status_code=403, detail="Неверная подпись sign3")
+        
+        # Проверка подписи sign4 (substr(md5(strftime("%Y-%m-%d") + sign3 + pass), 0, 10))
+        from datetime import date
+        today_str = date.today().strftime("%Y-%m-%d")
+        expected_sign4 = hashlib.md5(f"{today_str}{sign3}{CROSS_SERVER_PASSWORD}".encode()).hexdigest()[:10]
+        if sign4 != expected_sign4:
+            raise HTTPException(status_code=403, detail="Неверная подпись sign4 или истек срок действия")
+        
+        # Все подписи верны, ищем или создаем пользователя
+        # Ищем по gwars_user_id
+        db_user = db.query(User).filter(User.gwars_user_id == user_id_int).first()
+        
+        # Если пользователь не найден, создаем нового
+        if not db_user:
+            # Генерируем email на основе gwars_user_id и имени
+            email = f"gwars_{user_id_int}_{name.lower().replace(' ', '_')}@gwars.local"
+            
+            # Проверяем, нет ли пользователя с таким email
+            existing_user = db.query(User).filter(User.email == email).first()
+            if existing_user:
+                # Обновляем существующего пользователя
+                existing_user.gwars_user_id = user_id_int
+                existing_user.gwars_nickname = name
+                existing_user.gwars_verified = True
+                db.commit()
+                db.refresh(existing_user)
+                db_user = existing_user
+            else:
+                # Создаем нового пользователя
+                name_from_email = name.lower().replace(' ', '_')
+                db_user = User(
+                    email=email,
+                    hashed_password=get_password_hash(token_urlsafe(32)),  # Случайный пароль
+                    name=name_from_email,
+                    wishlist="",
+                    role="user",
+                    profile_completed=False,
+                    gwars_profile_url=f"https://www.gwars.io/info.php?id={user_id_int}",
+                    gwars_nickname=name,
+                    gwars_user_id=user_id_int,
+                    gwars_verified=True,
+                    avatar_seed=f"{name_from_email}_{email}_{datetime.utcnow().timestamp()}"
+                )
+                db.add(db_user)
+                db.commit()
+                db.refresh(db_user)
+        else:
+            # Обновляем данные пользователя из GWars
+            db_user.gwars_nickname = name
+            db_user.gwars_verified = True
+            if not db_user.gwars_profile_url:
+                db_user.gwars_profile_url = f"https://www.gwars.io/info.php?id={user_id_int}"
+            db.commit()
+            db.refresh(db_user)
+        
+        # Создаем JWT токен для пользователя
+        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token = create_access_token(
+            data={"sub": db_user.email}, expires_delta=access_token_expires
+        )
+        
+        return {
+            "success": True,
+            "message": "Успешный вход через GWars",
+            "access_token": access_token,
+            "token_type": "bearer"
+        }
+        
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=f"Неверный формат параметров: {str(e)}")
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Ошибка сервера: {str(e)}")
 
 @app.put("/admin/settings/{setting_key}", response_model=SystemSettingResponse)
 async def update_system_setting(
@@ -4087,15 +4214,78 @@ frontend_dirs = [
     "../dist"    # Dist в корне проекта
 ]
 
+frontend_dir = None
 frontend_served = False
-for frontend_dir in frontend_dirs:
-    if os.path.exists(frontend_dir):
-        app.mount("/", StaticFiles(directory=frontend_dir, html=True), name="static")
+for candidate_dir in frontend_dirs:
+    if os.path.exists(candidate_dir):
+        frontend_dir = candidate_dir
         frontend_served = True
         break
 
+# Mount static files (CSS, JS, images)
+if frontend_dir:
+    # Монтируем статические файлы из папки static
+    static_path = os.path.join(frontend_dir, "static")
+    if os.path.exists(static_path):
+        app.mount("/static", StaticFiles(directory=static_path), name="static_files")
+    
+    # Монтируем остальные статические файлы напрямую (favicon.ico, manifest.json, и т.д.)
+    # Но только если они существуют, чтобы не конфликтовать с catch-all роутом
+    @app.get("/favicon.ico")
+    @app.get("/manifest.json")
+    @app.get("/robots.txt")
+    async def serve_static_files(request: Request):
+        """Обработка статических файлов в корне"""
+        file_path = request.url.path.lstrip('/')
+        full_path = os.path.join(frontend_dir, file_path)
+        if os.path.exists(full_path) and os.path.isfile(full_path):
+            from fastapi.responses import FileResponse
+            return FileResponse(full_path)
+        raise HTTPException(status_code=404)
+
 # Mount uploads directory for serving uploaded files
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
+
+# Catch-all роут для SPA (должен быть последним!)
+# Этот роут возвращает index.html для всех путей, которые не являются API endpoints
+if frontend_dir:
+    @app.get("/{full_path:path}")
+    async def serve_frontend(full_path: str, request: Request):
+        """
+        Catch-all роут для SPA - возвращает index.html для всех маршрутов,
+        которые не являются API endpoints или статическими файлами
+        """
+        # Список префиксов, которые обрабатываются API
+        # Важно: проверяем точное совпадение или начало пути
+        api_prefixes = [
+            "api", "auth", "admin", "events", "users", "profile", "uploads", 
+            "docs", "openapi.json", "redoc"
+        ]
+        
+        # Разбиваем путь на части
+        path_parts = full_path.strip('/').split('/')
+        first_part = path_parts[0] if path_parts else ''
+        
+        # Проверяем, не является ли это API запросом
+        # Проверяем первый сегмент пути или полное совпадение
+        if any(first_part == prefix or full_path.startswith(f'/{prefix}/') or full_path == f'/{prefix}' for prefix in api_prefixes):
+            raise HTTPException(status_code=404, detail="Not found")
+        
+        # Проверяем, не является ли это статическим файлом
+        # Если путь содержит точку и не является известным роутом, возможно это файл
+        if '.' in full_path.split('/')[-1] and not full_path.endswith('.html'):
+            file_path = os.path.join(frontend_dir, full_path)
+            if os.path.exists(file_path) and os.path.isfile(file_path):
+                from fastapi.responses import FileResponse
+                return FileResponse(file_path)
+        
+        # Для всех остальных запросов возвращаем index.html (SPA роутинг)
+        index_path = os.path.join(frontend_dir, "index.html")
+        if os.path.exists(index_path):
+            from fastapi.responses import FileResponse
+            return FileResponse(index_path)
+        else:
+            raise HTTPException(status_code=404, detail="Frontend not found. Please build the frontend.")
 
 def generate_unique_verification_token(db: Session, user: User) -> str:
     # Деактивируем прошлые токены пользователя (в одной транзакции)
