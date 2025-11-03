@@ -81,6 +81,8 @@ const AdminSystemSettings = () => {
   const [activeIntegrationTab, setActiveIntegrationTab] = useState(getActiveIntegrationTab());
   const [dadataTokenStatus, setDadataTokenStatus] = useState(null);
   const [dadataTokenLoading, setDadataTokenLoading] = useState(false);
+  const [smtpTestStatus, setSmtpTestStatus] = useState(null);
+  const [smtpTestLoading, setSmtpTestLoading] = useState(false);
 
   // Правка 2: отдельная форма для DaData Tab
   const [dadataForm] = Form.useForm();
@@ -995,63 +997,205 @@ const AdminSystemSettings = () => {
           label="Включить SMTP"
           valuePropName="checked"
         >
-          <Switch />
-                </Form.Item>
+          <Switch 
+            disabled={smtpTestStatus !== 'valid'}
+            onChange={(checked) => {
+              if (checked && smtpTestStatus !== 'valid') {
+                message.warning('Сначала необходимо проверить SMTP настройки');
+                smtpForm.setFieldsValue({ smtp_enabled: false });
+              }
+            }}
+          />
+          {smtpTestStatus !== 'valid' && (
+            <div style={{
+              color: isDark ? '#ff7875' : '#ff4d4f',
+              marginTop: '8px',
+              fontSize: '12px'
+            }}>
+              Для включения необходимо сначала проверить SMTP настройки
+            </div>
+          )}
+        </Form.Item>
 
         <Form.Item
           name="smtp_host"
           label="Адрес SMTP сервера"
+          rules={[
+            { required: true, message: 'Адрес SMTP сервера обязателен' }
+          ]}
         >
           <Input
             style={inputStyle}
             placeholder="smtp.gmail.com"
             prefix={<MailOutlined />}
+            onChange={(e) => {
+              // При изменении хоста сбрасываем статус проверки
+              if (smtpTestStatus === 'valid') {
+                setSmtpTestStatus(null);
+                smtpForm.setFieldsValue({ smtp_enabled: false });
+              }
+            }}
           />
-                </Form.Item>
+        </Form.Item>
 
         <Form.Item
           name="smtp_port"
           label="Порт SMTP сервера"
+          rules={[
+            { required: true, message: 'Порт SMTP сервера обязателен' },
+            { pattern: /^\d+$/, message: 'Порт должен быть числом' },
+            { validator: (_, value) => {
+                if (value && (parseInt(value) < 1 || parseInt(value) > 65535)) {
+                  return Promise.reject(new Error('Порт должен быть от 1 до 65535'));
+                }
+                return Promise.resolve();
+              }
+            }
+          ]}
         >
           <Input
             style={inputStyle}
             placeholder="587"
             prefix={<SettingOutlined />}
+            onChange={(e) => {
+              // При изменении порта сбрасываем статус проверки
+              if (smtpTestStatus === 'valid') {
+                setSmtpTestStatus(null);
+                smtpForm.setFieldsValue({ smtp_enabled: false });
+              }
+            }}
           />
-                </Form.Item>
+        </Form.Item>
 
         <Form.Item
           name="smtp_username"
           label="Имя пользователя SMTP"
+          rules={[
+            { required: true, message: 'Имя пользователя SMTP обязательно' },
+            { type: 'email', message: 'Введите корректный email' }
+          ]}
         >
           <Input
             style={inputStyle}
             placeholder="your-email@gmail.com"
             prefix={<UserOutlined />}
+            onChange={(e) => {
+              // При изменении имени пользователя сбрасываем статус проверки
+              if (smtpTestStatus === 'valid') {
+                setSmtpTestStatus(null);
+                smtpForm.setFieldsValue({ smtp_enabled: false });
+              }
+            }}
           />
-                </Form.Item>
+        </Form.Item>
 
         <Form.Item
           name="smtp_password"
           label="Пароль SMTP"
+          rules={[
+            { required: true, message: 'Пароль SMTP обязателен' }
+          ]}
         >
           <Input.Password
             style={inputStyle}
             placeholder="Введите пароль"
             prefix={<SettingOutlined />}
+            onChange={(e) => {
+              // При изменении пароля сбрасываем статус проверки
+              if (smtpTestStatus === 'valid') {
+                setSmtpTestStatus(null);
+                smtpForm.setFieldsValue({ smtp_enabled: false });
+              }
+            }}
+            addonAfter={
+              <Button 
+                size="small" 
+                loading={smtpTestLoading} 
+                onClick={async () => {
+                  setSmtpTestStatus(null);
+                  setSmtpTestLoading(true);
+                  try {
+                    const formValues = smtpForm.getFieldsValue();
+                    const smtpData = {
+                      smtp_host: formValues.smtp_host || '',
+                      smtp_port: formValues.smtp_port || '',
+                      smtp_username: formValues.smtp_username || '',
+                      smtp_password: formValues.smtp_password || '',
+                      smtp_use_tls: formValues.smtp_use_tls || false,
+                      smtp_from_email: formValues.smtp_from_email || ''
+                    };
+                    
+                    // Проверяем, что все обязательные поля заполнены
+                    if (!smtpData.smtp_host || !smtpData.smtp_port || !smtpData.smtp_username || 
+                        !smtpData.smtp_password || !smtpData.smtp_from_email) {
+                      message.error('Заполните все обязательные поля перед проверкой');
+                      setSmtpTestLoading(false);
+                      return;
+                    }
+                    
+                    const response = await axios.post('/admin/verify-smtp', smtpData);
+                    
+                    if (response.data.valid) {
+                      setSmtpTestStatus('valid');
+                      message.success('SMTP настройки проверены успешно! Теперь можно включить SMTP.');
+                    } else {
+                      setSmtpTestStatus('error');
+                      message.error(response.data.error || 'Ошибка проверки SMTP');
+                      smtpForm.setFieldsValue({ smtp_enabled: false });
+                    }
+                  } catch (error) {
+                    setSmtpTestStatus('error');
+                    const errorMsg = error.response?.data?.error || error.response?.data?.detail || 'Ошибка проверки SMTP';
+                    message.error(errorMsg);
+                    smtpForm.setFieldsValue({ smtp_enabled: false });
+                  } finally {
+                    setSmtpTestLoading(false);
+                  }
+                }} 
+                type={isDark ? 'ghost' : 'default'} 
+                style={{
+                  backgroundColor: isDark ? '#232a3c' : undefined, 
+                  color: isDark ? '#fff' : undefined, 
+                  border: isDark ? '1px solid #404040' : undefined
+                }}
+              >
+                Проверить SMTP
+              </Button>
+            }
           />
-                </Form.Item>
+          {smtpTestStatus === 'valid' && (
+            <div style={{ color: '#52c41a', marginTop: '8px', fontSize: '12px' }}>
+              ✓ SMTP настройки проверены успешно
+            </div>
+          )}
+          {smtpTestStatus === 'error' && (
+            <div style={{ color: '#ff4d4f', marginTop: '8px', fontSize: '12px' }}>
+              ✗ Ошибка проверки SMTP
+            </div>
+          )}
+        </Form.Item>
 
         <Form.Item
           name="smtp_from_email"
           label="Email отправителя"
+          rules={[
+            { required: true, message: 'Email отправителя обязателен' },
+            { type: 'email', message: 'Введите корректный email' }
+          ]}
         >
           <Input
             style={inputStyle}
             placeholder="noreply@example.com"
             prefix={<MailOutlined />}
+            onChange={(e) => {
+              // При изменении email отправителя сбрасываем статус проверки
+              if (smtpTestStatus === 'valid') {
+                setSmtpTestStatus(null);
+                smtpForm.setFieldsValue({ smtp_enabled: false });
+              }
+            }}
           />
-                </Form.Item>
+        </Form.Item>
 
         <Form.Item
           name="smtp_from_name"

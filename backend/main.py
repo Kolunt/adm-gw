@@ -2536,6 +2536,91 @@ async def verify_dadata_token_endpoint(
             "error": token_check["error"]
         }
 
+# API endpoint для проверки SMTP подключения
+@app.post("/admin/verify-smtp")
+async def verify_smtp_endpoint(
+    request_data: dict,
+    current_admin: User = Depends(get_current_admin)
+):
+    """Проверка SMTP подключения (только для администраторов)"""
+    import smtplib
+    from email.mime.text import MIMEText
+    
+    smtp_host = request_data.get("smtp_host", "").strip()
+    smtp_port = request_data.get("smtp_port", "").strip()
+    smtp_username = request_data.get("smtp_username", "").strip()
+    smtp_password = request_data.get("smtp_password", "").strip()
+    smtp_use_tls = request_data.get("smtp_use_tls", False)
+    smtp_from_email = request_data.get("smtp_from_email", "").strip()
+    
+    # Валидация обязательных полей
+    if not smtp_host:
+        return {"valid": False, "error": "Адрес SMTP сервера обязателен"}
+    if not smtp_port:
+        return {"valid": False, "error": "Порт SMTP сервера обязателен"}
+    if not smtp_username:
+        return {"valid": False, "error": "Имя пользователя SMTP обязательно"}
+    if not smtp_password:
+        return {"valid": False, "error": "Пароль SMTP обязателен"}
+    if not smtp_from_email:
+        return {"valid": False, "error": "Email отправителя обязателен"}
+    
+    try:
+        # Преобразуем порт в число
+        port = int(smtp_port)
+        if port < 1 or port > 65535:
+            return {"valid": False, "error": "Порт должен быть числом от 1 до 65535"}
+    except ValueError:
+        return {"valid": False, "error": "Порт должен быть числом"}
+    
+    # Проверяем формат email
+    email_pattern = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+    if not email_pattern.match(smtp_username):
+        return {"valid": False, "error": "Некорректный формат email для имени пользователя"}
+    if not email_pattern.match(smtp_from_email):
+        return {"valid": False, "error": "Некорректный формат email отправителя"}
+    
+    # Пытаемся подключиться к SMTP серверу
+    try:
+        if smtp_use_tls:
+            # Для TLS используем SMTP с явным STARTTLS
+            server = smtplib.SMTP(smtp_host, port, timeout=10)
+            server.starttls()
+        else:
+            # Для SSL используем SMTP_SSL
+            server = smtplib.SMTP_SSL(smtp_host, port, timeout=10)
+        
+        # Пытаемся авторизоваться
+        server.login(smtp_username, smtp_password)
+        
+        # Закрываем соединение
+        server.quit()
+        
+        return {
+            "valid": True,
+            "message": "SMTP подключение успешно проверено"
+        }
+    except smtplib.SMTPAuthenticationError:
+        return {
+            "valid": False,
+            "error": "Ошибка аутентификации: неверный логин или пароль"
+        }
+    except smtplib.SMTPConnectError as e:
+        return {
+            "valid": False,
+            "error": f"Не удалось подключиться к SMTP серверу: {str(e)}"
+        }
+    except smtplib.SMTPException as e:
+        return {
+            "valid": False,
+            "error": f"Ошибка SMTP: {str(e)}"
+        }
+    except Exception as e:
+        return {
+            "valid": False,
+            "error": f"Ошибка подключения: {str(e)}"
+        }
+
 # API endpoints для управления интересами (только для администраторов)
 @app.get("/admin/interests", response_model=list[InterestResponse])
 async def get_interests(
