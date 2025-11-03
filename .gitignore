@@ -84,6 +84,8 @@ src_old_backup/
 test_*.py
 check_*.py
 create_*.py
+!backend/create_tables.py
+!backend/create_current_event.py
 copy_*.py
 debug_*.py
 add_*.py
