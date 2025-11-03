@@ -63,15 +63,53 @@ python3.10 -c "from main import app; print('OK')"
 
 Если есть ошибки импорта, они будут видны здесь.
 
-### Шаг 6: Проверка WSGI конфигурации
+### Шаг 6: Проверка WSGI конфигурации (КРИТИЧНО!)
 
-1. Откройте **Web** → **WSGI configuration file**
-2. Убедитесь, что путь правильный:
+**Ошибка `ModuleNotFoundError: No module named 'main'` почти всегда связана с неправильным username в WSGI файле!**
+
+1. **Узнайте ваш username:**
+   ```bash
+   echo $USER
+   # или
+   whoami
+   ```
+
+2. **Откройте Web → WSGI configuration file**
+
+3. **Убедитесь, что путь правильный:**
    ```python
-   path = '/home/gwadm/gwadm/backend'
+   username = 'gwadm'  # ← Должен совпадать с выводом echo $USER
+   project_path = f'/home/{username}/gwadm/backend'
    ```
    
-   **ВАЖНО:** Замените `gwadm` на ваш реальный username, если он отличается!
+   **ВАЖНО:** Если ваш username не `gwadm`, обязательно замените его в WSGI файле!
+
+4. **Проверьте структуру:**
+   ```bash
+   cd ~/gwadm/backend
+   pwd                    # Должен быть /home/ВАШ_USERNAME/gwadm/backend
+   ls main.py             # Файл должен существовать
+   ```
+
+5. **Правильный WSGI файл:**
+   ```python
+   import sys
+   import os
+   
+   # Узнайте username командой: echo $USER
+   username = 'gwadm'  # ← ЗАМЕНИТЕ НА ВАШ USERNAME!
+   
+   project_path = f'/home/{username}/gwadm/backend'
+   if project_path not in sys.path:
+       sys.path.insert(0, project_path)
+   
+   os.chdir(project_path)
+   
+   from main import app
+   application = app
+   ```
+
+Подробная инструкция: см. `docs/WSGI_CONFIGURATION.md`
 
 ### Шаг 7: Проверка путей к базе данных
 
