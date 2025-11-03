@@ -31,7 +31,7 @@ echo ""
 # Переходим в папку проекта
 cd ~/gwadm
 
-# Обновляем код из Git
+# Обновляем код из Git (включая frontend build)
 echo "1. Обновление кода из Git..."
 git pull origin master
 
@@ -43,9 +43,20 @@ else
     exit 1
 fi
 
+# Проверяем наличие build папки
+if [ ! -d "build" ]; then
+    echo ""
+    echo "⚠️  Папка build не найдена!"
+    echo "   Вы можете собрать фронтенд здесь или загрузить через Git"
+    echo "   Для сборки: npm install && npm run build"
+else
+    echo ""
+    echo "✅ Frontend build найден"
+fi
+
 # Устанавливаем/обновляем зависимости
 echo ""
-echo "2. Проверка зависимостей..."
+echo "2. Проверка зависимостей backend..."
 cd ~/gwadm/backend
 pip3.10 install --user -r requirements.txt --quiet
 
@@ -75,6 +86,8 @@ chmod +x ~/deploy.sh
 
 И затем нажать **Reload** в панели Web на PythonAnywhere.
 
+**Примечание:** Скрипт автоматически обновит как backend, так и frontend (если build находится в репозитории).
+
 ---
 
 ### Вариант 2: Scheduled Task (Автоматическое обновление)
@@ -92,7 +105,18 @@ nano auto_update.sh
 #!/bin/bash
 cd ~/gwadm
 git pull origin master > /dev/null 2>&1
-# Автоматический перезапуск через API (если доступен)
+
+# Если есть новые зависимости
+cd ~/gwadm/backend
+pip3.10 install --user -r requirements.txt --quiet > /dev/null 2>&1
+
+# Логирование (опционально)
+echo "$(date): Auto-update completed" >> ~/deploy.log
+```
+
+Сделайте скрипт исполняемым:
+```bash
+chmod +x ~/auto_update.sh
 ```
 
 #### 2. Настройте Scheduled Task
