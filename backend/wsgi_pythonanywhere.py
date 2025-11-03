@@ -93,6 +93,8 @@ try:
         import asyncio
         from io import BytesIO
         
+        try:
+        
         # Преобразуем WSGI environ в ASGI scope
         method = environ['REQUEST_METHOD']
         path = environ.get('PATH_INFO', '/')
@@ -160,6 +162,20 @@ try:
         asyncio.set_event_loop(loop)
         try:
             loop.run_until_complete(app(scope, receive, send))
+        except Exception as e:
+            # Логируем ошибку для диагностики
+            import traceback
+            error_msg = f"Error in ASGI app: {str(e)}\n{traceback.format_exc()}"
+            print(f"WSGI ERROR: {error_msg}")
+            
+            # Возвращаем ошибку 500
+            response_status = 500
+            response_headers = [('Content-Type', 'text/html; charset=utf-8')]
+            error_html = f"""<html><body><h1>500 Internal Server Error</h1>
+            <p>An error occurred while processing your request.</p>
+            <pre>{error_msg}</pre>
+            </body></html>"""
+            response_body_parts = [error_html.encode('utf-8')]
         finally:
             loop.close()
         
@@ -173,6 +189,20 @@ try:
         start_response(status_text, response_headers)
         
         return response_body_parts
+        
+        except Exception as e:
+            # Обработка критических ошибок в WSGI адаптере
+            import traceback
+            error_msg = f"Critical WSGI adapter error: {str(e)}\n{traceback.format_exc()}"
+            print(f"CRITICAL WSGI ERROR: {error_msg}")
+            
+            # Возвращаем минимальный ответ об ошибке
+            try:
+                start_response('500 Internal Server Error', [('Content-Type', 'text/plain')])
+            except:
+                pass  # Если start_response уже был вызван
+            
+            return [f"Internal Server Error: {str(e)}".encode('utf-8')]
     
     def _get_status_text(status_code):
         """Получаем текст статуса по коду"""
