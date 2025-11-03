@@ -167,7 +167,6 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",
         "http://127.0.0.1:3000",
-        "https://kolunt.github.io",  # GitHub Pages
         "https://yourusername.pythonanywhere.com",  # Ваш PythonAnywhere домен
     ],
     allow_credentials=True,
@@ -391,31 +390,11 @@ SQLite на PythonAnywhere может иметь проблемы с парал�
 - ⚠️ Лимит на внешние HTTP запросы
 - ⚠️ SQLite только (для MySQL/PostgreSQL нужен платный план)
 
-## 🔗 Интеграция с GitHub Pages Frontend
+## 🔗 Настройка API URL для Frontend
 
-После деплоя backend на PythonAnywhere:
+После деплоя backend на PythonAnywhere фронтенд будет работать на том же домене, поэтому настройка API URL обычно не требуется. Backend автоматически раздает фронтенд через FastAPI.
 
-1. Обновите `src/utils/axiosConfig.js`:
-```javascript
-axios.defaults.baseURL = process.env.NODE_ENV === 'production' 
-  ? 'https://yourusername.pythonanywhere.com' 
-  : 'http://localhost:8006';
-```
-
-2. Добавьте переменную окружения для production:
-```javascript
-// Используйте переменную окружения или проверку домена
-const getApiUrl = () => {
-  if (window.location.hostname === 'kolunt.github.io') {
-    return 'https://yourusername.pythonanywhere.com';
-  }
-  return 'http://localhost:8006';
-};
-
-axios.defaults.baseURL = getApiUrl();
-```
-
-3. Пересоберите и задеплойте frontend на GitHub Pages
+Если вы используете отдельный домен для фронтенда, обновите настройки CORS в `backend/main.py`.
 
 ## ✅ Чеклист деплоя
 
@@ -436,8 +415,8 @@ axios.defaults.baseURL = getApiUrl();
 
 ## 🎉 Готово!
 
-После выполнения всех шагов ваш backend будет работать на:
+После выполнения всех шагов ваше приложение будет работать на:
 **https://yourusername.pythonanywhere.com**
 
-Frontend на GitHub Pages будет обращаться к этому backend автоматически.
+Frontend и backend работают на одном домене через FastAPI.
 

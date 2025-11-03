@@ -11,7 +11,6 @@
 ### Организация документации:
 - Создана папка `docs/` для документации по деплою
 - Перемещены файлы:
-  - `GITHUB_PAGES_SETUP.md` → `docs/GITHUB_PAGES_SETUP.md`
   - `PYTHONANYWHERE_DEPLOYMENT.md` → `docs/PYTHONANYWHERE_DEPLOYMENT.md`
   - `PYTHONANYWHERE_QUICK_START.md` → `docs/PYTHONANYWHERE_QUICK_START.md`
 

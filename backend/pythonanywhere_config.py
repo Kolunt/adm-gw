@@ -31,7 +31,6 @@ else:
 PYTHONANYWHERE_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    "https://kolunt.github.io",  # GitHub Pages frontend
 ]
 
 # Добавляем домен PythonAnywhere если известен

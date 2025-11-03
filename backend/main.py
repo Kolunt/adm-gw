@@ -796,11 +796,11 @@ class GiftAssignmentApproval(BaseModel):
 # FastAPI app
 app = FastAPI(title="Анонимный Дед Мороз", version="0.1.24")
 
-# CORS middleware - Поддержка PythonAnywhere и GitHub Pages
+# CORS middleware - Поддержка PythonAnywhere
 # Получаем список разрешенных origins из переменной окружения или используем дефолтные
 allowed_origins = os.getenv(
     "CORS_ORIGINS", 
-    "http://localhost:3000,http://127.0.0.1:3000,https://kolunt.github.io"
+    "http://localhost:3000,http://127.0.0.1:3000"
 ).split(",")
 # Убираем пробелы и пустые строки
 allowed_origins = [origin.strip() for origin in allowed_origins if origin.strip()]
