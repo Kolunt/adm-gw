@@ -89,23 +89,43 @@ python3.10 create_current_event.py
 
 ### 7. Настройка WSGI
 
+**🔴 ВАЖНО:** Сначала узнайте ваш username на PythonAnywhere:
+
+```bash
+echo $USER
+```
+
 В разделе **Web** → **WSGI configuration file** замените содержимое:
 
 ```python
 import sys
 import os
 
-path = '/home/ВАШ_USERNAME/gwadm/backend'
-if path not in sys.path:
-    sys.path.insert(0, path)
+# ВАЖНО: Замените 'gwadm' на ваш username!
+username = 'gwadm'  # ← ЗАМЕНИТЕ НА ВАШ USERNAME из команды echo $USER
 
-os.chdir(path)
+# Путь к проекту
+project_path = f'/home/{username}/gwadm/backend'
 
+# Добавляем путь в sys.path
+if project_path not in sys.path:
+    sys.path.insert(0, project_path)
+
+# Меняем рабочую директорию
+os.chdir(project_path)
+
+# Импортируем приложение
 from main import app
+
+# Переменная application обязательна для PythonAnywhere
 application = app
 ```
 
-**⚠️ Замените `ВАШ_USERNAME` на ваш username!**
+**⚠️ ОБЯЗАТЕЛЬНО замените `gwadm` на ваш реальный username!**
+
+Если username не совпадает, будет ошибка: `ModuleNotFoundError: No module named 'main'`
+
+Подробная инструкция по отладке: см. `docs/WSGI_CONFIGURATION.md`
 
 ### 8. Настройка Static Files (опционально)
 
