@@ -26,9 +26,13 @@ pip3.10 install --user -r requirements.txt
 
 ### 4. Сборка Frontend
 
-**Рекомендуется: сборка через Git**
+**✅ Build уже включен в репозиторий!**
 
-На вашем компьютере (локально):
+Папка `build/` уже находится в Git репозитории, поэтому при клонировании она будет автоматически скачана.
+
+Если нужно обновить build после изменений во фронтенде:
+
+**На вашем компьютере (локально):**
 ```bash
 cd C:\Users\TBG\Documents\adm-gw  # или путь к проекту
 npm install
@@ -38,13 +42,13 @@ git commit -m "Update production build"
 git push origin master
 ```
 
-На PythonAnywhere:
+**На PythonAnywhere:**
 ```bash
 cd ~/gwadm
 git pull origin master
 ```
 
-**Альтернативный вариант: сборка на PythonAnywhere**
+**Альтернативный вариант: сборка на PythonAnywhere** (если build отсутствует)
 
 Если у вас платный план PythonAnywhere или установлен Node.js:
 

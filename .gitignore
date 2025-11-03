@@ -12,7 +12,7 @@ env.bak/
 venv.bak/
 
 # Production builds
-build/
+# build/ - Закомментировано, так как build должен быть в репозитории для PythonAnywhere
 dist/
 
 # Installers
