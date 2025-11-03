@@ -86,27 +86,123 @@ try:
     
     # FastAPI - это ASGI приложение, а PythonAnywhere использует WSGI
     # Нужен адаптер ASGI-to-WSGI
-    # Mangum - лучший вариант для FastAPI на WSGI серверах
-    try:
-        from mangum import Mangum
-        application = Mangum(app, lifespan="off")
-        print("✅ Using Mangum ASGI-to-WSGI adapter")
-    except ImportError:
-        print("❌ Mangum not found")
-        print("\nSOLUTION: Install Mangum:")
-        print("  pip3.10 install --user mangum")
-        print("\nThen reload the WSGI configuration.")
-        raise ImportError("Mangum is required for FastAPI on WSGI. Install: pip3.10 install --user mangum")
+    print("⚠️ Creating custom WSGI adapter for ASGI application")
     
+    def wsgi_app(environ, start_response):
+        """WSGI обертка для ASGI приложения (FastAPI)"""
+        import asyncio
+        from io import BytesIO
+        
+        # Преобразуем WSGI environ в ASGI scope
+        method = environ['REQUEST_METHOD']
+        path = environ.get('PATH_INFO', '/')
+        raw_path = path.encode('utf-8')
+        query_string = environ.get('QUERY_STRING', '').encode('utf-8')
+        
+        # Парсим headers
+        headers = []
+        for key, value in environ.items():
+            if key.startswith('HTTP_'):
+                header_name = key[5:].replace('_', '-').lower()
+                headers.append((header_name.encode('utf-8'), str(value).encode('utf-8')))
+            elif key == 'CONTENT_TYPE' and value:
+                headers.append((b'content-type', str(value).encode('utf-8')))
+            elif key == 'CONTENT_LENGTH' and value:
+                headers.append((b'content-length', str(value).encode('utf-8')))
+        
+        scope = {
+            'type': 'http',
+            'method': method,
+            'path': path,
+            'raw_path': raw_path,
+            'query_string': query_string,
+            'headers': headers,
+            'client': (environ.get('REMOTE_ADDR', ''), int(environ.get('REMOTE_PORT', 0) or 0)),
+            'server': (environ.get('SERVER_NAME', ''), int(environ.get('SERVER_PORT', 80) or 80)),
+            'scheme': environ.get('wsgi.url_scheme', 'http'),
+            'root_path': environ.get('SCRIPT_NAME', ''),
+            'path_info': path,
+            'http_version': '1.1',
+        }
+        
+        # Состояние ответа
+        response_status = None
+        response_headers = []
+        response_body_parts = []
+        
+        async def receive():
+            """Получаем тело запроса"""
+            wsgi_input = environ.get('wsgi.input', BytesIO())
+            content_length = int(environ.get('CONTENT_LENGTH', 0) or 0)
+            if content_length > 0:
+                body = wsgi_input.read(content_length)
+            else:
+                body = b''
+            return {'type': 'http.request', 'body': body, 'more_body': False}
+        
+        async def send(message):
+            """Получаем ответ от ASGI приложения"""
+            nonlocal response_status, response_headers, response_body_parts
+            if message['type'] == 'http.response.start':
+                response_status = message['status']
+                response_headers = [
+                    (k.decode('utf-8') if isinstance(k, bytes) else str(k),
+                     v.decode('utf-8') if isinstance(v, bytes) else str(v))
+                    for k, v in message.get('headers', [])
+                ]
+            elif message['type'] == 'http.response.body':
+                body_chunk = message.get('body', b'')
+                if body_chunk:
+                    response_body_parts.append(body_chunk)
+        
+        # Запускаем ASGI приложение
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            loop.run_until_complete(app(scope, receive, send))
+        finally:
+            loop.close()
+        
+        # Формируем WSGI ответ
+        if response_status is None:
+            response_status = 500
+            response_headers = [('Content-Type', 'text/plain')]
+            response_body_parts = [b'Internal Server Error']
+        
+        status_text = f"{response_status} {_get_status_text(response_status)}"
+        start_response(status_text, response_headers)
+        
+        return response_body_parts
+    
+    def _get_status_text(status_code):
+        """Получаем текст статуса по коду"""
+        status_texts = {
+            200: 'OK',
+            201: 'Created',
+            204: 'No Content',
+            301: 'Moved Permanently',
+            302: 'Found',
+            304: 'Not Modified',
+            400: 'Bad Request',
+            401: 'Unauthorized',
+            403: 'Forbidden',
+            404: 'Not Found',
+            500: 'Internal Server Error',
+            502: 'Bad Gateway',
+            503: 'Service Unavailable',
+        }
+        return status_texts.get(status_code, 'Unknown')
+    
+    application = wsgi_app
+    print("✅ Using custom WSGI adapter for ASGI")
     print("✅ Successfully imported app")
     print("✅ WSGI application configured successfully")
 except ImportError as e:
     print(f"❌ Import error: {e}")
     print("\nTroubleshooting:")
     print("1. Check main.py syntax: python3.10 -m py_compile main.py")
-    print("2. Install asgiref: pip3.10 install --user asgiref")
-    print("3. Check dependencies: pip3.10 list | grep fastapi")
-    print("4. Check error log for detailed traceback")
+    print("2. Check dependencies: pip3.10 list | grep fastapi")
+    print("3. Check error log for detailed traceback")
     raise
 except Exception as e:
     print(f"❌ Other error: {e}")
