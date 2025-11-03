@@ -4317,6 +4317,36 @@ if frontend_dir:
 # Mount uploads directory for serving uploaded files
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
+# Явный корневой роут для GET "/"
+@app.get("/")
+async def root():
+    """Главная страница - возвращает index.html если фронтенд собран"""
+    if frontend_dir:
+        index_path = os.path.join(frontend_dir, "index.html")
+        if os.path.exists(index_path):
+            from fastapi.responses import FileResponse
+            return FileResponse(index_path)
+        else:
+            return JSONResponse(
+                status_code=500,
+                content={
+                    "error": "Frontend index.html not found",
+                    "message": f"index.html not found in {frontend_dir}",
+                    "build_dir": frontend_dir,
+                    "build_dir_exists": os.path.exists(frontend_dir)
+                }
+            )
+    else:
+        return JSONResponse(
+            status_code=500,
+            content={
+                "error": "Frontend not built",
+                "message": "Frontend build directory not found. Please build the frontend: npm run build",
+                "searched_paths": [os.path.abspath(d) for d in frontend_dirs],
+                "current_directory": os.getcwd()
+            }
+        )
+
 # Catch-all роут для SPA (должен быть последним!)
 # Этот роут возвращает index.html для всех путей, которые не являются API endpoints
 if frontend_dir:
