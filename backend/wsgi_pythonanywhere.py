@@ -94,8 +94,7 @@ try:
         from io import BytesIO
         
         try:
-        
-        # Преобразуем WSGI environ в ASGI scope
+            # Преобразуем WSGI environ в ASGI scope
         method = environ['REQUEST_METHOD']
         path = environ.get('PATH_INFO', '/')
         raw_path = path.encode('utf-8')
