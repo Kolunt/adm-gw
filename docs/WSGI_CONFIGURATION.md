@@ -14,35 +14,53 @@
 
 ### Шаг 2: Замените содержимое
 
-**ВАЖНО:** Замените `gwadm` на ваш реальный username на PythonAnywhere!
+**Вариант A: С автоматическим определением username (рекомендуется)**
+
+```python
+import sys
+import os
+
+# Автоматическое определение username (не требует ручной замены)
+username = os.environ.get('USER', os.path.expanduser('~').split('/')[-1])
+home_dir = os.path.expanduser('~')
+
+# Путь к проекту
+project_path = os.path.join(home_dir, 'gwadm', 'backend')
+
+# Добавляем путь в sys.path
+if project_path not in sys.path:
+    sys.path.insert(0, project_path)
+
+# Меняем рабочую директорию
+os.chdir(project_path)
+
+# Импортируем приложение
+from main import app
+
+# Переменная application обязательна для PythonAnywhere
+application = app
+```
+
+**Вариант B: С явным указанием username**
+
+Если вариант A не работает, используйте этот (замените username):
 
 ```python
 import sys
 import os
 
 # ВАЖНО: Замените 'gwadm' на ваш username!
-# Проверить username можно командой: echo $USER
+# Проверить username: echo $USER
 username = 'gwadm'  # ← ЗАМЕНИТЕ НА ВАШ USERNAME!
 
-# Путь к проекту
 project_path = f'/home/{username}/gwadm/backend'
 
-# Добавляем путь в sys.path
 if project_path not in sys.path:
     sys.path.insert(0, project_path)
 
-# Меняем рабочую директорию на backend
 os.chdir(project_path)
 
-# Проверка (для отладки - можно удалить после успешного запуска)
-print(f"Current directory: {os.getcwd()}")
-print(f"Python path: {sys.path}")
-print(f"main.py exists: {os.path.exists('main.py')}")
-
-# Импортируем приложение
 from main import app
-
-# Переменная application обязательна для PythonAnywhere
 application = app
 ```
 
@@ -73,24 +91,44 @@ pwd             # Должен показать /home/ВАШ_USERNAME/gwadm/back
 2. Нажмите **Reload** в разделе Web
 3. Проверьте **Error log** на наличие новых ошибок
 
-## 🐛 Отладка
+## 🐛 Отладка с помощью диагностического WSGI файла
 
-Если ошибка сохраняется, добавьте в начало WSGI файла:
+Если ошибка сохраняется, используйте версию WSGI с диагностикой:
+
+1. Скопируйте содержимое файла `backend/wsgi_debug.py` в WSGI конфигурацию
+2. Или используйте этот вариант с автоматическим определением username:
 
 ```python
 import sys
 import os
 
-# Печать информации для отладки
-print("=" * 50)
-print(f"Python version: {sys.version}")
-print(f"Current working directory: {os.getcwd()}")
-print(f"USER environment: {os.environ.get('USER', 'NOT SET')}")
-print(f"Home directory: {os.path.expanduser('~')}")
-print("=" * 50)
+# Автоматическое определение username
+username = os.environ.get('USER', os.path.expanduser('~').split('/')[-1])
+home_dir = os.path.expanduser('~')
+
+# Диагностика (можно удалить после успешного запуска)
+print(f"USER: {username}")
+print(f"Home: {home_dir}")
+print(f"Current dir: {os.getcwd()}")
+
+# Путь к проекту с автоматическим определением username
+project_path = os.path.join(home_dir, 'gwadm', 'backend')
+
+print(f"Project path: {project_path}")
+print(f"Exists: {os.path.exists(project_path)}")
+print(f"main.py exists: {os.path.exists(os.path.join(project_path, 'main.py'))}")
+
+# Добавляем путь
+if project_path not in sys.path:
+    sys.path.insert(0, project_path)
+
+os.chdir(project_path)
+
+from main import app
+application = app
 ```
 
-Затем проверьте **Server log** в разделе Web - там будет видна эта информация.
+Проверьте **Server log** в разделе Web - там будет видна диагностическая информация.
 
 ## ✅ Проверка правильности пути
 
