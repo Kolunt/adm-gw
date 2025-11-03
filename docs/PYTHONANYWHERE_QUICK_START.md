@@ -97,15 +97,18 @@ echo $USER
 
 В разделе **Web** → **WSGI configuration file** замените содержимое:
 
+**Вариант 1: С автоматическим определением username (рекомендуется):**
+
 ```python
 import sys
 import os
 
-# ВАЖНО: Замените 'gwadm' на ваш username!
-username = 'gwadm'  # ← ЗАМЕНИТЕ НА ВАШ USERNAME из команды echo $USER
+# Автоматическое определение username (не требует ручной замены)
+username = os.environ.get('USER', os.path.expanduser('~').split('/')[-1])
+home_dir = os.path.expanduser('~')
 
 # Путь к проекту
-project_path = f'/home/{username}/gwadm/backend'
+project_path = os.path.join(home_dir, 'gwadm', 'backend')
 
 # Добавляем путь в sys.path
 if project_path not in sys.path:
@@ -121,11 +124,27 @@ from main import app
 application = app
 ```
 
-**⚠️ ОБЯЗАТЕЛЬНО замените `gwadm` на ваш реальный username!**
+**Вариант 2: Если вариант 1 не работает (с явным username):**
 
-Если username не совпадает, будет ошибка: `ModuleNotFoundError: No module named 'main'`
+```python
+import sys
+import os
 
-Подробная инструкция по отладке: см. `docs/WSGI_CONFIGURATION.md`
+# Сначала узнайте username: echo $USER
+username = 'gwadm'  # ← ЗАМЕНИТЕ НА ВАШ USERNAME!
+
+project_path = f'/home/{username}/gwadm/backend'
+
+if project_path not in sys.path:
+    sys.path.insert(0, project_path)
+
+os.chdir(project_path)
+
+from main import app
+application = app
+```
+
+**Примечание:** Если получаете ошибку `ModuleNotFoundError: No module named 'main'`, используйте диагностический файл `backend/wsgi_debug.py` - см. `docs/WSGI_CONFIGURATION.md`
 
 ### 8. Настройка Static Files (опционально)
 
