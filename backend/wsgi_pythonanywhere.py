@@ -95,100 +95,100 @@ try:
         
         try:
             # Преобразуем WSGI environ в ASGI scope
-        method = environ['REQUEST_METHOD']
-        path = environ.get('PATH_INFO', '/')
-        raw_path = path.encode('utf-8')
-        query_string = environ.get('QUERY_STRING', '').encode('utf-8')
-        
-        # Парсим headers
-        headers = []
-        for key, value in environ.items():
-            if key.startswith('HTTP_'):
-                header_name = key[5:].replace('_', '-').lower()
-                headers.append((header_name.encode('utf-8'), str(value).encode('utf-8')))
-            elif key == 'CONTENT_TYPE' and value:
-                headers.append((b'content-type', str(value).encode('utf-8')))
-            elif key == 'CONTENT_LENGTH' and value:
-                headers.append((b'content-length', str(value).encode('utf-8')))
-        
-        scope = {
-            'type': 'http',
-            'method': method,
-            'path': path,
-            'raw_path': raw_path,
-            'query_string': query_string,
-            'headers': headers,
-            'client': (environ.get('REMOTE_ADDR', ''), int(environ.get('REMOTE_PORT', 0) or 0)),
-            'server': (environ.get('SERVER_NAME', ''), int(environ.get('SERVER_PORT', 80) or 80)),
-            'scheme': environ.get('wsgi.url_scheme', 'http'),
-            'root_path': environ.get('SCRIPT_NAME', ''),
-            'path_info': path,
-            'http_version': '1.1',
-        }
-        
-        # Состояние ответа
-        response_status = None
-        response_headers = []
-        response_body_parts = []
-        
-        async def receive():
-            """Получаем тело запроса"""
-            wsgi_input = environ.get('wsgi.input', BytesIO())
-            content_length = int(environ.get('CONTENT_LENGTH', 0) or 0)
-            if content_length > 0:
-                body = wsgi_input.read(content_length)
-            else:
-                body = b''
-            return {'type': 'http.request', 'body': body, 'more_body': False}
-        
-        async def send(message):
-            """Получаем ответ от ASGI приложения"""
-            nonlocal response_status, response_headers, response_body_parts
-            if message['type'] == 'http.response.start':
-                response_status = message['status']
-                response_headers = [
-                    (k.decode('utf-8') if isinstance(k, bytes) else str(k),
-                     v.decode('utf-8') if isinstance(v, bytes) else str(v))
-                    for k, v in message.get('headers', [])
-                ]
-            elif message['type'] == 'http.response.body':
-                body_chunk = message.get('body', b'')
-                if body_chunk:
-                    response_body_parts.append(body_chunk)
-        
-        # Запускаем ASGI приложение
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        try:
-            loop.run_until_complete(app(scope, receive, send))
-        except Exception as e:
-            # Логируем ошибку для диагностики
-            import traceback
-            error_msg = f"Error in ASGI app: {str(e)}\n{traceback.format_exc()}"
-            print(f"WSGI ERROR: {error_msg}")
+            method = environ['REQUEST_METHOD']
+            path = environ.get('PATH_INFO', '/')
+            raw_path = path.encode('utf-8')
+            query_string = environ.get('QUERY_STRING', '').encode('utf-8')
             
-            # Возвращаем ошибку 500
-            response_status = 500
-            response_headers = [('Content-Type', 'text/html; charset=utf-8')]
-            error_html = f"""<html><body><h1>500 Internal Server Error</h1>
-            <p>An error occurred while processing your request.</p>
-            <pre>{error_msg}</pre>
-            </body></html>"""
-            response_body_parts = [error_html.encode('utf-8')]
-        finally:
-            loop.close()
-        
-        # Формируем WSGI ответ
-        if response_status is None:
-            response_status = 500
-            response_headers = [('Content-Type', 'text/plain')]
-            response_body_parts = [b'Internal Server Error']
-        
-        status_text = f"{response_status} {_get_status_text(response_status)}"
-        start_response(status_text, response_headers)
-        
-        return response_body_parts
-        
+            # Парсим headers
+            headers = []
+            for key, value in environ.items():
+                if key.startswith('HTTP_'):
+                    header_name = key[5:].replace('_', '-').lower()
+                    headers.append((header_name.encode('utf-8'), str(value).encode('utf-8')))
+                elif key == 'CONTENT_TYPE' and value:
+                    headers.append((b'content-type', str(value).encode('utf-8')))
+                elif key == 'CONTENT_LENGTH' and value:
+                    headers.append((b'content-length', str(value).encode('utf-8')))
+            
+            scope = {
+                'type': 'http',
+                'method': method,
+                'path': path,
+                'raw_path': raw_path,
+                'query_string': query_string,
+                'headers': headers,
+                'client': (environ.get('REMOTE_ADDR', ''), int(environ.get('REMOTE_PORT', 0) or 0)),
+                'server': (environ.get('SERVER_NAME', ''), int(environ.get('SERVER_PORT', 80) or 80)),
+                'scheme': environ.get('wsgi.url_scheme', 'http'),
+                'root_path': environ.get('SCRIPT_NAME', ''),
+                'path_info': path,
+                'http_version': '1.1',
+            }
+            
+            # Состояние ответа
+            response_status = None
+            response_headers = []
+            response_body_parts = []
+            
+            async def receive():
+                """Получаем тело запроса"""
+                wsgi_input = environ.get('wsgi.input', BytesIO())
+                content_length = int(environ.get('CONTENT_LENGTH', 0) or 0)
+                if content_length > 0:
+                    body = wsgi_input.read(content_length)
+                else:
+                    body = b''
+                return {'type': 'http.request', 'body': body, 'more_body': False}
+            
+            async def send(message):
+                """Получаем ответ от ASGI приложения"""
+                nonlocal response_status, response_headers, response_body_parts
+                if message['type'] == 'http.response.start':
+                    response_status = message['status']
+                    response_headers = [
+                        (k.decode('utf-8') if isinstance(k, bytes) else str(k),
+                         v.decode('utf-8') if isinstance(v, bytes) else str(v))
+                        for k, v in message.get('headers', [])
+                    ]
+                elif message['type'] == 'http.response.body':
+                    body_chunk = message.get('body', b'')
+                    if body_chunk:
+                        response_body_parts.append(body_chunk)
+            
+            # Запускаем ASGI приложение
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                loop.run_until_complete(app(scope, receive, send))
+            except Exception as e:
+                # Логируем ошибку для диагностики
+                import traceback
+                error_msg = f"Error in ASGI app: {str(e)}\n{traceback.format_exc()}"
+                print(f"WSGI ERROR: {error_msg}")
+                
+                # Возвращаем ошибку 500
+                response_status = 500
+                response_headers = [('Content-Type', 'text/html; charset=utf-8')]
+                error_html = f"""<html><body><h1>500 Internal Server Error</h1>
+                <p>An error occurred while processing your request.</p>
+                <pre>{error_msg}</pre>
+                </body></html>"""
+                response_body_parts = [error_html.encode('utf-8')]
+            finally:
+                loop.close()
+            
+            # Формируем WSGI ответ
+            if response_status is None:
+                response_status = 500
+                response_headers = [('Content-Type', 'text/plain')]
+                response_body_parts = [b'Internal Server Error']
+            
+            status_text = f"{response_status} {_get_status_text(response_status)}"
+            start_response(status_text, response_headers)
+            
+            return response_body_parts
+            
         except Exception as e:
             # Обработка критических ошибок в WSGI адаптере
             import traceback
