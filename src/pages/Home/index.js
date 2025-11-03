@@ -68,9 +68,11 @@ const HomePage = () => {
             <Paragraph style={{ fontSize: '18px', marginBottom: '16px' }}>
               {settings.welcome_subtitle || 'Добро пожаловать в систему обмена подарками!'}
             </Paragraph>
-            <Text type="secondary" style={{ fontSize: '16px' }}>
-              {settings.welcome_message || 'Привет, Тестовый пользователь 1!'}
-            </Text>
+            {settings.welcome_message && (
+              <Text type="secondary" style={{ fontSize: '16px' }}>
+                {settings.welcome_message}
+              </Text>
+            )}
           </Col>
           <Col xs={24} md={8} style={{ textAlign: 'center' }}>
             <div style={{ fontSize: '120px' }}>🎅</div>
